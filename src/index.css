@@ -1,100 +1,103 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* FLYFIT Design System - Energetyczny, zabawny styl fitness */
+/* FLYFIT Design System - Inspirowane maskotką FitFly (niebieski ptaszek) */
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 20% 15%;
+    /* Tło - ciepły kremowy jak tło maskotki */
+    --background: 45 30% 96%;
+    --foreground: 220 30% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 15%;
+    --card-foreground: 220 30% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 15%;
+    --popover-foreground: 220 30% 15%;
 
-    /* Primary - energetyczny fiolet/magenta */
-    --primary: 280 85% 55%;
+    /* Primary - niebieski jak ptaszek FitFly */
+    --primary: 200 85% 55%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - miętowy zielony */
-    --secondary: 160 60% 92%;
-    --secondary-foreground: 160 60% 25%;
+    /* Secondary - zielony jak opaska */
+    --secondary: 100 55% 50%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 20% 94%;
-    --muted-foreground: 215 15% 50%;
+    --muted: 45 20% 92%;
+    --muted-foreground: 220 15% 45%;
 
-    /* Accent - słoneczny pomarańcz */
-    --accent: 35 95% 55%;
+    /* Accent - pomarańczowy jak dziobek */
+    --accent: 25 95% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 90%;
-    --input: 210 20% 90%;
-    --ring: 280 85% 55%;
+    --border: 200 20% 88%;
+    --input: 200 20% 88%;
+    --ring: 200 85% 55%;
 
-    --radius: 1rem;
+    --radius: 1.25rem;
 
-    /* Custom FLYFIT colors */
-    --flyfit-purple: 280 85% 55%;
-    --flyfit-mint: 160 60% 50%;
-    --flyfit-orange: 35 95% 55%;
-    --flyfit-pink: 330 85% 60%;
-    --flyfit-blue: 200 85% 55%;
+    /* Custom FitFly colors */
+    --fitfly-blue: 200 85% 55%;
+    --fitfly-blue-dark: 200 85% 45%;
+    --fitfly-green: 100 55% 50%;
+    --fitfly-green-dark: 100 55% 40%;
+    --fitfly-orange: 25 95% 55%;
+    --fitfly-cream: 45 30% 96%;
+    --fitfly-navy: 220 60% 20%;
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 280 85% 55%;
+    --sidebar-foreground: 220 30% 26%;
+    --sidebar-primary: 200 85% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 160 60% 92%;
-    --sidebar-accent-foreground: 160 60% 25%;
-    --sidebar-border: 210 20% 90%;
-    --sidebar-ring: 280 85% 55%;
+    --sidebar-accent: 100 55% 92%;
+    --sidebar-accent-foreground: 100 55% 30%;
+    --sidebar-border: 200 20% 90%;
+    --sidebar-ring: 200 85% 55%;
   }
 
   .dark {
-    --background: 220 25% 8%;
-    --foreground: 210 20% 95%;
+    --background: 220 30% 8%;
+    --foreground: 45 20% 95%;
 
-    --card: 220 25% 12%;
-    --card-foreground: 210 20% 95%;
+    --card: 220 30% 12%;
+    --card-foreground: 45 20% 95%;
 
-    --popover: 220 25% 12%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 220 30% 12%;
+    --popover-foreground: 45 20% 95%;
 
-    --primary: 280 85% 60%;
+    --primary: 200 85% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 160 40% 20%;
-    --secondary-foreground: 160 60% 80%;
+    --secondary: 100 50% 45%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 220 25% 18%;
-    --muted-foreground: 215 15% 60%;
+    --muted-foreground: 220 15% 60%;
 
-    --accent: 35 95% 55%;
+    --accent: 25 95% 55%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62% 40%;
+    --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 25% 20%;
-    --input: 220 25% 20%;
-    --ring: 280 85% 60%;
+    --border: 220 25% 22%;
+    --input: 220 25% 22%;
+    --ring: 200 85% 60%;
 
-    --sidebar-background: 220 25% 10%;
-    --sidebar-foreground: 210 20% 95%;
-    --sidebar-primary: 280 85% 60%;
+    --sidebar-background: 220 30% 10%;
+    --sidebar-foreground: 45 20% 95%;
+    --sidebar-primary: 200 85% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 160 40% 20%;
-    --sidebar-accent-foreground: 160 60% 80%;
-    --sidebar-border: 220 25% 20%;
-    --sidebar-ring: 280 85% 60%;
+    --sidebar-accent: 100 40% 20%;
+    --sidebar-accent-foreground: 100 50% 80%;
+    --sidebar-border: 220 25% 22%;
+    --sidebar-ring: 200 85% 60%;
   }
 }
 
@@ -104,7 +107,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground antialiased;
     font-family: 'Nunito', sans-serif;
   }
 }
@@ -116,5 +119,13 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+  
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.15);
   }
 }
