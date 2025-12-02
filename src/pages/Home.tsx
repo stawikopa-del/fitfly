@@ -30,9 +30,14 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Maskotka - centralny element */}
-      <section className="py-4">
-        <MascotDisplay state={mascotState} size="xl" showMessage animate />
+      {/* Maskotka - centralny element z animacją powitania */}
+      <section className="py-6">
+        <MascotDisplay 
+          state={{ emotion: 'greeting', message: 'Cześć! Miło Cię widzieć! 👋' }} 
+          size="hero" 
+          showMessage 
+          animate 
+        />
       </section>
 
       {/* Statystyki w gridzie */}
