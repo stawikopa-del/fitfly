@@ -13,6 +13,11 @@ const initialProgress: DailyProgress = {
 };
 
 const motivationalMessages: Record<MascotEmotion, string[]> = {
+  greeting: [
+    'Cześć! Miło Cię widzieć! 👋',
+    'Hej! Gotowy/a na nowy dzień?',
+    'Witaj! Dzisiaj będzie super!',
+  ],
   happy: [
     'Świetnie Ci idzie! 💪',
     'Jesteś niesamowity/a!',
@@ -42,6 +47,21 @@ const motivationalMessages: Record<MascotEmotion, string[]> = {
     '🎉 Cel osiągnięty!',
     'Niesamowite! Udało się!',
     'Jesteś mistrzem/mistrzynią!',
+  ],
+  cheering: [
+    'Dajesz! Jeszcze trochę! 💪',
+    'Nie poddawaj się!',
+    'Jesteś na dobrej drodze!',
+  ],
+  sleeping: [
+    'Zzz... dobranoc!',
+    'Czas na odpoczynek...',
+    'Sen to też trening!',
+  ],
+  excited: [
+    'Wow! To będzie świetny dzień! ⭐',
+    'Nie mogę się doczekać!',
+    'Energia na maksa!',
   ],
 };
 

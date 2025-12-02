@@ -1,6 +1,6 @@
 // Typy dla aplikacji FLYFIT
 
-export type MascotEmotion = 'happy' | 'proud' | 'motivated' | 'tired' | 'neutral' | 'celebrating';
+export type MascotEmotion = 'greeting' | 'happy' | 'proud' | 'motivated' | 'tired' | 'neutral' | 'celebrating' | 'cheering' | 'sleeping' | 'excited';
 
 export interface MascotState {
   emotion: MascotEmotion;
