@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import mascotImage from '@/assets/fitfly-mascot.png';
 import { Meal } from '@/types/flyfit';
+import { AddMealDialog } from '@/components/flyfit/AddMealDialog';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -20,6 +21,9 @@ export default function Nutrition() {
     { id: '1', type: 'breakfast', name: 'Owsianka z owocami', calories: 350, protein: 12, carbs: 55, fat: 8, time: '08:00' },
     { id: '2', type: 'lunch', name: 'Kurczak z ryżem', calories: 550, protein: 40, carbs: 60, fat: 12, time: '13:00' },
   ]);
+  
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
 
   const dailyGoals = { calories: 2000, protein: 120, carbs: 250, fat: 65 };
   
@@ -32,16 +36,15 @@ export default function Nutrition() {
 
   const getMealsByType = (type: MealType) => meals.filter(m => m.type === type);
 
-  const handleAddMeal = (type: MealType) => {
+  const handleOpenAddMeal = (type: MealType) => {
+    setSelectedMealType(type);
+    setDialogOpen(true);
+  };
+
+  const handleAddMeal = (mealData: Omit<Meal, 'id'>) => {
     const newMeal: Meal = {
       id: Date.now().toString(),
-      type,
-      name: 'Nowy posiłek',
-      calories: 200,
-      protein: 10,
-      carbs: 25,
-      fat: 5,
-      time: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
+      ...mealData,
     };
     setMeals([...meals, newMeal]);
   };
@@ -145,9 +148,9 @@ export default function Nutrition() {
                     <p className="text-xs text-muted-foreground font-medium">{typeCalories} kcal</p>
                   </div>
                 </div>
-                <Button 
+              <Button 
                   size="icon"
-                  onClick={() => handleAddMeal(type)}
+                  onClick={() => handleOpenAddMeal(type)}
                   className="rounded-2xl w-10 h-10"
                 >
                   <Plus className="w-5 h-5" />
@@ -172,6 +175,13 @@ export default function Nutrition() {
           );
         })}
       </section>
+
+      <AddMealDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        mealType={selectedMealType}
+        onAddMeal={handleAddMeal}
+      />
     </div>
   );
 }
