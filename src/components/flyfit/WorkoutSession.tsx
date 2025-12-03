@@ -290,7 +290,7 @@ export function WorkoutSession({
           <h3 className={cn("text-lg font-bold font-display mb-1 transition-colors duration-300", isBreak ? 'text-fitfly-green' : 'text-foreground')}>
             {isBreak ? '☕ Przerwa' : currentExercise.name}
           </h3>
-          {!isBreak && <Button variant="outline" size="sm" onClick={() => setShowInstructions(true)} className="rounded-full border-2 gap-1 h-8 text-xs px-3">
+          {!isBreak && <Button variant="outline" size="sm" onClick={() => setShowInstructions(true)} className="rounded-full border-2 gap-1 h-8 text-xs px-3 py-[4px] my-0">
               <Info className="w-3.5 h-3.5" />
               Instrukcja
             </Button>}
@@ -300,7 +300,7 @@ export function WorkoutSession({
         </div>
 
         {/* Controls - inside main content */}
-        <div className="gap-5 mt-4 rounded-none text-primary flex items-center justify-center py-[20px] bg-fitfly-cream">
+        <div className="mt-4 rounded-none text-primary flex items-center justify-center bg-fitfly-cream py-[15px] gap-[20px]">
           {/* Previous */}
           <Button variant="outline" size="icon" onClick={previousExercise} disabled={currentExerciseIndex === 0 && !isBreak} className="w-14 h-14 rounded-full border-2">
             <ChevronLeft className="w-6 h-6" />
