@@ -182,31 +182,37 @@ export default function Chat() {
           </div>
         )}
 
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={cn(
-              'flex gap-3 animate-slide-up-bounce',
-              message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-            )}
-          >
-            {message.role === 'assistant' && (
-              <div className="w-10 h-10 rounded-full bg-white border-2 border-primary/20 shadow-playful-sm shrink-0 overflow-hidden">
-                <img src={fitekAvatar} alt="FITEK" className="w-full h-full object-cover" />
-              </div>
-            )}
+        {messages.map((message, index) => {
+          const isLastAssistantMessage = message.role === 'assistant' && index === messages.length - 1;
+          const isStreaming = isLastAssistantMessage && isTyping;
+          
+          return (
             <div
+              key={index}
               className={cn(
-                'max-w-[80%] px-4 py-3 rounded-3xl',
-                message.role === 'user'
-                  ? 'bg-primary text-primary-foreground rounded-br-lg shadow-playful-sm'
-                  : 'bg-card border-2 border-border/50 text-foreground rounded-bl-lg shadow-card-playful'
+                'flex gap-3',
+                message.role === 'user' ? 'flex-row-reverse' : 'flex-row',
+                !isStreaming && 'animate-fade-in'
               )}
             >
-              <p className="text-sm font-medium whitespace-pre-wrap">{message.content}</p>
+              {message.role === 'assistant' && (
+                <div className="w-10 h-10 rounded-full bg-white border-2 border-primary/20 shadow-playful-sm shrink-0 overflow-hidden">
+                  <img src={fitekAvatar} alt="FITEK" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div
+                className={cn(
+                  'max-w-[80%] px-4 py-3 rounded-3xl',
+                  message.role === 'user'
+                    ? 'bg-primary text-primary-foreground rounded-br-lg shadow-playful-sm'
+                    : 'bg-card border-2 border-border/50 text-foreground rounded-bl-lg shadow-card-playful'
+                )}
+              >
+                <p className="text-sm font-medium whitespace-pre-wrap">{message.content}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {isTyping && messages[messages.length - 1]?.role === 'user' && (
           <div className="flex gap-3">
