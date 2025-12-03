@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles } from 'lucide-react';
+import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -47,6 +47,10 @@ export default function Nutrition() {
       ...mealData,
     };
     setMeals([...meals, newMeal]);
+  };
+
+  const handleDeleteMeal = (mealId: string) => {
+    setMeals(meals.filter(m => m.id !== mealId));
   };
 
   return (
@@ -160,9 +164,17 @@ export default function Nutrition() {
               {typeMeals.length > 0 ? (
                 <div className="space-y-2">
                   {typeMeals.map(meal => (
-                    <div key={meal.id} className="flex justify-between items-center py-3 px-4 bg-card/80 rounded-2xl border border-border/30">
+                    <div key={meal.id} className="flex justify-between items-center py-3 px-4 bg-card/80 rounded-2xl border border-border/30 group">
                       <span className="text-sm font-bold text-foreground">{meal.name}</span>
-                      <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-1 rounded-full">{meal.calories} kcal</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-1 rounded-full">{meal.calories} kcal</span>
+                        <button
+                          onClick={() => handleDeleteMeal(meal.id)}
+                          className="w-6 h-6 rounded-full bg-destructive/10 text-destructive flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
