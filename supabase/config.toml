@@ -1,13 +1,13 @@
 project_id = "mjcuvflvqgenujpfcoqw"
 
 [functions.fitek-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.shopify-storefront]
 verify_jwt = false
 
 [functions.generate-recipes]
-verify_jwt = false
+verify_jwt = true
 
 [functions.estimate-meal]
-verify_jwt = false
+verify_jwt = true
