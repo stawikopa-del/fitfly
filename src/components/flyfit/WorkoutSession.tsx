@@ -261,9 +261,9 @@ export function WorkoutSession({
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex-col px-4 gap-3 overflow-hidden border-none my-[10px] flex items-center justify-start py-[85px] bg-fitfly-cream">
+      <div className="flex-1 flex-col px-4 gap-2 overflow-hidden border-none flex items-center justify-center bg-fitfly-cream">
         {/* Mascot with transition */}
-        <img key={`mascot-${transitionKey}`} src={mascotImage} alt="FITEK" className={cn("w-72 h-72 object-contain animate-pushup transition-all duration-300", isTransitioning && "opacity-0 scale-90")} />
+        <img key={`mascot-${transitionKey}`} src={mascotImage} alt="FITEK" className={cn("w-52 h-52 object-contain animate-pushup transition-all duration-300", isTransitioning && "opacity-0 scale-90")} />
         
         {/* Speech bubble with transition */}
         <div key={`bubble-${transitionKey}`} className={cn("relative max-w-[240px] transition-all duration-300", isTransitioning && "opacity-0 translate-y-2")}>
@@ -298,9 +298,11 @@ export function WorkoutSession({
               Następne: <span className="font-semibold">{workout.exercises[currentExerciseIndex + 1]?.name || 'Koniec!'}</span>
             </p>}
         </div>
+      </div>
 
-        {/* Controls - inside main content */}
-        <div className="mt-4 rounded-none text-primary flex items-center justify-center bg-fitfly-cream py-[15px] gap-[20px]">
+      {/* Controls - fixed at bottom with safe area */}
+      <div className="px-4 pb-6 pt-3 bg-fitfly-cream border-t border-border/30 safe-area-bottom">
+        <div className="flex items-center justify-center gap-5">
           {/* Previous */}
           <Button variant="outline" size="icon" onClick={previousExercise} disabled={currentExerciseIndex === 0 && !isBreak} className="w-14 h-14 rounded-full border-2">
             <ChevronLeft className="w-6 h-6" />
