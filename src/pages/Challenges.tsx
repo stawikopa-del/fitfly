@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Trophy, Star, Play, Check, Zap, Sparkles } from 'lucide-react';
+import { Trophy, Star, Play, Check, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import mascotImage from '@/assets/fitfly-mascot.png';
 import { Challenge } from '@/types/flyfit';
 
 const initialChallenges: Challenge[] = [
@@ -78,18 +77,12 @@ export default function Challenges() {
       <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-32 left-0 w-48 h-48 bg-fitfly-yellow/10 rounded-full blur-3xl -translate-x-1/2" />
 
-      {/* Header z maskotką */}
-      <header className="flex items-center gap-3 relative z-10">
-        <div className="relative animate-float">
-          <img src={mascotImage} alt="FitFly" className="w-14 h-14 object-contain drop-shadow-md" />
-          <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-fitfly-yellow animate-pulse" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-accent to-fitfly-orange-light bg-clip-text text-transparent">
-            Wyzwania
-          </h1>
-          <p className="text-sm text-muted-foreground font-medium">Zdobywaj punkty ze mną! 🏆</p>
-        </div>
+      {/* Header */}
+      <header className="relative z-10">
+        <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-accent to-fitfly-orange-light bg-clip-text text-transparent">
+          Wyzwania
+        </h1>
+        <p className="text-sm text-muted-foreground font-medium">Zdobywaj punkty ze mną! 🏆</p>
       </header>
 
       {/* Karta punktów */}

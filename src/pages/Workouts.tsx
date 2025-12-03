@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Search, Clock, Flame, ChevronRight, Play, Sparkles, Trophy } from 'lucide-react';
+import { Search, Clock, Flame, ChevronRight, Play, Trophy } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { WorkoutSession } from '@/components/flyfit/WorkoutSession';
 import { workouts, categories, difficultyConfig, WorkoutData } from '@/data/workouts';
 import { useToast } from '@/hooks/use-toast';
-import mascotImage from '@/assets/fitfly-mascot.png';
 
 export default function Workouts() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,18 +52,12 @@ export default function Workouts() {
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-32 left-0 w-48 h-48 bg-accent/10 rounded-full blur-3xl -translate-x-1/2" />
 
-      {/* Header z maskotką */}
-      <header className="flex items-center gap-3 relative z-10">
-        <div className="relative animate-float">
-          <img src={mascotImage} alt="FitFly" className="w-14 h-14 object-contain drop-shadow-md" />
-          <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-fitfly-yellow animate-pulse" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent">
-            Treningi
-          </h1>
-          <p className="text-sm text-muted-foreground font-medium">Ćwicz ze mną! 💪</p>
-        </div>
+      {/* Header */}
+      <header className="relative z-10">
+        <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent">
+          Treningi
+        </h1>
+        <p className="text-sm text-muted-foreground font-medium">Ćwicz ze mną! 💪</p>
       </header>
 
       {/* Wyszukiwarka */}
