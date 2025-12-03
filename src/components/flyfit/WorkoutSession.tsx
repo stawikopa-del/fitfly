@@ -309,8 +309,9 @@ export function WorkoutSession({
 
           <Button onClick={togglePlayPause} className={cn(
             "w-24 h-24 rounded-full shadow-playful relative overflow-hidden",
-            "bg-gradient-to-br from-fitfly-green to-fitfly-green-dark hover:from-fitfly-green/90 hover:to-fitfly-green-dark/90",
-            !isRunning && "animate-pulse"
+            isRunning 
+              ? "bg-gradient-to-br from-fitfly-green to-fitfly-green-dark hover:from-fitfly-green/90 hover:to-fitfly-green-dark/90"
+              : "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-500/90 hover:to-red-600/90"
           )}>
             <div className="absolute inset-0 bg-white/10 rounded-full" />
             {isRunning ? <Pause className="w-10 h-10 relative z-10" /> : <Play className="w-10 h-10 ml-1 relative z-10" />}
