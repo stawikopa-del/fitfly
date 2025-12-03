@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Play, Pause, X, Info, ChevronLeft, ChevronRight, Trophy, Clock, Flame } from 'lucide-react';
+import { Play, Pause, ArrowLeft, X, Info, ChevronLeft, ChevronRight, Trophy, Clock, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -293,38 +293,38 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
 
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-3 py-2 border-b border-border">
-        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full w-8 h-8">
-          <X className="w-5 h-5" />
+      {/* Header with back arrow */}
+      <header className="flex items-center gap-3 px-4 py-3 border-b border-border">
+        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full w-9 h-9">
+          <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h2 className="font-bold font-display text-base">{workout.name}</h2>
-        <div className="w-8" />
+        <div className="flex-1">
+          <h2 className="font-bold font-display text-base">{workout.name}</h2>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-semibold text-primary">{currentExerciseIndex + 1}/{totalExercises}</span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {formatTime(totalRemainingTime)}
+            </span>
+          </div>
+        </div>
       </header>
 
-      {/* Progress bar and counters */}
+      {/* Progress bar */}
       <div className="px-4 py-2">
-        <div className="flex items-center justify-between text-xs mb-1">
-          <span className="font-bold text-primary">
-            {currentExerciseIndex + 1}/{totalExercises}
-          </span>
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {formatTime(totalRemainingTime)} pozostało
-          </span>
-        </div>
         <Progress value={progressPercent} className="h-1.5" />
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-2 gap-3 overflow-hidden">
-        {/* Mascot with transition */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-2 gap-4 overflow-hidden">
+        {/* Mascot with transition - larger */}
         <img 
           key={`mascot-${transitionKey}`}
           src={mascotImage} 
           alt="FITEK" 
           className={cn(
-            "w-28 h-28 object-contain animate-float-gentle transition-all duration-300",
+            "w-40 h-40 object-contain animate-float-gentle transition-all duration-300",
             isTransitioning && "opacity-0 scale-90"
           )}
         />
@@ -408,29 +408,33 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="p-4 pb-24 border-t border-border bg-card/50">
-        <div className="flex items-center justify-center gap-3">
+      {/* Controls - no bottom padding since no nav */}
+      <div className="p-4 pb-6 border-t border-border bg-card/50">
+        <div className="flex items-center justify-center gap-4">
           {/* Previous */}
           <Button
             variant="outline"
             size="icon"
             onClick={previousExercise}
             disabled={currentExerciseIndex === 0 && !isBreak}
-            className="w-12 h-12 rounded-full border-2"
+            className="w-14 h-14 rounded-full border-2"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-6 h-6" />
           </Button>
 
           {/* Play/Pause */}
           <Button
             onClick={togglePlayPause}
-            className={`w-16 h-16 rounded-full ${isBreak ? 'bg-fitfly-green hover:bg-fitfly-green-dark' : ''} shadow-playful`}
+            className={cn(
+              "w-18 h-18 rounded-full shadow-playful",
+              isBreak && 'bg-fitfly-green hover:bg-fitfly-green-dark'
+            )}
+            style={{ width: '72px', height: '72px' }}
           >
             {isRunning ? (
-              <Pause className="w-8 h-8" />
+              <Pause className="w-9 h-9" />
             ) : (
-              <Play className="w-8 h-8 ml-0.5" />
+              <Play className="w-9 h-9 ml-0.5" />
             )}
           </Button>
 
@@ -439,9 +443,9 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
             variant="outline"
             size="icon"
             onClick={skipExercise}
-            className="w-12 h-12 rounded-full border-2"
+            className="w-14 h-14 rounded-full border-2"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-6 h-6" />
           </Button>
         </div>
       </div>

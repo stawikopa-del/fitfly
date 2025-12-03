@@ -112,10 +112,8 @@ export default {
           "50%": { transform: "translateY(-12px)" },
         },
         "float-gentle": {
-          "0%, 100%": { transform: "translateY(0px) rotate(-1deg)" },
-          "25%": { transform: "translateY(-6px) rotate(0.5deg)" },
-          "50%": { transform: "translateY(-10px) rotate(1deg)" },
-          "75%": { transform: "translateY(-6px) rotate(0deg)" },
+          "0%, 100%": { transform: "translateY(0px) rotate(-0.5deg)" },
+          "50%": { transform: "translateY(-8px) rotate(0.5deg)" },
         },
         "pulse-ring": {
           "0%": { transform: "scale(0.8)", opacity: "0.8" },
@@ -158,7 +156,7 @@ export default {
         "wiggle": "wiggle 0.5s ease-in-out",
         "float": "float 3s ease-in-out infinite",
         "float-slow": "float-slow 4s ease-in-out infinite",
-        "float-gentle": "float-gentle 3.5s ease-in-out infinite",
+        "float-gentle": "float-gentle 5s ease-in-out infinite",
         "pulse-ring": "pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "celebrate": "celebrate 0.6s ease-in-out",
         "bounce-in": "bounce-in 0.6s ease-out",
