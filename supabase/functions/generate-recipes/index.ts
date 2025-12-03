@@ -1,9 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const inputSchema = z.object({
+  ingredients: z.array(z.string().min(1).max(100)).max(30).optional(),
+  imageBase64: z.string().max(10_000_000).optional()
+}).refine(data => data.ingredients || data.imageBase64, {
+  message: 'Wymagane ingredients lub imageBase64'
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,7 +19,18 @@ serve(async (req) => {
   }
 
   try {
-    const { ingredients, imageBase64 } = await req.json();
+    const body = await req.json();
+    const parseResult = inputSchema.safeParse(body);
+    
+    if (!parseResult.success) {
+      console.error("Validation error:", parseResult.error);
+      return new Response(JSON.stringify({ error: "Nieprawidłowe dane wejściowe", details: parseResult.error.flatten() }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    const { ingredients, imageBase64 } = parseResult.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
