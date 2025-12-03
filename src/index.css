@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -139,8 +139,8 @@
   }
 
   h1, h2, h3 {
-    font-family: 'Quicksand', 'Nunito', sans-serif;
-    font-weight: 700;
+    font-family: 'Poppins', 'Nunito', sans-serif;
+    font-weight: 800;
   }
 }
 
