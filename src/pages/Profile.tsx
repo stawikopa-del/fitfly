@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Target, Bell, Settings, ChevronRight, Footprints, Droplets, Flame, Trophy, Edit3, Sparkles, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,25 +7,32 @@ import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import mascotImage from '@/assets/fitfly-mascot.png';
-import { UserProfile } from '@/types/flyfit';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+interface ProfileData {
+  display_name: string | null;
+  gender: string | null;
+  age: number | null;
+  height: number | null;
+  weight: number | null;
+  goal_weight: number | null;
+  goal: string | null;
+  daily_calories: number | null;
+  daily_water: number | null;
+  daily_steps_goal: number | null;
+}
 
 export default function Profile() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   
-  const [profile, setProfile] = useState<UserProfile>({
-    name: user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Użytkownik',
-    age: 25,
-    weight: 75,
-    height: 180,
-    goalWeight: 70,
-    dailyWaterGoal: 2000,
-    dailyStepsGoal: 10000,
-    dailyCaloriesGoal: 2000,
-  });
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedProfile, setEditedProfile] = useState<Partial<ProfileData>>({});
 
   const [notifications, setNotifications] = useState({
     water: true,
@@ -33,7 +40,50 @@ export default function Profile() {
     challenges: false,
   });
 
-  const [isEditing, setIsEditing] = useState(false);
+  // Fetch profile from database
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchProfile = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+      } else if (data) {
+        setProfile(data);
+        setEditedProfile(data);
+      }
+      setLoading(false);
+    };
+    
+    fetchProfile();
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    if (!user || !editedProfile) return;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        goal_weight: editedProfile.goal_weight,
+        daily_steps_goal: editedProfile.daily_steps_goal,
+        daily_water: editedProfile.daily_water,
+      })
+      .eq('user_id', user.id);
+    
+    if (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Nie udało się zapisać zmian');
+    } else {
+      setProfile({ ...profile, ...editedProfile } as ProfileData);
+      setIsEditing(false);
+      toast.success('Zmiany zapisane! 🎉');
+    }
+  };
 
   const weeklyStats = {
     avgSteps: 8500,
@@ -49,6 +99,30 @@ export default function Profile() {
     toast.success('Wylogowano pomyślnie');
     navigate('/auth');
   };
+
+  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Użytkownik';
+  const weight = profile?.weight || 70;
+  const height = profile?.height || 170;
+  const goalWeight = editedProfile?.goal_weight ?? profile?.goal_weight ?? 65;
+  const dailyStepsGoal = editedProfile?.daily_steps_goal ?? profile?.daily_steps_goal ?? 10000;
+  const dailyWaterGoal = editedProfile?.daily_water ?? profile?.daily_water ?? 2000;
+  const dailyCalories = profile?.daily_calories ?? 2000;
+  const goal = profile?.goal;
+  
+  const weightDiff = Math.abs(weight - goalWeight);
+  const weightProgress = goal === 'lose' 
+    ? Math.max(0, 100 - (weightDiff / (weight * 0.2)) * 100)
+    : goal === 'gain'
+      ? Math.max(0, 100 - (weightDiff / (goalWeight * 0.2)) * 100)
+      : 100;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 py-6 space-y-6 relative overflow-hidden">
@@ -71,8 +145,15 @@ export default function Profile() {
             <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-fitfly-yellow animate-pulse" />
           </div>
         </div>
-        <h1 className="text-2xl font-extrabold font-display text-foreground">{profile.name}</h1>
-        <p className="text-sm text-muted-foreground font-medium">{profile.weight} kg • {profile.height} cm</p>
+        <h1 className="text-2xl font-extrabold font-display text-foreground">{displayName}</h1>
+        <p className="text-sm text-muted-foreground font-medium">{weight} kg • {height} cm</p>
+        
+        {/* Badge z celem */}
+        {goal && (
+          <div className="inline-flex items-center gap-2 mt-2 bg-secondary/20 text-secondary px-3 py-1 rounded-full text-xs font-bold">
+            {goal === 'lose' ? '🔥 Redukcja' : goal === 'gain' ? '💪 Masa' : '⚖️ Utrzymanie'}
+          </div>
+        )}
         
         {/* Badge punktów */}
         <div className="inline-flex items-center gap-2 mt-3 bg-accent text-accent-foreground px-4 py-2 rounded-2xl shadow-playful-orange animate-float" style={{ animationDelay: '0.2s' }}>
@@ -81,6 +162,20 @@ export default function Profile() {
           <span>🏆</span>
         </div>
       </header>
+
+      {/* Dzienne cele */}
+      <div className="grid grid-cols-2 gap-3 relative z-10">
+        <div className="bg-secondary/10 rounded-2xl p-4 text-center border-2 border-secondary/20">
+          <div className="text-2xl mb-1">🔥</div>
+          <p className="text-2xl font-extrabold font-display text-secondary">{dailyCalories}</p>
+          <p className="text-xs text-muted-foreground font-medium">kcal/dzień</p>
+        </div>
+        <div className="bg-primary/10 rounded-2xl p-4 text-center border-2 border-primary/20">
+          <div className="text-2xl mb-1">💧</div>
+          <p className="text-2xl font-extrabold font-display text-primary">{dailyWaterGoal}</p>
+          <p className="text-xs text-muted-foreground font-medium">ml wody/dzień</p>
+        </div>
+      </div>
 
       {/* Statystyki tygodnia */}
       <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful relative z-10 animate-float" style={{ animationDelay: '0.3s' }}>
@@ -97,7 +192,7 @@ export default function Profile() {
             { icon: Droplets, value: `${weeklyStats.avgWater} ml`, label: 'Śr. wody/dzień', color: 'bg-primary text-primary-foreground', shadow: 'shadow-playful' },
             { icon: Flame, value: weeklyStats.workouts, label: 'Treningów', color: 'bg-accent text-accent-foreground', shadow: 'shadow-playful-orange' },
             { icon: Trophy, value: weeklyStats.challengesCompleted, label: 'Wyzwań', color: 'bg-fitfly-purple text-white', shadow: 'shadow-md' },
-          ].map(({ icon: Icon, value, label, color, shadow }, index) => (
+          ].map(({ icon: Icon, value, label, color, shadow }) => (
             <div 
               key={label} 
               className="flex items-center gap-3 p-3 bg-muted/50 rounded-2xl hover:-translate-y-0.5 transition-all duration-300"
@@ -126,7 +221,7 @@ export default function Profile() {
           <Button 
             variant={isEditing ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
             className="rounded-2xl font-bold"
           >
             <Edit3 className="w-4 h-4 mr-1" />
@@ -141,36 +236,49 @@ export default function Profile() {
               {isEditing ? (
                 <Input 
                   type="number"
-                  value={profile.goalWeight}
-                  onChange={(e) => setProfile({...profile, goalWeight: Number(e.target.value)})}
+                  value={goalWeight}
+                  onChange={(e) => setEditedProfile({...editedProfile, goal_weight: Number(e.target.value)})}
                   className="w-20 h-8 text-right rounded-xl"
                 />
               ) : (
-                <span className="font-bold text-foreground">{profile.goalWeight} kg</span>
+                <span className="font-bold text-foreground">{goalWeight} kg</span>
               )}
             </div>
-            <Progress value={80} className="h-3" />
-            <p className="text-xs text-muted-foreground mt-2 font-medium">Pozostało 5 kg do celu 💪</p>
+            <Progress value={weightProgress} className="h-3" />
+            <p className="text-xs text-muted-foreground mt-2 font-medium">
+              {weightDiff > 0 
+                ? `Pozostało ${weightDiff} kg do celu 💪` 
+                : 'Cel osiągnięty! 🎉'}
+            </p>
           </div>
           
-          {[
-            { label: 'Dzienny cel kroków', value: profile.dailyStepsGoal, key: 'dailyStepsGoal', emoji: '👟' },
-            { label: 'Dzienny cel wody (ml)', value: profile.dailyWaterGoal, key: 'dailyWaterGoal', emoji: '💧' },
-          ].map(({ label, value, key, emoji }) => (
-            <div key={key} className="flex justify-between items-center bg-muted/50 rounded-2xl p-4">
-              <span className="text-sm text-muted-foreground font-medium">{label} {emoji}</span>
-              {isEditing ? (
-                <Input 
-                  type="number"
-                  value={value}
-                  onChange={(e) => setProfile({...profile, [key]: Number(e.target.value)})}
-                  className="w-24 h-8 text-right rounded-xl"
-                />
-              ) : (
-                <span className="font-bold text-foreground">{value.toLocaleString()}</span>
-              )}
-            </div>
-          ))}
+          <div className="flex justify-between items-center bg-muted/50 rounded-2xl p-4">
+            <span className="text-sm text-muted-foreground font-medium">Dzienny cel kroków 👟</span>
+            {isEditing ? (
+              <Input 
+                type="number"
+                value={dailyStepsGoal}
+                onChange={(e) => setEditedProfile({...editedProfile, daily_steps_goal: Number(e.target.value)})}
+                className="w-24 h-8 text-right rounded-xl"
+              />
+            ) : (
+              <span className="font-bold text-foreground">{dailyStepsGoal.toLocaleString()}</span>
+            )}
+          </div>
+          
+          <div className="flex justify-between items-center bg-muted/50 rounded-2xl p-4">
+            <span className="text-sm text-muted-foreground font-medium">Dzienny cel wody (ml) 💧</span>
+            {isEditing ? (
+              <Input 
+                type="number"
+                value={dailyWaterGoal}
+                onChange={(e) => setEditedProfile({...editedProfile, daily_water: Number(e.target.value)})}
+                className="w-24 h-8 text-right rounded-xl"
+              />
+            ) : (
+              <span className="font-bold text-foreground">{dailyWaterGoal.toLocaleString()}</span>
+            )}
+          </div>
         </div>
       </div>
 
