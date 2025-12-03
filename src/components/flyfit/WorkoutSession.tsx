@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Play, Pause, ArrowLeft, X, Info, ChevronLeft, ChevronRight, Trophy, Clock, Flame } from 'lucide-react';
+import { Play, Pause, ArrowLeft, X, Info, ChevronLeft, ChevronRight, Trophy, Clock, Flame, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import mascotImage from '@/assets/fitek-pompki.png';
 import { workoutFeedback, resumeAudioContext } from '@/utils/soundFeedback';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 export interface Exercise {
   id: string;
   name: string;
@@ -289,11 +288,33 @@ export function WorkoutSession({
             {isBreak ? '☕ Przerwa' : currentExercise.name}
           </h3>
           {!isBreak && (
-            <Button variant="outline" size="sm" onClick={() => setShowInstructions(true)} className="rounded-full border-2 gap-1.5 h-auto text-sm px-4 py-2 mt-2 max-w-[280px]">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                if (!showInstructions && isRunning) {
+                  setIsRunning(false);
+                  workoutFeedback.pause();
+                }
+                setShowInstructions(!showInstructions);
+              }} 
+              className="rounded-full border-2 gap-1.5 h-auto text-sm px-4 py-2 mt-2 max-w-[280px]"
+            >
               <Info className="w-4 h-4 shrink-0" />
               <span className="truncate">{currentExercise.instruction.split(' ').slice(0, 4).join(' ')}...</span>
+              {showInstructions ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
             </Button>
           )}
+          
+          {/* Expandable instruction */}
+          {!isBreak && showInstructions && (
+            <div className="mt-3 mx-auto max-w-[320px] bg-card border-2 border-primary/30 rounded-2xl p-4 animate-fade-in">
+              <p className="text-sm text-foreground leading-relaxed text-left">
+                {currentExercise.instruction}
+              </p>
+            </div>
+          )}
+          
           {isBreak && (
             <p className="text-sm text-muted-foreground mt-1">
               Następne: <span className="font-semibold">{workout.exercises[currentExerciseIndex + 1]?.name || 'Koniec!'}</span>
@@ -321,19 +342,5 @@ export function WorkoutSession({
           </Button>
         </div>
       </div>
-
-      {/* Instructions Dialog */}
-      <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
-        <DialogContent className="rounded-3xl border-2">
-          <DialogHeader>
-            <DialogTitle className="font-display text-xl">
-              {currentExercise?.name}
-            </DialogTitle>
-            <DialogDescription className="text-base pt-4 leading-relaxed">
-              {currentExercise?.instruction}
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
     </div>;
 }
