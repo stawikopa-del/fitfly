@@ -3,7 +3,6 @@ import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkl
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import mascotImage from '@/assets/fitfly-mascot.png';
 import { Meal } from '@/types/flyfit';
 import { AddMealDialog } from '@/components/flyfit/AddMealDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -128,18 +127,12 @@ export default function Nutrition() {
       <div className="absolute top-0 left-0 w-64 h-64 bg-secondary/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2" />
       <div className="absolute bottom-32 right-0 w-48 h-48 bg-accent/10 rounded-full blur-3xl translate-x-1/2" />
 
-      {/* Header z maskotką */}
-      <header className="flex items-center gap-3 relative z-10">
-        <div className="relative animate-float">
-          <img src={mascotImage} alt="FitFly" className="w-14 h-14 object-contain drop-shadow-md" />
-          <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-fitfly-yellow animate-pulse" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-secondary to-fitfly-green-light bg-clip-text text-transparent">
-            Odżywianie
-          </h1>
-          <p className="text-sm text-muted-foreground font-medium">Jedz zdrowo, żyj zdrowo! 🥗</p>
-        </div>
+      {/* Header */}
+      <header className="relative z-10">
+        <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-secondary to-fitfly-green-light bg-clip-text text-transparent">
+          Odżywianie
+        </h1>
+        <p className="text-sm text-muted-foreground font-medium">Jedz zdrowo, żyj zdrowo! 🥗</p>
       </header>
 
       {/* Podsumowanie kalorii */}
