@@ -208,7 +208,12 @@ export default function Chat() {
                     : 'bg-card border-2 border-border/50 text-foreground rounded-bl-lg shadow-card-playful'
                 )}
               >
-                <p className="text-sm font-medium whitespace-pre-wrap">{message.content}</p>
+                <p className="text-sm font-medium whitespace-pre-wrap">
+                  {message.content}
+                  {isStreaming && (
+                    <span className="inline-block w-0.5 h-4 bg-primary ml-0.5 animate-pulse" />
+                  )}
+                </p>
               </div>
             </div>
           );
