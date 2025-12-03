@@ -317,7 +317,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-start px-3 pt-4 gap-2 overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col items-center justify-end px-3 pb-6 gap-2 overflow-hidden min-h-0">
         {/* Mascot with transition */}
         <img 
           key={`mascot-${transitionKey}`}
