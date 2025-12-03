@@ -25,27 +25,23 @@ export function ChatHeroBubble() {
   };
 
   return (
-    <div className="flex items-end gap-3">
+    <div className={`flex gap-2 transition-all duration-300 ${isExpanded ? 'items-center' : 'items-end'}`}>
       {/* Mascot - po lewej, dostosowuje się do rozmiaru chatu */}
-      <div className={`flex-shrink-0 transition-all duration-300 ease-out ${isExpanded ? 'w-56 h-56' : 'w-44 h-44'}`}>
+      <div className={`flex-shrink-0 overflow-hidden transition-all duration-300 ease-out ${isExpanded ? 'w-48 h-64' : 'w-36 h-44'}`}>
         <video 
           src={waveAnimation} 
           autoPlay 
           loop 
           muted 
           playsInline
-          className="w-full h-full object-contain"
+          className="w-full h-[120%] object-cover object-top"
         />
       </div>
 
       {/* Chat bubble - po prawej */}
       <div className="flex-1 min-w-0">
-        {/* Glow effect */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-fitfly-green/30 to-emerald-400/30 rounded-3xl blur-xl" />
-          
-          {/* Main bubble */}
-          <div className="relative bg-gradient-to-br from-fitfly-green via-emerald-500 to-teal-500 rounded-3xl p-5 shadow-xl border border-fitfly-green/20 overflow-hidden">
+        {/* Main bubble */}
+        <div className="relative bg-gradient-to-br from-fitfly-green via-emerald-500 to-teal-500 rounded-3xl p-5 shadow-xl border border-fitfly-green/20 overflow-hidden">
             {/* Decorative bubbles */}
             <div className="absolute top-3 right-3 w-8 h-8 bg-white/10 rounded-full" />
             <div className="absolute top-8 right-8 w-4 h-4 bg-white/15 rounded-full" />
@@ -130,6 +126,5 @@ export function ChatHeroBubble() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
