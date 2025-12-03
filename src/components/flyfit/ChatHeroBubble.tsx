@@ -25,9 +25,9 @@ export function ChatHeroBubble() {
   };
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Mascot - po lewej, z animacją */}
-      <div className="flex-shrink-0 w-40 h-40 relative">
+    <div className="flex items-end gap-3">
+      {/* Mascot - po lewej, dostosowuje się do rozmiaru chatu */}
+      <div className={`flex-shrink-0 relative transition-all duration-300 ease-out ${isExpanded ? 'w-56 h-56' : 'w-44 h-44'}`}>
         <div className="absolute inset-2 bg-fitfly-green/30 rounded-full blur-2xl animate-pulse" />
         <img 
           src={mascotImage} 
@@ -35,7 +35,7 @@ export function ChatHeroBubble() {
           className="w-full h-full object-contain drop-shadow-2xl animate-float relative z-10"
         />
         {/* Efekt machania */}
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-2xl animate-bounce">
+        <div className={`absolute left-1/2 -translate-x-1/2 text-2xl animate-bounce transition-all duration-300 ${isExpanded ? '-bottom-2' : '-bottom-1'}`}>
           👋
         </div>
       </div>
