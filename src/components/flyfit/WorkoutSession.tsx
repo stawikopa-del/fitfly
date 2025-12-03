@@ -193,19 +193,19 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
   if (isCompleted) {
     return (
       <div className="fixed inset-0 bg-background z-50 flex flex-col">
-        <header className="flex items-center justify-between p-4 border-b border-border">
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
-            <X className="w-6 h-6" />
+        <header className="flex items-center justify-between px-3 py-2 border-b border-border">
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full w-8 h-8">
+            <X className="w-5 h-5" />
           </Button>
-          <h2 className="font-bold font-display text-lg">{workout.name}</h2>
-          <div className="w-10" />
+          <h2 className="font-bold font-display text-base">{workout.name}</h2>
+          <div className="w-8" />
         </header>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 gap-8">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-4 gap-4">
           {/* Trophy */}
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-fitfly-yellow/20 flex items-center justify-center animate-pulse">
-              <Trophy className="w-14 h-14 text-fitfly-yellow" />
+            <div className="w-16 h-16 rounded-full bg-fitfly-yellow/20 flex items-center justify-center animate-pulse">
+              <Trophy className="w-9 h-9 text-fitfly-yellow" />
             </div>
           </div>
 
@@ -213,40 +213,40 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
           <img 
             src={mascotImage} 
             alt="FITEK" 
-            className="w-40 h-40 object-contain animate-float-gentle"
+            className="w-28 h-28 object-contain animate-float-gentle"
           />
           
           {/* Completion bubble */}
           <div className="relative">
-            <div className="bg-fitfly-green/10 border-2 border-fitfly-green rounded-[2rem] px-8 py-4 max-w-[300px] relative">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-b-[16px] border-b-fitfly-green" />
-              <p className="text-lg text-foreground text-center font-bold">
+            <div className="bg-fitfly-green/10 border-2 border-fitfly-green rounded-[1.5rem] px-5 py-3 max-w-[260px] relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[12px] border-b-fitfly-green" />
+              <p className="text-base text-foreground text-center font-bold">
                 {motivationMessage}
               </p>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="flex gap-6 mt-4">
+          <div className="flex gap-5 mt-2">
             <div className="flex flex-col items-center gap-1">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Flame className="w-7 h-7 text-primary" />
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Flame className="w-6 h-6 text-primary" />
               </div>
               <span className="text-xs text-muted-foreground">Ćwiczeń</span>
-              <span className="font-bold text-lg">{totalExercises}</span>
+              <span className="font-bold">{totalExercises}</span>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <div className="w-14 h-14 rounded-2xl bg-fitfly-green/10 flex items-center justify-center">
-                <Clock className="w-7 h-7 text-fitfly-green" />
+              <div className="w-12 h-12 rounded-xl bg-fitfly-green/10 flex items-center justify-center">
+                <Clock className="w-6 h-6 text-fitfly-green" />
               </div>
               <span className="text-xs text-muted-foreground">Czas</span>
-              <span className="font-bold text-lg">{workout.exercises.reduce((acc, ex) => acc + ex.duration, 0) / 60} min</span>
+              <span className="font-bold">{Math.round(workout.exercises.reduce((acc, ex) => acc + ex.duration, 0) / 60)} min</span>
             </div>
           </div>
 
           <Button 
             onClick={handleFinish}
-            className="w-full max-w-xs rounded-full h-14 text-lg font-bold shadow-playful-green mt-4"
+            className="w-full max-w-xs rounded-full h-12 font-bold shadow-playful-green mt-2"
           >
             Zakończ trening
           </Button>
@@ -258,51 +258,51 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between p-4 border-b border-border">
-        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
-          <X className="w-6 h-6" />
+      <header className="flex items-center justify-between px-3 py-2 border-b border-border">
+        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full w-8 h-8">
+          <X className="w-5 h-5" />
         </Button>
-        <h2 className="font-bold font-display text-lg">{workout.name}</h2>
-        <div className="w-10" />
+        <h2 className="font-bold font-display text-base">{workout.name}</h2>
+        <div className="w-8" />
       </header>
 
       {/* Progress bar and counters */}
-      <div className="px-4 py-3">
-        <div className="flex items-center justify-between text-sm mb-2">
+      <div className="px-4 py-2">
+        <div className="flex items-center justify-between text-xs mb-1">
           <span className="font-bold text-primary">
             {currentExerciseIndex + 1}/{totalExercises}
           </span>
           <span className="text-muted-foreground flex items-center gap-1">
-            <Clock className="w-4 h-4" />
+            <Clock className="w-3 h-3" />
             {formatTime(totalRemainingTime)} pozostało
           </span>
         </div>
-        <Progress value={progressPercent} className="h-2" />
+        <Progress value={progressPercent} className="h-1.5" />
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 gap-5 overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-2 gap-3 overflow-hidden">
         {/* Mascot */}
         <img 
           src={mascotImage} 
           alt="FITEK" 
-          className="w-44 h-44 object-contain animate-float-gentle"
+          className="w-28 h-28 object-contain animate-float-gentle"
         />
         
         {/* Speech bubble - nicer design */}
-        <div className="relative max-w-[280px]">
-          <div className={`relative px-6 py-3 rounded-[1.5rem] border-2 ${
+        <div className="relative max-w-[240px]">
+          <div className={`relative px-4 py-2 rounded-[1.25rem] border-2 ${
             isBreak 
               ? 'bg-fitfly-green/10 border-fitfly-green' 
               : 'bg-primary/10 border-primary'
           }`}>
             {/* Triangle pointer */}
-            <div className={`absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 
-              border-l-[10px] border-l-transparent 
-              border-r-[10px] border-r-transparent 
-              border-b-[12px] ${isBreak ? 'border-b-fitfly-green' : 'border-b-primary'}`} 
+            <div className={`absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 
+              border-l-[8px] border-l-transparent 
+              border-r-[8px] border-r-transparent 
+              border-b-[10px] ${isBreak ? 'border-b-fitfly-green' : 'border-b-primary'}`} 
             />
-            <p className="text-sm text-foreground text-center font-bold">
+            <p className="text-xs text-foreground text-center font-bold">
               {motivationMessage}
             </p>
           </div>
@@ -310,21 +310,21 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
 
         {/* Timer */}
         <div className="text-center">
-          <div className={`text-7xl font-extrabold font-display ${
+          <div className={`text-5xl font-extrabold font-display ${
             isBreak 
               ? 'text-fitfly-green' 
               : 'bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent'
           }`}>
             {formatTime(timeLeft)}
           </div>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-xs">
             {isBreak ? 'przerwa' : 'pozostało'}
           </p>
         </div>
 
         {/* Exercise name */}
         <div className="text-center">
-          <h3 className={`text-2xl font-bold font-display mb-2 ${
+          <h3 className={`text-lg font-bold font-display mb-1 ${
             isBreak ? 'text-fitfly-green' : 'text-foreground'
           }`}>
             {isBreak ? '☕ Przerwa' : currentExercise.name}
@@ -334,14 +334,14 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
               variant="outline" 
               size="sm" 
               onClick={() => setShowInstructions(true)}
-              className="rounded-full border-2 gap-2"
+              className="rounded-full border-2 gap-1.5 h-8 text-xs px-3"
             >
-              <Info className="w-4 h-4" />
+              <Info className="w-3.5 h-3.5" />
               Instrukcja
             </Button>
           )}
           {isBreak && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Następne: <span className="font-semibold">{workout.exercises[currentExerciseIndex + 1]?.name || 'Koniec!'}</span>
             </p>
           )}
@@ -349,28 +349,28 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
       </div>
 
       {/* Controls */}
-      <div className="p-6 pb-28 border-t border-border bg-card/50">
-        <div className="flex items-center justify-center gap-4">
+      <div className="p-4 pb-24 border-t border-border bg-card/50">
+        <div className="flex items-center justify-center gap-3">
           {/* Previous */}
           <Button
             variant="outline"
             size="icon"
             onClick={previousExercise}
             disabled={currentExerciseIndex === 0 && !isBreak}
-            className="w-14 h-14 rounded-full border-2"
+            className="w-12 h-12 rounded-full border-2"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5" />
           </Button>
 
           {/* Play/Pause */}
           <Button
             onClick={togglePlayPause}
-            className={`w-20 h-20 rounded-full ${isBreak ? 'bg-fitfly-green hover:bg-fitfly-green-dark' : ''} shadow-playful`}
+            className={`w-16 h-16 rounded-full ${isBreak ? 'bg-fitfly-green hover:bg-fitfly-green-dark' : ''} shadow-playful`}
           >
             {isRunning ? (
-              <Pause className="w-10 h-10" />
+              <Pause className="w-8 h-8" />
             ) : (
-              <Play className="w-10 h-10 ml-1" />
+              <Play className="w-8 h-8 ml-0.5" />
             )}
           </Button>
 
@@ -379,9 +379,9 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
             variant="outline"
             size="icon"
             onClick={skipExercise}
-            className="w-14 h-14 rounded-full border-2"
+            className="w-12 h-12 rounded-full border-2"
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-5 h-5" />
           </Button>
         </div>
       </div>
