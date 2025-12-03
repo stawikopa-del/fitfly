@@ -3,7 +3,7 @@ import { Play, Pause, SkipForward, X, Info, ChevronLeft, ChevronRight } from 'lu
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import mascotImage from '@/assets/fitfly-mascot.png';
+import mascotImage from '@/assets/fitek-pompki.png';
 import {
   Dialog,
   DialogContent,
@@ -151,10 +151,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
             <img 
               src={mascotImage} 
               alt="FITEK" 
-              className={cn(
-                "w-40 h-40 object-contain drop-shadow-2xl relative z-10 transition-transform duration-300",
-                isRunning && "animate-bounce-soft"
-              )}
+              className="w-48 h-48 object-contain drop-shadow-2xl relative z-10 animate-float-slow"
             />
           </div>
           
@@ -197,7 +194,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
       </div>
 
       {/* Controls */}
-      <div className="p-6 pb-8 border-t border-border bg-card/50">
+      <div className="p-6 pb-28 border-t border-border bg-card/50">
         <div className="flex items-center justify-center gap-4">
           {/* Previous */}
           <Button
