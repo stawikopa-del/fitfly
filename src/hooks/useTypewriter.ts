@@ -1,52 +1,62 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
-export function useTypewriter(targetText: string, isStreaming: boolean, charDelay: number = 30) {
+export function useTypewriter(targetText: string, isStreaming: boolean, charDelay: number = 20) {
   const [displayedText, setDisplayedText] = useState('');
-  const currentIndexRef = useRef(0);
-  const animationFrameRef = useRef<number | null>(null);
-  const lastUpdateRef = useRef<number>(0);
+  const indexRef = useRef(0);
+  const targetRef = useRef(targetText);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isStreamingRef = useRef(isStreaming);
 
+  // Aktualizuj ref'y
+  targetRef.current = targetText;
+  isStreamingRef.current = isStreaming;
+
+  // Funkcja do czyszczenia intervalu
+  const clearIntervalSafe = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  // Główny efekt
   useEffect(() => {
-    // Jeśli streaming się skończył, pokaż cały tekst natychmiast
-    if (!isStreaming && targetText) {
+    // Jeśli streaming się skończył
+    if (!isStreaming) {
+      clearIntervalSafe();
       setDisplayedText(targetText);
-      currentIndexRef.current = targetText.length;
+      indexRef.current = targetText.length;
       return;
     }
 
-    const animate = (timestamp: number) => {
-      // Sprawdź czy minęło wystarczająco czasu
-      if (timestamp - lastUpdateRef.current >= charDelay) {
-        if (currentIndexRef.current < targetText.length) {
-          currentIndexRef.current += 1;
-          setDisplayedText(targetText.slice(0, currentIndexRef.current));
-          lastUpdateRef.current = timestamp;
-        }
+    // Jeśli już mamy interval, nie twórz nowego
+    if (intervalRef.current) return;
+
+    // Startuj interval
+    intervalRef.current = setInterval(() => {
+      const target = targetRef.current;
+      const currentIndex = indexRef.current;
+      
+      if (currentIndex < target.length) {
+        indexRef.current = currentIndex + 1;
+        setDisplayedText(target.slice(0, indexRef.current));
       }
+    }, charDelay);
 
-      // Kontynuuj animację jeśli jeszcze nie wyświetliliśmy całego tekstu
-      if (currentIndexRef.current < targetText.length) {
-        animationFrameRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    // Rozpocznij animację
-    animationFrameRef.current = requestAnimationFrame(animate);
-
+    // Cleanup tylko przy unmount
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      clearIntervalSafe();
     };
-  }, [targetText, isStreaming, charDelay]);
+  }, [isStreaming]); // Tylko isStreaming w dependencies!
 
-  // Reset gdy nowa konwersacja
+  // Reset przy nowej konwersacji
   useEffect(() => {
-    if (targetText === '') {
+    if (targetText === '' && displayedText !== '') {
+      clearIntervalSafe();
       setDisplayedText('');
-      currentIndexRef.current = 0;
+      indexRef.current = 0;
     }
-  }, [targetText]);
+  }, [targetText, displayedText, clearIntervalSafe]);
 
   return displayedText;
 }
