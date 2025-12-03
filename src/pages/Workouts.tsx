@@ -1,45 +1,51 @@
 import { useState } from 'react';
-import { Search, Clock, Flame, ChevronRight, Play, Sparkles } from 'lucide-react';
+import { Search, Clock, Flame, ChevronRight, Play, Sparkles, Trophy } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { WorkoutSession } from '@/components/flyfit/WorkoutSession';
+import { workouts, categories, difficultyConfig, WorkoutData } from '@/data/workouts';
+import { useToast } from '@/hooks/use-toast';
 import mascotImage from '@/assets/fitfly-mascot.png';
-
-interface Workout {
-  id: string;
-  name: string;
-  category: string;
-  duration: number;
-  difficulty: 'easy' | 'medium' | 'hard';
-  calories: number;
-}
-
-const workouts: Workout[] = [
-  { id: '1', name: 'Poranny rozruch', category: 'Domowe 10 min', duration: 10, difficulty: 'easy', calories: 80 },
-  { id: '2', name: 'Trening na start', category: 'Dla początkujących', duration: 15, difficulty: 'easy', calories: 120 },
-  { id: '3', name: 'Spalanie kalorii', category: 'Cardio', duration: 20, difficulty: 'medium', calories: 200 },
-  { id: '4', name: 'Siłownia - podstawy', category: 'Siła', duration: 30, difficulty: 'medium', calories: 250 },
-  { id: '5', name: 'HIIT Express', category: 'Intensywny', duration: 15, difficulty: 'hard', calories: 180 },
-  { id: '6', name: 'Joga wieczorna', category: 'Relaks', duration: 20, difficulty: 'easy', calories: 60 },
-];
-
-const categories = ['Wszystkie', 'Domowe 10 min', 'Dla początkujących', 'Cardio', 'Siła'];
-
-const difficultyConfig = {
-  easy: { label: 'Łatwy', color: 'bg-secondary text-secondary-foreground' },
-  medium: { label: 'Średni', color: 'bg-accent text-accent-foreground' },
-  hard: { label: 'Trudny', color: 'bg-destructive text-destructive-foreground' },
-};
 
 export default function Workouts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Wszystkie');
+  const [activeWorkout, setActiveWorkout] = useState<WorkoutData | null>(null);
+  const { toast } = useToast();
 
   const filteredWorkouts = workouts.filter(workout => {
     const matchesSearch = workout.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'Wszystkie' || workout.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const handleStartWorkout = (workout: WorkoutData) => {
+    setActiveWorkout(workout);
+  };
+
+  const handleCloseWorkout = () => {
+    setActiveWorkout(null);
+  };
+
+  const handleCompleteWorkout = () => {
+    setActiveWorkout(null);
+    toast({
+      title: "Brawo! 🎉",
+      description: "Ukończyłeś trening! FITEK jest z ciebie dumny!",
+    });
+  };
+
+  // Show workout session if active
+  if (activeWorkout) {
+    return (
+      <WorkoutSession
+        workout={activeWorkout}
+        onClose={handleCloseWorkout}
+        onComplete={handleCompleteWorkout}
+      />
+    );
+  }
 
   return (
     <div className="px-4 py-6 space-y-6 relative overflow-hidden">
@@ -95,6 +101,7 @@ export default function Workouts() {
         {filteredWorkouts.map((workout) => (
           <button
             key={workout.id}
+            onClick={() => handleStartWorkout(workout)}
             className="w-full bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful 
                        hover:-translate-y-1 hover:shadow-card-playful-hover transition-all duration-300 
                        text-left flex items-center gap-4 active:scale-[0.98]"
@@ -107,7 +114,7 @@ export default function Workouts() {
             <div className="flex-1 min-w-0">
               <h3 className="font-bold font-display text-foreground truncate text-lg">{workout.name}</h3>
               <p className="text-xs text-muted-foreground mb-2 font-medium">{workout.category}</p>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
                   <Clock className="w-3.5 h-3.5" />
                   {workout.duration} min
@@ -116,17 +123,21 @@ export default function Workouts() {
                   <Flame className="w-3.5 h-3.5" />
                   {workout.calories} kcal
                 </span>
-                <span className={cn(
-                  'text-xs px-3 py-1 rounded-full font-bold',
-                  difficultyConfig[workout.difficulty].color
-                )}>
-                  {difficultyConfig[workout.difficulty].label}
+                <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                  <Trophy className="w-3.5 h-3.5" />
+                  {workout.exercises.length} ćwiczeń
                 </span>
               </div>
+              <span className={cn(
+                'text-xs px-3 py-1 rounded-full font-bold inline-block mt-2',
+                difficultyConfig[workout.difficulty].color
+              )}>
+                {difficultyConfig[workout.difficulty].label}
+              </span>
             </div>
             
-            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <ChevronRight className="w-5 h-5 text-primary" />
             </div>
           </button>
         ))}
