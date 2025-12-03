@@ -38,6 +38,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_progress: {
+        Row: {
+          active_minutes: number
+          created_at: string
+          id: string
+          progress_date: string
+          steps: number
+          updated_at: string
+          user_id: string
+          water: number
+        }
+        Insert: {
+          active_minutes?: number
+          created_at?: string
+          id?: string
+          progress_date?: string
+          steps?: number
+          updated_at?: string
+          user_id: string
+          water?: number
+        }
+        Update: {
+          active_minutes?: number
+          created_at?: string
+          id?: string
+          progress_date?: string
+          steps?: number
+          updated_at?: string
+          user_id?: string
+          water?: number
+        }
+        Relationships: []
+      }
       meals: {
         Row: {
           calories: number
