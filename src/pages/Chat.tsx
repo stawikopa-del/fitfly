@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles } from 'lucide-react';
+import { Send, Sparkles, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import fitekAvatar from '@/assets/fitek-avatar.png';
 import greetingVideo from '@/assets/fitfly-greeting.mp4';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Message {
+  id?: string;
   role: 'user' | 'assistant';
   content: string;
 }
@@ -18,15 +21,53 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Pobierz historię czatu przy starcie
+  useEffect(() => {
+    const fetchMessages = async () => {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching messages:', error);
+      } else if (data) {
+        setMessages(data.map(m => ({
+          id: m.id,
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        })));
+      }
+      setIsLoadingHistory(false);
+    };
+    
+    fetchMessages();
+  }, []);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Zapisz wiadomość do bazy
+  const saveMessage = async (message: Message) => {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .insert({ role: message.role, content: message.content })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error saving message:', error);
+    }
+    return data;
+  };
 
   const streamChat = async (userMessages: Message[]) => {
     const resp = await fetch(CHAT_URL, {
@@ -85,6 +126,7 @@ export default function Chat() {
         }
       }
     }
+    return assistantContent;
   };
 
   const sendMessage = async () => {
@@ -98,17 +140,38 @@ export default function Chat() {
     setIsLoading(true);
     setIsTyping(true);
 
+    // Zapisz wiadomość użytkownika
+    await saveMessage(userMessage);
+
     try {
-      await streamChat(updatedMessages);
+      const assistantContent = await streamChat(updatedMessages);
+      // Zapisz odpowiedź asystenta
+      if (assistantContent) {
+        await saveMessage({ role: 'assistant', content: assistantContent });
+      }
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: 'Ups! Coś poszło nie tak 😓 Spróbuj jeszcze raz!' }
-      ]);
+      const errorMessage: Message = { role: 'assistant', content: 'Ups! Coś poszło nie tak 😓 Spróbuj jeszcze raz!' };
+      setMessages(prev => [...prev, errorMessage]);
+      await saveMessage(errorMessage);
     } finally {
       setIsLoading(false);
       setIsTyping(false);
+    }
+  };
+
+  const clearHistory = async () => {
+    const { error } = await supabase
+      .from('chat_messages')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+    
+    if (error) {
+      console.error('Error clearing history:', error);
+      toast.error('Nie udało się wyczyścić historii');
+    } else {
+      setMessages([]);
+      toast.success('Historia wyczyszczona');
     }
   };
 
@@ -127,22 +190,34 @@ export default function Chat() {
 
       {/* Header */}
       <header className="px-4 py-3 border-b border-border/50 bg-card/80 backdrop-blur-sm relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full bg-white border-2 border-primary/20 shadow-playful overflow-hidden">
-              <img src={fitekAvatar} alt="FITEK" className="w-full h-full object-cover" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-full bg-white border-2 border-primary/20 shadow-playful overflow-hidden">
+                <img src={fitekAvatar} alt="FITEK" className="w-full h-full object-cover" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-secondary rounded-full border-2 border-card" />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-secondary rounded-full border-2 border-card" />
+            <div>
+              <h1 className="font-bold font-display text-lg text-foreground flex items-center gap-2">
+                FITEK
+                <Sparkles className="w-4 h-4 text-fitfly-yellow" />
+              </h1>
+              <p className="text-xs text-muted-foreground font-medium">
+                {isTyping ? 'pisze...' : 'Twój przyjaciel fitness'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-bold font-display text-lg text-foreground flex items-center gap-2">
-              FITEK
-              <Sparkles className="w-4 h-4 text-fitfly-yellow" />
-            </h1>
-            <p className="text-xs text-muted-foreground font-medium">
-              {isTyping ? 'pisze...' : 'Twój przyjaciel fitness'}
-            </p>
-          </div>
+          {messages.length > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={clearHistory}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="w-5 h-5" />
+            </Button>
+          )}
         </div>
       </header>
 
