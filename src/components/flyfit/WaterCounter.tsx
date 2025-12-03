@@ -1,6 +1,7 @@
 import { Droplets, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { soundFeedback } from '@/utils/soundFeedback';
 
 interface WaterCounterProps {
   current: number;
@@ -11,6 +12,11 @@ interface WaterCounterProps {
 export function WaterCounter({ current, goal, onAdd }: WaterCounterProps) {
   const percentage = Math.min((current / goal) * 100, 100);
   const glasses = Math.floor(current / 250);
+
+  const handleAdd = (amount: number) => {
+    soundFeedback.success();
+    onAdd(amount);
+  };
 
   return (
     <div className="bg-card rounded-2xl p-4 border border-border shadow-sm">
@@ -26,7 +32,8 @@ export function WaterCounter({ current, goal, onAdd }: WaterCounterProps) {
         </div>
         <Button 
           size="sm" 
-          onClick={() => onAdd(250)}
+          onClick={() => handleAdd(250)}
+          sound={false}
           className="rounded-full bg-blue-500 hover:bg-blue-600"
         >
           <Plus className="w-4 h-4 mr-1" />
