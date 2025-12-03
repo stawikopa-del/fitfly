@@ -175,7 +175,7 @@ export default function Auth() {
 
       {/* FITEK Detektyw */}
       <div className="relative z-10 mb-6">
-        <div className={mode === 'forgot' ? 'w-32 h-32' : 'w-48 h-48'} style={{ transition: 'all 0.3s' }}>
+        <div className={mode === 'forgot' ? 'w-48 h-48' : 'w-64 h-64'} style={{ transition: 'all 0.3s' }}>
           <img 
             src={fitekDetective} 
             alt="FITEK Detektyw" 
