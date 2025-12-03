@@ -250,23 +250,23 @@ export function WorkoutSession({
       </div>
 
       {/* Centered content - moved up */}
-      <div className="flex flex-col items-center gap-4 -mt-8">
+      <div className="flex flex-col items-center gap-2 -mt-12">
         {/* Mascot */}
         <img 
           key={`mascot-${transitionKey}`} 
           src={mascotImage} 
           alt="FITEK"
           className={cn(
-            "w-[22rem] h-[22rem] object-contain animate-pushup transition-all duration-300", 
+            "w-72 h-72 object-contain animate-pushup transition-all duration-300", 
             isTransitioning && "opacity-0 scale-90"
           )} 
         />
         
         {/* Speech bubble */}
-        <div key={`bubble-${transitionKey}`} className={cn("relative max-w-[320px] transition-all duration-300", isTransitioning && "opacity-0 translate-y-2")}>
-          <div className={cn("relative px-7 py-4 rounded-2xl border-2 transition-colors duration-300", isBreak ? 'bg-fitfly-green/10 border-fitfly-green' : 'bg-primary/10 border-primary')}>
+        <div key={`bubble-${transitionKey}`} className={cn("relative max-w-[280px] transition-all duration-300", isTransitioning && "opacity-0 translate-y-2")}>
+          <div className={cn("relative px-5 py-3 rounded-2xl border-2 transition-colors duration-300", isBreak ? 'bg-fitfly-green/10 border-fitfly-green' : 'bg-primary/10 border-primary')}>
             <div className={cn("absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[12px] transition-colors duration-300", isBreak ? 'border-b-fitfly-green' : 'border-b-primary')} />
-            <p className="text-lg text-foreground text-center font-bold">
+            <p className="text-sm text-foreground text-center font-bold">
               {motivationMessage}
             </p>
           </div>
@@ -274,17 +274,17 @@ export function WorkoutSession({
 
         {/* Timer */}
         <div key={`timer-${transitionKey}`} className={cn("text-center transition-all duration-300 mt-1", isTransitioning && "opacity-0 scale-95")}>
-          <div className={cn("text-8xl font-extrabold font-display transition-colors duration-300", isBreak ? 'text-fitfly-green' : 'bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent')}>
+          <div className={cn("text-6xl font-extrabold font-display transition-colors duration-300", isBreak ? 'text-fitfly-green' : 'bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent')}>
             {formatTime(timeLeft)}
           </div>
-          <p className="text-muted-foreground text-lg mt-1">
+          <p className="text-muted-foreground text-sm mt-0.5">
             {isBreak ? 'przerwa' : 'pozostało'}
           </p>
         </div>
 
         {/* Exercise name */}
         <div key={`exercise-${transitionKey}`} className={cn("text-center transition-all duration-300 mt-1", isTransitioning && "opacity-0 translate-y-2")}>
-          <h3 className={cn("text-2xl font-bold font-display transition-colors duration-300", isBreak ? 'text-fitfly-green' : 'text-foreground')}>
+          <h3 className={cn("text-lg font-bold font-display transition-colors duration-300", isBreak ? 'text-fitfly-green' : 'text-foreground')}>
             {isBreak ? '☕ Przerwa' : currentExercise.name}
           </h3>
           {!isBreak && (
@@ -332,22 +332,22 @@ export function WorkoutSession({
         </div>
 
         {/* Controls */}
-        <div className="flex items-center justify-center gap-7 mt-5">
-          <Button variant="outline" size="icon" onClick={previousExercise} disabled={currentExerciseIndex === 0 && !isBreak} className="w-16 h-16 rounded-full border-2">
-            <ChevronLeft className="w-7 h-7" />
+        <div className="flex items-center justify-center gap-5 mt-4">
+          <Button variant="outline" size="icon" onClick={previousExercise} disabled={currentExerciseIndex === 0 && !isBreak} className="w-12 h-12 rounded-full border-2">
+            <ChevronLeft className="w-5 h-5" />
           </Button>
 
           <Button onClick={togglePlayPause} className={cn(
-            "w-28 h-28 rounded-full relative overflow-hidden border-0 shadow-lg",
+            "w-20 h-20 rounded-full relative overflow-hidden border-0 shadow-lg",
             isRunning 
               ? "bg-fitfly-green hover:bg-fitfly-green-dark"
               : "bg-red-500 hover:bg-red-600"
           )}>
-            {isRunning ? <Pause className="w-12 h-12" /> : <Play className="w-12 h-12 ml-1" />}
+            {isRunning ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-1" />}
           </Button>
 
-          <Button variant="outline" size="icon" onClick={skipExercise} className="w-16 h-16 rounded-full border-2">
-            <ChevronRight className="w-7 h-7" />
+          <Button variant="outline" size="icon" onClick={skipExercise} className="w-12 h-12 rounded-full border-2">
+            <ChevronRight className="w-5 h-5" />
           </Button>
         </div>
       </div>
