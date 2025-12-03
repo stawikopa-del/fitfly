@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import mascotImage from '@/assets/fitek-pompki.png';
+import { workoutFeedback, resumeAudioContext } from '@/utils/workoutFeedback';
 import {
   Dialog,
   DialogContent,
@@ -118,16 +119,23 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
+        // Countdown tick for last 3 seconds
+        if (prev <= 4 && prev > 1) {
+          workoutFeedback.tick();
+        }
+        
         if (prev <= 1) {
           triggerTransition();
           if (isBreak) {
             // Break finished, move to next exercise
+            workoutFeedback.breakComplete();
             setIsBreak(false);
             if (currentExerciseIndex < totalExercises - 1) {
               setCurrentExerciseIndex((idx) => idx + 1);
               return workout.exercises[currentExerciseIndex + 1]?.duration || 30;
             } else {
               // Workout complete
+              workoutFeedback.workoutComplete();
               setIsRunning(false);
               setIsCompleted(true);
               setMotivationMessage(completionMessages[Math.floor(Math.random() * completionMessages.length)]);
@@ -137,11 +145,13 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
             // Exercise finished
             if (currentExerciseIndex < totalExercises - 1) {
               // Start break
+              workoutFeedback.exerciseComplete();
               setIsBreak(true);
               setMotivationMessage(breakMessages[Math.floor(Math.random() * breakMessages.length)]);
               return BREAK_DURATION;
             } else {
               // Last exercise - workout complete
+              workoutFeedback.workoutComplete();
               setIsRunning(false);
               setIsCompleted(true);
               setMotivationMessage(completionMessages[Math.floor(Math.random() * completionMessages.length)]);
@@ -157,10 +167,19 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
   }, [isRunning, timeLeft, currentExerciseIndex, totalExercises, workout.exercises, isBreak, isCompleted, triggerTransition]);
 
   const togglePlayPause = useCallback(() => {
-    setIsRunning((prev) => !prev);
+    resumeAudioContext();
+    setIsRunning((prev) => {
+      if (!prev) {
+        workoutFeedback.start();
+      } else {
+        workoutFeedback.pause();
+      }
+      return !prev;
+    });
   }, []);
 
   const skipExercise = useCallback(() => {
+    workoutFeedback.skip();
     triggerTransition();
     if (isBreak) {
       // Skip break
@@ -181,6 +200,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
   }, [currentExerciseIndex, totalExercises, workout.exercises, isBreak]);
 
   const previousExercise = useCallback(() => {
+    workoutFeedback.skip();
     triggerTransition();
     if (isBreak) {
       setIsBreak(false);
@@ -198,6 +218,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
   };
 
   const handleFinish = () => {
+    workoutFeedback.buttonPress();
     onComplete();
     onClose();
   };
