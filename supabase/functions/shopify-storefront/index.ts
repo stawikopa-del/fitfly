@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,10 +9,16 @@ const corsHeaders = {
 const SHOPIFY_STORE_URL = Deno.env.get('SHOPIFY_STORE_URL') || '';
 const SHOPIFY_ACCESS_TOKEN = Deno.env.get('SHOPIFY_ACCESS_TOKEN') || '';
 
-interface CartItem {
-  variantId: string;
-  quantity: number;
-}
+// Input validation schemas
+const cartItemSchema = z.object({
+  variantId: z.string().min(1),
+  quantity: z.number().int().positive().max(100)
+});
+
+const requestSchema = z.object({
+  action: z.enum(['getProducts', 'createCheckout']),
+  items: z.array(cartItemSchema).max(50).optional()
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -20,7 +27,21 @@ serve(async (req) => {
   }
 
   try {
-    const { action, items } = await req.json();
+    const body = await req.json();
+    
+    // Validate input
+    const parseResult = requestSchema.safeParse(body);
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.errors);
+      return new Response(JSON.stringify({ 
+        error: 'Nieprawidłowe dane wejściowe' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    const { action, items } = parseResult.data;
     console.log(`Shopify Storefront API - Action: ${action}`);
 
     if (!SHOPIFY_STORE_URL || !SHOPIFY_ACCESS_TOKEN) {
@@ -120,11 +141,11 @@ serve(async (req) => {
     if (action === 'createCheckout') {
       console.log('Creating checkout with items:', items);
 
-      if (!items || !Array.isArray(items) || items.length === 0) {
+      if (!items || items.length === 0) {
         throw new Error('No items provided for checkout');
       }
 
-      const lineItems = items.map((item: CartItem) => ({
+      const lineItems = items.map((item) => ({
         variantId: item.variantId,
         quantity: item.quantity,
       }));
