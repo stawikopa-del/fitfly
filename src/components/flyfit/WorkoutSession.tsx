@@ -146,14 +146,11 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 gap-6">
         {/* Mascot with motivation */}
         <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl scale-75" />
-            <img 
-              src={mascotImage} 
-              alt="FITEK" 
-              className="w-48 h-48 object-contain drop-shadow-2xl relative z-10 animate-float-slow"
-            />
-          </div>
+          <img 
+            src={mascotImage} 
+            alt="FITEK" 
+            className="w-48 h-48 object-contain animate-float-slow"
+          />
           
           {/* Motivational bubble */}
           <div className="relative animate-bounce-in">
