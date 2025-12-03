@@ -118,20 +118,19 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
   // Overview screen
   if (currentStep === -1) {
     return (
-      <div className="fixed inset-0 bg-background z-[100] overflow-auto">
-        <div className="min-h-full flex flex-col">
-          {/* Header */}
-          <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-border p-4 flex items-center gap-3 z-10">
-            <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors">
-              <X className="w-6 h-6" />
-            </button>
-            <div className="flex-1">
-              <h1 className="font-bold font-display text-lg text-foreground truncate">{recipe.name}</h1>
-              <p className="text-xs text-muted-foreground">Przegląd przepisu</p>
-            </div>
+      <div className="fixed inset-0 bg-background z-[100] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="bg-background/95 backdrop-blur-sm border-b border-border p-4 flex items-center gap-3 shrink-0">
+          <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors">
+            <X className="w-6 h-6" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-bold font-display text-lg text-foreground truncate">{recipe.name}</h1>
+            <p className="text-xs text-muted-foreground">Przegląd przepisu</p>
           </div>
+        </div>
 
-          <div className="flex-1 p-4 space-y-6">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6">
             {/* Time & Servings */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl p-4 border border-primary/20">
@@ -243,13 +242,12 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
             </div>
           </div>
 
-          {/* Start button */}
-          <div className="sticky bottom-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border">
-            <Button onClick={() => goToStep(0)} className="w-full rounded-2xl h-14 text-lg">
-              <Play className="w-6 h-6 mr-2" />
-              Zacznij gotować
-            </Button>
-          </div>
+        {/* Start button */}
+        <div className="p-4 bg-background border-t border-border shrink-0">
+          <Button onClick={() => goToStep(0)} className="w-full rounded-2xl h-14 text-lg">
+            <Play className="w-6 h-6 mr-2" />
+            Zacznij gotować
+          </Button>
         </div>
       </div>
     );
@@ -257,13 +255,13 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
 
   // Step view
   return (
-    <div className="fixed inset-0 bg-background z-[100] flex flex-col">
+    <div className="fixed inset-0 bg-background z-[100] flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-background border-b border-border p-4 flex items-center gap-3">
+      <div className="bg-background border-b border-border p-4 flex items-center gap-3 shrink-0">
         <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors">
           <X className="w-6 h-6" />
         </button>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h1 className="font-bold font-display text-foreground truncate">{recipe.name}</h1>
           <p className="text-xs text-muted-foreground">Krok {currentStep + 1} z {totalSteps}</p>
         </div>
@@ -284,7 +282,7 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
         {/* Step number badge */}
         <div className="flex justify-center">
           <div className="bg-gradient-to-br from-primary to-fitfly-purple w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
@@ -370,7 +368,7 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
       </div>
 
       {/* Navigation */}
-      <div className="bg-background border-t border-border p-4 flex gap-3">
+      <div className="bg-background border-t border-border p-4 flex gap-3 shrink-0">
         <Button
           onClick={prevStep}
           variant="outline"

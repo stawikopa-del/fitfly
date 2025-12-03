@@ -5,7 +5,8 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Meal } from '@/types/flyfit';
 import { AddMealDialog } from '@/components/flyfit/AddMealDialog';
-import { RecipesSection } from '@/components/flyfit/RecipesSection';
+import { RecipesSection, DetailedRecipe } from '@/components/flyfit/RecipesSection';
+import { CookingMode } from '@/components/flyfit/CookingMode';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +24,7 @@ const mealConfig: Record<MealType, { label: string; icon: typeof Coffee; gradien
 export default function Nutrition() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cookingRecipe, setCookingRecipe] = useState<DetailedRecipe | null>(null);
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
@@ -139,6 +141,21 @@ export default function Nutrition() {
     }
   };
 
+  // Pokaż tryb gotowania jeśli aktywny
+  if (cookingRecipe && cookingRecipe.steps) {
+    return (
+      <CookingMode 
+        recipe={{
+          ...cookingRecipe,
+          total_time_minutes: cookingRecipe.total_time_minutes || 30,
+          tools_needed: cookingRecipe.tools_needed || [],
+          steps: cookingRecipe.steps
+        }} 
+        onClose={() => setCookingRecipe(null)} 
+      />
+    );
+  }
+
   return (
     <div className="px-4 py-6 space-y-6 relative overflow-hidden">
       {/* Dekoracyjne tło */}
@@ -198,7 +215,7 @@ export default function Nutrition() {
       </div>
 
       {/* Sekcja przepisów AI */}
-      <RecipesSection />
+      <RecipesSection onStartCooking={setCookingRecipe} />
 
       {/* Lista posiłków */}
       <section className="space-y-4 relative z-10">
