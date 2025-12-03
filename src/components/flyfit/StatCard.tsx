@@ -11,10 +11,26 @@ interface StatCardProps {
 }
 
 const colorClasses = {
-  blue: 'bg-primary/10 text-primary',
-  green: 'bg-secondary/10 text-secondary',
-  orange: 'bg-accent/10 text-accent',
-  purple: 'bg-purple-500/10 text-purple-500',
+  blue: {
+    bg: 'bg-gradient-to-br from-primary/20 to-primary/5',
+    icon: 'bg-primary text-primary-foreground shadow-playful-sm',
+    border: 'border-primary/20',
+  },
+  green: {
+    bg: 'bg-gradient-to-br from-secondary/20 to-secondary/5',
+    icon: 'bg-secondary text-secondary-foreground shadow-playful-green',
+    border: 'border-secondary/20',
+  },
+  orange: {
+    bg: 'bg-gradient-to-br from-accent/20 to-accent/5',
+    icon: 'bg-accent text-accent-foreground shadow-playful-orange',
+    border: 'border-accent/20',
+  },
+  purple: {
+    bg: 'bg-gradient-to-br from-fitfly-purple/20 to-fitfly-purple/5',
+    icon: 'bg-fitfly-purple text-white shadow-md',
+    border: 'border-fitfly-purple/20',
+  },
 };
 
 export function StatCard({ icon, label, value, subValue, color, onClick }: StatCardProps) {
@@ -23,18 +39,22 @@ export function StatCard({ icon, label, value, subValue, color, onClick }: StatC
       onClick={onClick}
       disabled={!onClick}
       className={cn(
-        'bg-card rounded-2xl p-4 border border-border shadow-sm text-left w-full',
-        'transition-all duration-200',
-        onClick && 'hover:shadow-md hover:scale-[1.02] active:scale-[0.98]'
+        'bg-card rounded-3xl p-5 border-2 text-left w-full',
+        'shadow-card-playful transition-all duration-300',
+        'hover:-translate-y-1 hover:shadow-card-playful-hover active:translate-y-0 active:scale-95',
+        colorClasses[color].border
       )}
     >
-      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center mb-3', colorClasses[color])}>
+      <div className={cn(
+        'w-12 h-12 rounded-2xl flex items-center justify-center mb-4',
+        colorClasses[color].icon
+      )}>
         {icon}
       </div>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
-      <p className="text-xs text-muted-foreground font-medium">{label}</p>
+      <p className="text-3xl font-extrabold font-display text-foreground">{value}</p>
+      <p className="text-sm text-muted-foreground font-semibold mt-1">{label}</p>
       {subValue && (
-        <p className="text-xs text-muted-foreground/70 mt-0.5">{subValue}</p>
+        <p className="text-xs text-muted-foreground/70 mt-0.5 font-medium">{subValue}</p>
       )}
     </button>
   );
