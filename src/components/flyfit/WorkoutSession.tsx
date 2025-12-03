@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Play, Pause, X, Info, ChevronLeft, ChevronRight, Trophy, Clock, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 import mascotImage from '@/assets/fitek-pompki.png';
 import {
   Dialog,
@@ -70,10 +71,21 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
   const [showInstructions, setShowInstructions] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionKey, setTransitionKey] = useState(0);
 
   const currentExercise = workout.exercises[currentExerciseIndex];
   const totalExercises = workout.exercises.length;
   const progressPercent = ((currentExerciseIndex + (isBreak ? 0.5 : 0)) / totalExercises) * 100;
+
+  // Trigger transition animation
+  const triggerTransition = useCallback(() => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setIsTransitioning(false);
+      setTransitionKey(prev => prev + 1);
+    }, 150);
+  }, []);
 
   // Calculate total remaining time
   const totalRemainingTime = useMemo(() => {
@@ -107,6 +119,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
+          triggerTransition();
           if (isBreak) {
             // Break finished, move to next exercise
             setIsBreak(false);
@@ -141,13 +154,14 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isRunning, timeLeft, currentExerciseIndex, totalExercises, workout.exercises, isBreak, isCompleted]);
+  }, [isRunning, timeLeft, currentExerciseIndex, totalExercises, workout.exercises, isBreak, isCompleted, triggerTransition]);
 
   const togglePlayPause = useCallback(() => {
     setIsRunning((prev) => !prev);
   }, []);
 
   const skipExercise = useCallback(() => {
+    triggerTransition();
     if (isBreak) {
       // Skip break
       setIsBreak(false);
@@ -167,6 +181,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
   }, [currentExerciseIndex, totalExercises, workout.exercises, isBreak]);
 
   const previousExercise = useCallback(() => {
+    triggerTransition();
     if (isBreak) {
       setIsBreak(false);
       setTimeLeft(workout.exercises[currentExerciseIndex]?.duration || 30);
@@ -174,7 +189,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
       setCurrentExerciseIndex((idx) => idx - 1);
       setTimeLeft(workout.exercises[currentExerciseIndex - 1]?.duration || 30);
     }
-  }, [currentExerciseIndex, workout.exercises, isBreak]);
+  }, [currentExerciseIndex, workout.exercises, isBreak, triggerTransition]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -282,39 +297,56 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
 
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-2 gap-3 overflow-hidden">
-        {/* Mascot */}
+        {/* Mascot with transition */}
         <img 
+          key={`mascot-${transitionKey}`}
           src={mascotImage} 
           alt="FITEK" 
-          className="w-28 h-28 object-contain animate-float-gentle"
+          className={cn(
+            "w-28 h-28 object-contain animate-float-gentle transition-all duration-300",
+            isTransitioning && "opacity-0 scale-90"
+          )}
         />
         
-        {/* Speech bubble - nicer design */}
-        <div className="relative max-w-[240px]">
-          <div className={`relative px-4 py-2 rounded-[1.25rem] border-2 ${
+        {/* Speech bubble with transition */}
+        <div 
+          key={`bubble-${transitionKey}`}
+          className={cn(
+            "relative max-w-[240px] transition-all duration-300",
+            isTransitioning && "opacity-0 translate-y-2"
+          )}
+        >
+          <div className={cn(
+            "relative px-4 py-2 rounded-[1.25rem] border-2 transition-colors duration-300",
             isBreak 
               ? 'bg-fitfly-green/10 border-fitfly-green' 
               : 'bg-primary/10 border-primary'
-          }`}>
+          )}>
             {/* Triangle pointer */}
-            <div className={`absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 
-              border-l-[8px] border-l-transparent 
-              border-r-[8px] border-r-transparent 
-              border-b-[10px] ${isBreak ? 'border-b-fitfly-green' : 'border-b-primary'}`} 
-            />
+            <div className={cn(
+              "absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[10px] transition-colors duration-300",
+              isBreak ? 'border-b-fitfly-green' : 'border-b-primary'
+            )} />
             <p className="text-xs text-foreground text-center font-bold">
               {motivationMessage}
             </p>
           </div>
         </div>
 
-        {/* Timer */}
-        <div className="text-center">
-          <div className={`text-5xl font-extrabold font-display ${
+        {/* Timer with transition */}
+        <div 
+          key={`timer-${transitionKey}`}
+          className={cn(
+            "text-center transition-all duration-300",
+            isTransitioning && "opacity-0 scale-95"
+          )}
+        >
+          <div className={cn(
+            "text-5xl font-extrabold font-display transition-colors duration-300",
             isBreak 
               ? 'text-fitfly-green' 
               : 'bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent'
-          }`}>
+          )}>
             {formatTime(timeLeft)}
           </div>
           <p className="text-muted-foreground text-xs">
@@ -322,11 +354,18 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
           </p>
         </div>
 
-        {/* Exercise name */}
-        <div className="text-center">
-          <h3 className={`text-lg font-bold font-display mb-1 ${
+        {/* Exercise name with transition */}
+        <div 
+          key={`exercise-${transitionKey}`}
+          className={cn(
+            "text-center transition-all duration-300",
+            isTransitioning && "opacity-0 translate-y-2"
+          )}
+        >
+          <h3 className={cn(
+            "text-lg font-bold font-display mb-1 transition-colors duration-300",
             isBreak ? 'text-fitfly-green' : 'text-foreground'
-          }`}>
+          )}>
             {isBreak ? '☕ Przerwa' : currentExercise.name}
           </h3>
           {!isBreak && (
