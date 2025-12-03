@@ -408,7 +408,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
       </div>
 
       {/* Controls */}
-      <div className="p-2 border-t border-border bg-card/50">
+      <div className="p-2 pb-8 border-t border-border bg-card/50">
         <div className="flex items-center justify-center gap-3">
           {/* Previous */}
           <Button
