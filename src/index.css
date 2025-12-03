@@ -9,8 +9,8 @@
 
 @layer base {
   :root {
-    /* Tło - ciepłe, przyjazne */
-    --background: 45 40% 97%;
+    /* Tło - pasujące do animacji maskotki #fdfeea */
+    --background: 66 83% 96%;
     --foreground: 220 40% 20%;
 
     --card: 0 0% 100%;
@@ -55,7 +55,7 @@
     --fitfly-yellow: 45 100% 60%;
     --fitfly-pink: 340 80% 65%;
     --fitfly-purple: 270 70% 60%;
-    --fitfly-cream: 45 40% 97%;
+    --fitfly-cream: 66 83% 96%;
     --fitfly-navy: 220 60% 25%;
 
     /* Gradient colors */
