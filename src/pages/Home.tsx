@@ -1,6 +1,6 @@
 import { Footprints, Flame, Target, Dumbbell, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { MascotDisplay } from '@/components/flyfit/MascotDisplay';
+import { ChatHeroBubble } from '@/components/flyfit/ChatHeroBubble';
 import { StatCard } from '@/components/flyfit/StatCard';
 import { WaterTracker } from '@/components/flyfit/WaterTracker';
 import { QuickAction } from '@/components/flyfit/QuickAction';
@@ -39,14 +39,9 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Maskotka - centralny element z animacją powitania */}
-      <section className="py-4 relative z-10">
-        <MascotDisplay 
-          state={{ emotion: 'greeting', message: 'Cześć! Miło Cię widzieć! 👋' }} 
-          size="hero" 
-          showMessage 
-          animate 
-        />
+      {/* Chat Hero - zachęta do rozmowy z FITEK */}
+      <section className="py-2 relative z-10">
+        <ChatHeroBubble />
       </section>
 
       {/* Statystyki w gridzie */}
