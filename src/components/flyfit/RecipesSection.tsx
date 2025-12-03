@@ -5,9 +5,8 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CookingMode } from './CookingMode';
 
-interface RecipeStep {
+export interface RecipeStep {
   step_number: number;
   instruction: string;
   duration_minutes?: number;
@@ -15,7 +14,7 @@ interface RecipeStep {
   tip?: string;
 }
 
-interface Recipe {
+export interface DetailedRecipe {
   name: string;
   ingredients: string[];
   description: string;
@@ -33,17 +32,20 @@ interface Recipe {
 
 interface RecipeResponse {
   detected_ingredients?: string[];
-  recipes: Recipe[];
+  recipes: DetailedRecipe[];
 }
 
-export function RecipesSection() {
+interface RecipesSectionProps {
+  onStartCooking: (recipe: DetailedRecipe) => void;
+}
+
+export function RecipesSection({ onStartCooking }: RecipesSectionProps) {
   const [mode, setMode] = useState<'idle' | 'scan' | 'ingredients'>('idle');
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [newIngredient, setNewIngredient] = useState('');
   const [loading, setLoading] = useState(false);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<DetailedRecipe[]>([]);
   const [detectedIngredients, setDetectedIngredients] = useState<string[]>([]);
-  const [cookingRecipe, setCookingRecipe] = useState<Recipe | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleScanFridge = () => {
@@ -330,7 +332,7 @@ export function RecipesSection() {
               {/* Przycisk gotowania */}
               {recipe.steps && recipe.steps.length > 0 && (
                 <Button 
-                  onClick={() => setCookingRecipe(recipe)}
+                  onClick={() => onStartCooking(recipe)}
                   className="w-full rounded-2xl h-12 bg-gradient-to-r from-primary to-fitfly-purple hover:opacity-90 transition-opacity"
                 >
                   <PlayCircle className="w-5 h-5 mr-2" />
@@ -340,19 +342,6 @@ export function RecipesSection() {
             </div>
           ))}
         </div>
-      )}
-
-      {/* Cooking Mode */}
-      {cookingRecipe && cookingRecipe.steps && (
-        <CookingMode 
-          recipe={{
-            ...cookingRecipe,
-            total_time_minutes: cookingRecipe.total_time_minutes || 30,
-            tools_needed: cookingRecipe.tools_needed || [],
-            steps: cookingRecipe.steps
-          }} 
-          onClose={() => setCookingRecipe(null)} 
-        />
       )}
 
       {/* Ukryty input do uploadu */}
