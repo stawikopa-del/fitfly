@@ -27,14 +27,14 @@ export function ChatHeroBubble() {
   return (
     <div className={`flex gap-2 transition-all duration-300 ${isExpanded ? 'items-center' : 'items-end'}`}>
       {/* Mascot - po lewej, dostosowuje się do rozmiaru chatu */}
-      <div className={`flex-shrink-0 overflow-hidden transition-all duration-300 ease-out ${isExpanded ? 'w-48 h-64' : 'w-36 h-44'}`}>
+      <div className={`flex-shrink-0 transition-all duration-300 ease-out ${isExpanded ? 'w-52' : 'w-40'}`}>
         <video 
           src={waveAnimation} 
           autoPlay 
           loop 
           muted 
           playsInline
-          className="w-full h-[120%] object-cover object-top"
+          className="w-full h-auto object-contain"
         />
       </div>
 
