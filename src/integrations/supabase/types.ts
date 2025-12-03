@@ -82,22 +82,52 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           created_at: string
+          daily_calories: number | null
+          daily_steps_goal: number | null
+          daily_water: number | null
           display_name: string | null
+          gender: string | null
+          goal: string | null
+          goal_weight: number | null
+          height: number | null
           id: string
+          updated_at: string | null
           user_id: string
+          weight: number | null
         }
         Insert: {
+          age?: number | null
           created_at?: string
+          daily_calories?: number | null
+          daily_steps_goal?: number | null
+          daily_water?: number | null
           display_name?: string | null
+          gender?: string | null
+          goal?: string | null
+          goal_weight?: number | null
+          height?: number | null
           id?: string
+          updated_at?: string | null
           user_id: string
+          weight?: number | null
         }
         Update: {
+          age?: number | null
           created_at?: string
+          daily_calories?: number | null
+          daily_steps_goal?: number | null
+          daily_water?: number | null
           display_name?: string | null
+          gender?: string | null
+          goal?: string | null
+          goal_weight?: number | null
+          height?: number | null
           id?: string
+          updated_at?: string | null
           user_id?: string
+          weight?: number | null
         }
         Relationships: []
       }

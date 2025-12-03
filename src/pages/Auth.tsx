@@ -182,8 +182,23 @@ export default function Auth() {
 
   const handleRegister = async () => {
     setIsLoading(true);
+    
+    // Calculate values before registration
+    const calories = calculateCalories(regData.weight, regData.height, regData.age, regData.gender, regData.goal);
+    const water = calculateWater(regData.weight);
+    
     try {
-      const { error } = await signUp(regData.email, regData.password, regData.displayName);
+      const { error } = await signUp(regData.email, regData.password, {
+        displayName: regData.displayName,
+        gender: regData.gender || undefined,
+        age: regData.age,
+        height: regData.height,
+        weight: regData.weight,
+        goalWeight: regData.goalWeight,
+        goal: regData.goal || undefined,
+        dailyCalories: calories,
+        dailyWater: water,
+      });
       if (error) {
         if (error.message.includes('already registered')) {
           toast.error('Ten email jest już zarejestrowany');
