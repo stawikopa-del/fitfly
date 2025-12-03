@@ -317,14 +317,14 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-end px-3 pb-6 gap-2 overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-3 overflow-hidden">
         {/* Mascot with transition */}
         <img 
           key={`mascot-${transitionKey}`}
           src={mascotImage} 
           alt="FITEK" 
           className={cn(
-            "w-56 h-56 object-contain animate-pushup transition-all duration-300 shrink-0",
+            "w-60 h-60 object-contain animate-pushup transition-all duration-300",
             isTransitioning && "opacity-0 scale-90"
           )}
         />
@@ -333,12 +333,12 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
         <div 
           key={`bubble-${transitionKey}`}
           className={cn(
-            "relative max-w-[200px] transition-all duration-300",
+            "relative max-w-[240px] transition-all duration-300",
             isTransitioning && "opacity-0 translate-y-2"
           )}
         >
           <div className={cn(
-            "relative px-3 py-1.5 rounded-xl border-2 transition-colors duration-300",
+            "relative px-4 py-2 rounded-xl border-2 transition-colors duration-300",
             isBreak 
               ? 'bg-fitfly-green/10 border-fitfly-green' 
               : 'bg-primary/10 border-primary'
@@ -347,7 +347,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
               "absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[8px] transition-colors duration-300",
               isBreak ? 'border-b-fitfly-green' : 'border-b-primary'
             )} />
-            <p className="text-[11px] text-foreground text-center font-bold">
+            <p className="text-sm text-foreground text-center font-bold">
               {motivationMessage}
             </p>
           </div>
@@ -362,14 +362,14 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
           )}
         >
           <div className={cn(
-            "text-4xl font-extrabold font-display transition-colors duration-300",
+            "text-5xl font-extrabold font-display transition-colors duration-300",
             isBreak 
               ? 'text-fitfly-green' 
               : 'bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent'
           )}>
             {formatTime(timeLeft)}
           </div>
-          <p className="text-muted-foreground text-[10px]">
+          <p className="text-muted-foreground text-xs">
             {isBreak ? 'przerwa' : 'pozostało'}
           </p>
         </div>
@@ -383,7 +383,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
           )}
         >
           <h3 className={cn(
-            "text-base font-bold font-display mb-0.5 transition-colors duration-300",
+            "text-lg font-bold font-display mb-1 transition-colors duration-300",
             isBreak ? 'text-fitfly-green' : 'text-foreground'
           )}>
             {isBreak ? '☕ Przerwa' : currentExercise.name}
@@ -393,44 +393,44 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
               variant="outline" 
               size="sm" 
               onClick={() => setShowInstructions(true)}
-              className="rounded-full border-2 gap-1 h-7 text-[11px] px-2.5"
+              className="rounded-full border-2 gap-1 h-8 text-xs px-3"
             >
-              <Info className="w-3 h-3" />
+              <Info className="w-3.5 h-3.5" />
               Instrukcja
             </Button>
           )}
           {isBreak && (
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Następne: <span className="font-semibold">{workout.exercises[currentExerciseIndex + 1]?.name || 'Koniec!'}</span>
             </p>
           )}
         </div>
 
         {/* Controls - inside main content */}
-        <div className="flex items-center justify-center gap-4 mt-6 mb-4">
+        <div className="flex items-center justify-center gap-5 mt-4">
           {/* Previous */}
           <Button
             variant="outline"
             size="icon"
             onClick={previousExercise}
             disabled={currentExerciseIndex === 0 && !isBreak}
-            className="w-12 h-12 rounded-full border-2"
+            className="w-14 h-14 rounded-full border-2"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-6 h-6" />
           </Button>
 
           {/* Play/Pause */}
           <Button
             onClick={togglePlayPause}
             className={cn(
-              "w-16 h-16 rounded-full shadow-playful",
+              "w-20 h-20 rounded-full shadow-playful",
               isBreak && 'bg-fitfly-green hover:bg-fitfly-green-dark'
             )}
           >
             {isRunning ? (
-              <Pause className="w-7 h-7" />
+              <Pause className="w-8 h-8" />
             ) : (
-              <Play className="w-7 h-7 ml-0.5" />
+              <Play className="w-8 h-8 ml-0.5" />
             )}
           </Button>
 
@@ -439,9 +439,9 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
             variant="outline"
             size="icon"
             onClick={skipExercise}
-            className="w-12 h-12 rounded-full border-2"
+            className="w-14 h-14 rounded-full border-2"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-6 h-6" />
           </Button>
         </div>
       </div>
