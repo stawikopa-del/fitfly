@@ -7,6 +7,7 @@ import fitekAvatar from '@/assets/fitek-avatar.png';
 import greetingVideo from '@/assets/fitfly-greeting.mp4';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Message {
   id?: string;
@@ -23,6 +24,7 @@ export default function Chat() {
   const [isTyping, setIsTyping] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -30,10 +32,13 @@ export default function Chat() {
 
   // Pobierz historię czatu przy starcie
   useEffect(() => {
+    if (!user) return;
+    
     const fetchMessages = async () => {
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: true });
       
       if (error) {
@@ -49,7 +54,7 @@ export default function Chat() {
     };
     
     fetchMessages();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     scrollToBottom();
@@ -57,9 +62,11 @@ export default function Chat() {
 
   // Zapisz wiadomość do bazy
   const saveMessage = async (message: Message) => {
+    if (!user) return null;
+    
     const { data, error } = await supabase
       .from('chat_messages')
-      .insert({ role: message.role, content: message.content })
+      .insert({ role: message.role, content: message.content, user_id: user.id })
       .select()
       .single();
     
@@ -161,10 +168,12 @@ export default function Chat() {
   };
 
   const clearHistory = async () => {
+    if (!user) return;
+    
     const { error } = await supabase
       .from('chat_messages')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      .eq('user_id', user.id);
     
     if (error) {
       console.error('Error clearing history:', error);

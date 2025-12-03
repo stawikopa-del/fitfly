@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Target, Bell, Settings, ChevronRight, Footprints, Droplets, Flame, Trophy, Edit3, Sparkles } from 'lucide-react';
+import { User, Target, Bell, Settings, ChevronRight, Footprints, Droplets, Flame, Trophy, Edit3, Sparkles, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,10 +8,16 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import mascotImage from '@/assets/fitfly-mascot.png';
 import { UserProfile } from '@/types/flyfit';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function Profile() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  
   const [profile, setProfile] = useState<UserProfile>({
-    name: 'Jan Kowalski',
+    name: user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Użytkownik',
     age: 25,
     weight: 75,
     height: 180,
@@ -37,6 +43,12 @@ export default function Profile() {
   };
 
   const totalPoints = 250;
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success('Wylogowano pomyślnie');
+    navigate('/auth');
+  };
 
   return (
     <div className="px-4 py-6 space-y-6 relative overflow-hidden">
@@ -202,6 +214,22 @@ export default function Profile() {
             <Settings className="w-5 h-5" />
           </div>
           Ustawienia aplikacji ⚙️
+        </span>
+        <ChevronRight className="w-5 h-5" />
+      </Button>
+
+      {/* Wyloguj */}
+      <Button 
+        variant="outline" 
+        onClick={handleSignOut}
+        className="w-full justify-between rounded-3xl h-14 border-2 border-destructive/30 text-destructive font-bold relative z-10 animate-float hover:-translate-y-1 transition-all hover:bg-destructive/10"
+        style={{ animationDelay: '0.7s' }}
+      >
+        <span className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-destructive/10 flex items-center justify-center">
+            <LogOut className="w-5 h-5" />
+          </div>
+          Wyloguj się
         </span>
         <ChevronRight className="w-5 h-5" />
       </Button>
