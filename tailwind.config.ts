@@ -111,6 +111,10 @@ export default {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-6px)" },
         },
+        "pushup": {
+          "0%, 100%": { transform: "translateY(0px) scaleY(1)" },
+          "50%": { transform: "translateY(8px) scaleY(0.92)" },
+        },
         "float-gentle": {
           "0%, 100%": { transform: "translateY(0px) rotate(-0.3deg)" },
           "50%": { transform: "translateY(-5px) rotate(0.3deg)" },
@@ -156,6 +160,7 @@ export default {
         "wiggle": "wiggle 0.5s ease-in-out",
         "float": "float 3s ease-in-out infinite",
         "float-slow": "float-slow 10s ease-in-out infinite",
+        "pushup": "pushup 2s ease-in-out infinite",
         "float-gentle": "float-gentle 6s ease-in-out infinite",
         "pulse-ring": "pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "celebrate": "celebrate 0.6s ease-in-out",
