@@ -258,7 +258,7 @@ export function WorkoutSession({
           src={mascotImage} 
           alt="FITEK" 
           className={cn(
-            "w-64 h-64 object-contain animate-pushup transition-all duration-300", 
+            "w-80 h-80 object-contain animate-pushup transition-all duration-300", 
             isTransitioning && "opacity-0 scale-90"
           )} 
         />
