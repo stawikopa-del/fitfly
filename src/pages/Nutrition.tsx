@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import mascotImage from '@/assets/fitfly-mascot.png';
 import { Meal } from '@/types/flyfit';
 import { AddMealDialog } from '@/components/flyfit/AddMealDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -17,13 +19,42 @@ const mealConfig: Record<MealType, { label: string; icon: typeof Coffee; gradien
 };
 
 export default function Nutrition() {
-  const [meals, setMeals] = useState<Meal[]>([
-    { id: '1', type: 'breakfast', name: 'Owsianka z owocami', calories: 350, protein: 12, carbs: 55, fat: 8, time: '08:00' },
-    { id: '2', type: 'lunch', name: 'Kurczak z ryżem', calories: 550, protein: 40, carbs: 60, fat: 12, time: '13:00' },
-  ]);
+  const [meals, setMeals] = useState<Meal[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
+
+  // Pobierz posiłki z bazy danych
+  useEffect(() => {
+    const fetchMeals = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('meal_date', today)
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching meals:', error);
+        toast.error('Nie udało się pobrać posiłków');
+      } else {
+        setMeals(data?.map(m => ({
+          id: m.id,
+          type: m.type as MealType,
+          name: m.name,
+          calories: m.calories,
+          protein: Number(m.protein),
+          carbs: Number(m.carbs),
+          fat: Number(m.fat),
+          time: m.time || undefined,
+        })) || []);
+      }
+      setLoading(false);
+    };
+    
+    fetchMeals();
+  }, []);
 
   const dailyGoals = { calories: 2000, protein: 120, carbs: 250, fat: 65 };
   
@@ -41,16 +72,54 @@ export default function Nutrition() {
     setDialogOpen(true);
   };
 
-  const handleAddMeal = (mealData: Omit<Meal, 'id'>) => {
-    const newMeal: Meal = {
-      id: Date.now().toString(),
-      ...mealData,
-    };
-    setMeals([...meals, newMeal]);
+  const handleAddMeal = async (mealData: Omit<Meal, 'id'>) => {
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+      .from('meals')
+      .insert({
+        type: mealData.type,
+        name: mealData.name,
+        calories: mealData.calories,
+        protein: mealData.protein,
+        carbs: mealData.carbs,
+        fat: mealData.fat,
+        time: mealData.time,
+        meal_date: today,
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding meal:', error);
+      toast.error('Nie udało się dodać posiłku');
+    } else if (data) {
+      setMeals([...meals, {
+        id: data.id,
+        type: data.type as MealType,
+        name: data.name,
+        calories: data.calories,
+        protein: Number(data.protein),
+        carbs: Number(data.carbs),
+        fat: Number(data.fat),
+        time: data.time || undefined,
+      }]);
+      toast.success('Posiłek dodany!');
+    }
   };
 
-  const handleDeleteMeal = (mealId: string) => {
-    setMeals(meals.filter(m => m.id !== mealId));
+  const handleDeleteMeal = async (mealId: string) => {
+    const { error } = await supabase
+      .from('meals')
+      .delete()
+      .eq('id', mealId);
+    
+    if (error) {
+      console.error('Error deleting meal:', error);
+      toast.error('Nie udało się usunąć posiłku');
+    } else {
+      setMeals(meals.filter(m => m.id !== mealId));
+      toast.success('Posiłek usunięty');
+    }
   };
 
   return (
