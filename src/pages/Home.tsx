@@ -28,9 +28,11 @@ export default function Home() {
           </div>
         </div>
         <div className="text-right bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-border/50 shadow-sm">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Dzisiaj</p>
           <p className="text-sm font-bold text-foreground capitalize">
             {new Date().toLocaleDateString('pl-PL', { weekday: 'long' })}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })} • {new Date().toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')}
           </p>
         </div>
       </header>
