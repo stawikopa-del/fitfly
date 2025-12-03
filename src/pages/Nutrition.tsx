@@ -8,6 +8,7 @@ import { AddMealDialog } from '@/components/flyfit/AddMealDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProgress } from '@/hooks/useUserProgress';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -25,6 +26,7 @@ export default function Nutrition() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
   const { user } = useAuth();
+  const { progress } = useUserProgress();
 
   // Pobierz posiłki z bazy danych
   useEffect(() => {
@@ -60,7 +62,14 @@ export default function Nutrition() {
     fetchMeals();
   }, [user]);
 
-  const dailyGoals = { calories: 2000, protein: 120, carbs: 250, fat: 65 };
+  // Oblicz makra proporcjonalnie do kalorii z profilu
+  const dailyCalories = progress.caloriesGoal;
+  const dailyGoals = { 
+    calories: dailyCalories, 
+    protein: Math.round(dailyCalories * 0.25 / 4), // 25% kalorii z białka (4 kcal/g)
+    carbs: Math.round(dailyCalories * 0.50 / 4),   // 50% kalorii z węglowodanów (4 kcal/g)
+    fat: Math.round(dailyCalories * 0.25 / 9),      // 25% kalorii z tłuszczu (9 kcal/g)
+  };
   
   const totals = meals.reduce((acc, meal) => ({
     calories: acc.calories + meal.calories,
