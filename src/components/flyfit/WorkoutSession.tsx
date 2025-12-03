@@ -405,11 +405,9 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
             </p>
           )}
         </div>
-      </div>
 
-      {/* Controls */}
-      <div className="p-3 pb-10 border-t border-border bg-card/50 shrink-0">
-        <div className="flex items-center justify-center gap-4">
+        {/* Controls - inside main content */}
+        <div className="flex items-center justify-center gap-4 mt-4">
           {/* Previous */}
           <Button
             variant="outline"
