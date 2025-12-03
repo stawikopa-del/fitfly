@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, ChevronDown, ChevronUp, Send } from 'lucide-react';
-import mascotImage from '@/assets/fitfly-mascot.png';
+import waveAnimation from '@/assets/fitfly-wave.webm';
 
 export function ChatHeroBubble() {
   const navigate = useNavigate();
@@ -29,15 +29,14 @@ export function ChatHeroBubble() {
       {/* Mascot - po lewej, dostosowuje się do rozmiaru chatu */}
       <div className={`flex-shrink-0 relative transition-all duration-300 ease-out ${isExpanded ? 'w-56 h-56' : 'w-44 h-44'}`}>
         <div className="absolute inset-2 bg-fitfly-green/30 rounded-full blur-2xl animate-pulse" />
-        <img 
-          src={mascotImage} 
-          alt="FITEK" 
-          className="w-full h-full object-contain drop-shadow-2xl animate-float relative z-10"
+        <video 
+          src={waveAnimation} 
+          autoPlay 
+          loop 
+          muted 
+          playsInline
+          className="w-full h-full object-contain drop-shadow-2xl relative z-10"
         />
-        {/* Efekt machania */}
-        <div className={`absolute left-1/2 -translate-x-1/2 text-2xl animate-bounce transition-all duration-300 ${isExpanded ? '-bottom-2' : '-bottom-1'}`}>
-          👋
-        </div>
       </div>
 
       {/* Chat bubble - po prawej */}
