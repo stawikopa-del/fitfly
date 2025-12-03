@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Meal } from '@/types/flyfit';
 import { AddMealDialog } from '@/components/flyfit/AddMealDialog';
+import { RecipesSection } from '@/components/flyfit/RecipesSection';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -195,6 +196,9 @@ export default function Nutrition() {
           </div>
         ))}
       </div>
+
+      {/* Sekcja przepisów AI */}
+      <RecipesSection />
 
       {/* Lista posiłków */}
       <section className="space-y-4 relative z-10">
