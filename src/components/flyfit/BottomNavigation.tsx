@@ -6,7 +6,7 @@ import { soundFeedback } from '@/utils/soundFeedback';
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/treningi', icon: Dumbbell, label: 'Treningi' },
-  { to: '/odzywianie', icon: Utensils, label: 'Jedzenie' },
+  { to: '/odzywianie', icon: Utensils, label: 'Dieta' },
   { to: '/wyzwania', icon: Trophy, label: 'Wyzwania' },
   { to: '/postepy', icon: TrendingUp, label: 'Postępy' },
 ];
