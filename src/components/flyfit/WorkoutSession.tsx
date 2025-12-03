@@ -264,10 +264,10 @@ export function WorkoutSession({
         />
         
         {/* Speech bubble */}
-        <div key={`bubble-${transitionKey}`} className={cn("relative max-w-[260px] transition-all duration-300", isTransitioning && "opacity-0 translate-y-2")}>
-          <div className={cn("relative px-5 py-3 rounded-2xl border-2 transition-colors duration-300", isBreak ? 'bg-fitfly-green/10 border-fitfly-green' : 'bg-primary/10 border-primary')}>
-            <div className={cn("absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[10px] transition-colors duration-300", isBreak ? 'border-b-fitfly-green' : 'border-b-primary')} />
-            <p className="text-sm text-foreground text-center font-bold">
+        <div key={`bubble-${transitionKey}`} className={cn("relative max-w-[300px] transition-all duration-300", isTransitioning && "opacity-0 translate-y-2")}>
+          <div className={cn("relative px-6 py-4 rounded-2xl border-2 transition-colors duration-300", isBreak ? 'bg-fitfly-green/10 border-fitfly-green' : 'bg-primary/10 border-primary')}>
+            <div className={cn("absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[12px] transition-colors duration-300", isBreak ? 'border-b-fitfly-green' : 'border-b-primary')} />
+            <p className="text-base text-foreground text-center font-bold">
               {motivationMessage}
             </p>
           </div>
@@ -275,10 +275,10 @@ export function WorkoutSession({
 
         {/* Timer */}
         <div key={`timer-${transitionKey}`} className={cn("text-center transition-all duration-300 mt-2", isTransitioning && "opacity-0 scale-95")}>
-          <div className={cn("text-6xl font-extrabold font-display transition-colors duration-300", isBreak ? 'text-fitfly-green' : 'bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent')}>
+          <div className={cn("text-7xl font-extrabold font-display transition-colors duration-300", isBreak ? 'text-fitfly-green' : 'bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent')}>
             {formatTime(timeLeft)}
           </div>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-base mt-1">
             {isBreak ? 'przerwa' : 'pozostało'}
           </p>
         </div>
