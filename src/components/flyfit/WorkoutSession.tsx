@@ -317,14 +317,14 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-3 py-1 gap-2 overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center px-3 py-1 gap-1 overflow-hidden min-h-0">
         {/* Mascot with transition */}
         <img 
           key={`mascot-${transitionKey}`}
           src={mascotImage} 
           alt="FITEK" 
           className={cn(
-            "w-64 h-64 object-contain animate-pushup transition-all duration-300",
+            "w-48 h-48 object-contain animate-pushup transition-all duration-300 shrink-0",
             isTransitioning && "opacity-0 scale-90"
           )}
         />
@@ -408,8 +408,8 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
       </div>
 
       {/* Controls */}
-      <div className="p-2 pb-8 border-t border-border bg-card/50">
-        <div className="flex items-center justify-center gap-3">
+      <div className="p-3 pb-10 border-t border-border bg-card/50 shrink-0">
+        <div className="flex items-center justify-center gap-4">
           {/* Previous */}
           <Button
             variant="outline"
