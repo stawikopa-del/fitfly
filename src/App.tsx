@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Workouts from "./pages/Workouts";
 import Nutrition from "./pages/Nutrition";
 import Challenges from "./pages/Challenges";
+import Progress from "./pages/Progress";
 import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
@@ -75,6 +76,16 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <AppLayout>
             <Challenges />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/postepy"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Progress />
           </AppLayout>
         </ProtectedRoute>
       }
