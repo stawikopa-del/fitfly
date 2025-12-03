@@ -12,8 +12,14 @@ export default function Home() {
 
   return (
     <div className="px-4 py-6 space-y-6 relative overflow-hidden">
-      {/* Header z datą */}
-      <header className="flex items-center justify-end relative z-10">
+      {/* Header z logo */}
+      <header className="flex items-center justify-between relative z-10">
+        <div>
+          <h1 className="text-2xl font-extrabold font-display text-foreground tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            FLYFIT
+          </h1>
+          <p className="text-xs text-muted-foreground font-medium">Cześć! Jak się dziś czujesz?</p>
+        </div>
         <div className="text-right bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-border/50 shadow-sm">
           <p className="text-sm font-bold text-foreground capitalize">
             {new Date().toLocaleDateString('pl-PL', { weekday: 'long' })}
