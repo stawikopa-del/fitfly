@@ -1,0 +1,252 @@
+import { useState, useRef, useEffect } from 'react';
+import { Send, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import mascotImage from '@/assets/fitfly-mascot.png';
+import greetingVideo from '@/assets/fitfly-greeting.mp4';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fitek-chat`;
+
+export default function Chat() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const streamChat = async (userMessages: Message[]) => {
+    const resp = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ messages: userMessages }),
+    });
+
+    if (!resp.ok || !resp.body) {
+      const errorData = await resp.json().catch(() => ({ error: 'Błąd połączenia' }));
+      throw new Error(errorData.error || 'Nie udało się połączyć z FITKIEM');
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = "";
+    let assistantContent = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      textBuffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (line.startsWith(":") || line.trim() === "") continue;
+        if (!line.startsWith("data: ")) continue;
+
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === "[DONE]") break;
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          if (content) {
+            assistantContent += content;
+            setMessages(prev => {
+              const last = prev[prev.length - 1];
+              if (last?.role === "assistant") {
+                return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantContent } : m));
+              }
+              return [...prev, { role: "assistant", content: assistantContent }];
+            });
+          }
+        } catch {
+          textBuffer = line + "\n" + textBuffer;
+          break;
+        }
+      }
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: Message = { role: 'user', content: input.trim() };
+    const updatedMessages = [...messages, userMessage];
+    
+    setMessages(updatedMessages);
+    setInput('');
+    setIsLoading(true);
+    setIsTyping(true);
+
+    try {
+      await streamChat(updatedMessages);
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: 'Ups! Coś poszło nie tak 😓 Spróbuj jeszcze raz!' }
+      ]);
+    } finally {
+      setIsLoading(false);
+      setIsTyping(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-7rem)] relative overflow-hidden">
+      {/* Dekoracyjne tło */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute bottom-32 left-0 w-48 h-48 bg-fitfly-purple/10 rounded-full blur-3xl -translate-x-1/2" />
+
+      {/* Header */}
+      <header className="px-4 py-3 border-b border-border/50 bg-card/80 backdrop-blur-sm relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-light flex items-center justify-center shadow-playful overflow-hidden">
+              <img src={mascotImage} alt="FITEK" className="w-10 h-10 object-contain" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-secondary rounded-full border-2 border-card" />
+          </div>
+          <div>
+            <h1 className="font-bold font-display text-lg text-foreground flex items-center gap-2">
+              FITEK
+              <Sparkles className="w-4 h-4 text-fitfly-yellow" />
+            </h1>
+            <p className="text-xs text-muted-foreground font-medium">
+              {isTyping ? 'pisze...' : 'Twój przyjaciel fitness'}
+            </p>
+          </div>
+        </div>
+      </header>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 relative z-10">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-center py-8">
+            <div className="w-40 h-40 mb-4 rounded-3xl overflow-hidden shadow-card-playful">
+              <video 
+                src={greetingVideo}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h2 className="text-xl font-bold font-display text-foreground mb-2">
+              Cześć! Jestem FITEK! 👋
+            </h2>
+            <p className="text-muted-foreground text-sm max-w-[250px]">
+              Twój przyjaciel fitness! Porozmawiaj ze mną o ćwiczeniach, jedzeniu, lub po prostu pogadajmy! 💪
+            </p>
+            <div className="flex flex-wrap gap-2 mt-4 justify-center">
+              {['Jak zacząć ćwiczyć?', 'Co jeść na śniadanie?', 'Zmotywuj mnie!'].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => {
+                    setInput(suggestion);
+                  }}
+                  className="px-4 py-2 bg-card border-2 border-border/50 rounded-2xl text-sm font-medium text-foreground hover:-translate-y-0.5 hover:shadow-card-playful transition-all"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={cn(
+              'flex gap-3 animate-slide-up-bounce',
+              message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+            )}
+          >
+            {message.role === 'assistant' && (
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-light flex items-center justify-center shadow-playful-sm shrink-0">
+                <img src={mascotImage} alt="FITEK" className="w-8 h-8 object-contain" />
+              </div>
+            )}
+            <div
+              className={cn(
+                'max-w-[80%] px-4 py-3 rounded-3xl',
+                message.role === 'user'
+                  ? 'bg-primary text-primary-foreground rounded-br-lg shadow-playful-sm'
+                  : 'bg-card border-2 border-border/50 text-foreground rounded-bl-lg shadow-card-playful'
+              )}
+            >
+              <p className="text-sm font-medium whitespace-pre-wrap">{message.content}</p>
+            </div>
+          </div>
+        ))}
+
+        {isTyping && messages[messages.length - 1]?.role === 'user' && (
+          <div className="flex gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-light flex items-center justify-center shadow-playful-sm shrink-0 animate-bounce-soft">
+              <img src={mascotImage} alt="FITEK" className="w-8 h-8 object-contain" />
+            </div>
+            <div className="bg-card border-2 border-border/50 rounded-3xl rounded-bl-lg px-4 py-3 shadow-card-playful">
+              <div className="flex gap-1">
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div className="px-4 py-4 border-t border-border/50 bg-card/80 backdrop-blur-sm relative z-10">
+        <div className="flex gap-3">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Napisz do FITKA..."
+            disabled={isLoading}
+            className="flex-1 rounded-2xl border-2 h-12"
+          />
+          <Button
+            onClick={sendMessage}
+            disabled={!input.trim() || isLoading}
+            size="icon"
+            className="w-12 h-12 rounded-2xl"
+          >
+            <Send className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
