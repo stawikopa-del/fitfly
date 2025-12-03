@@ -289,9 +289,9 @@ export function WorkoutSession({
             {isBreak ? '☕ Przerwa' : currentExercise.name}
           </h3>
           {!isBreak && (
-            <Button variant="outline" size="sm" onClick={() => setShowInstructions(true)} className="rounded-full border-2 gap-1.5 h-9 text-sm px-4 mt-2">
-              <Info className="w-4 h-4" />
-              Instrukcja
+            <Button variant="outline" size="sm" onClick={() => setShowInstructions(true)} className="rounded-full border-2 gap-1.5 h-auto text-sm px-4 py-2 mt-2 max-w-[280px]">
+              <Info className="w-4 h-4 shrink-0" />
+              <span className="truncate">{currentExercise.instruction.split(' ').slice(0, 4).join(' ')}...</span>
             </Button>
           )}
           {isBreak && (
