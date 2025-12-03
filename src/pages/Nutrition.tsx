@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat } from 'lucide-react';
+import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -8,11 +8,11 @@ import { Meal } from '@/types/flyfit';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
-const mealConfig: Record<MealType, { label: string; icon: typeof Coffee; gradient: string }> = {
-  breakfast: { label: 'Śniadanie', icon: Coffee, gradient: 'from-accent/20 to-accent/5' },
-  lunch: { label: 'Obiad', icon: UtensilsCrossed, gradient: 'from-secondary/20 to-secondary/5' },
-  dinner: { label: 'Kolacja', icon: Moon, gradient: 'from-primary/20 to-primary/5' },
-  snack: { label: 'Przekąski', icon: Cookie, gradient: 'from-purple-500/20 to-purple-500/5' },
+const mealConfig: Record<MealType, { label: string; icon: typeof Coffee; gradient: string; emoji: string }> = {
+  breakfast: { label: 'Śniadanie', icon: Coffee, gradient: 'from-accent/20 to-accent/5', emoji: '🌅' },
+  lunch: { label: 'Obiad', icon: UtensilsCrossed, gradient: 'from-secondary/20 to-secondary/5', emoji: '🍽️' },
+  dinner: { label: 'Kolacja', icon: Moon, gradient: 'from-primary/20 to-primary/5', emoji: '🌙' },
+  snack: { label: 'Przekąski', icon: Cookie, gradient: 'from-fitfly-purple/20 to-fitfly-purple/5', emoji: '🍪' },
 };
 
 export default function Nutrition() {
@@ -47,63 +47,78 @@ export default function Nutrition() {
   };
 
   return (
-    <div className="px-4 py-6 space-y-6">
+    <div className="px-4 py-6 space-y-6 relative overflow-hidden">
+      {/* Dekoracyjne tło */}
+      <div className="absolute top-0 left-0 w-64 h-64 bg-secondary/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2" />
+      <div className="absolute bottom-32 right-0 w-48 h-48 bg-accent/10 rounded-full blur-3xl translate-x-1/2" />
+
       {/* Header z maskotką */}
-      <header className="flex items-center gap-3">
-        <img src={mascotImage} alt="FitFly" className="w-12 h-12 object-contain" />
+      <header className="flex items-center gap-3 relative z-10">
+        <div className="relative animate-float">
+          <img src={mascotImage} alt="FitFly" className="w-14 h-14 object-contain drop-shadow-md" />
+          <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-fitfly-yellow animate-pulse" />
+        </div>
         <div>
-          <h1 className="text-2xl font-extrabold text-foreground">Odżywianie</h1>
-          <p className="text-sm text-muted-foreground">Jedz zdrowo, żyj zdrowo! 🥗</p>
+          <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-secondary to-fitfly-green-light bg-clip-text text-transparent">
+            Odżywianie
+          </h1>
+          <p className="text-sm text-muted-foreground font-medium">Jedz zdrowo, żyj zdrowo! 🥗</p>
         </div>
       </header>
 
       {/* Podsumowanie kalorii */}
-      <div className="bg-gradient-to-br from-secondary to-secondary/80 rounded-2xl p-5 text-secondary-foreground shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-sm opacity-80">Dzisiejsze kalorie</p>
-            <p className="text-4xl font-extrabold">{totals.calories}</p>
-            <p className="text-sm opacity-80">/ {dailyGoals.calories} kcal</p>
-          </div>
-          <div className="w-20 h-20 rounded-full border-4 border-secondary-foreground/30 flex items-center justify-center">
-            <div className="text-center">
-              <Flame className="w-6 h-6 mx-auto" />
-              <span className="text-xs font-bold">{Math.round((totals.calories / dailyGoals.calories) * 100)}%</span>
+      <div className="animate-float relative z-10" style={{ animationDelay: '0.2s' }}>
+        <div className="bg-gradient-to-br from-secondary to-fitfly-green-dark rounded-3xl p-6 text-secondary-foreground shadow-playful-green relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div>
+              <p className="text-sm opacity-80 font-medium">Dzisiejsze kalorie</p>
+              <p className="text-5xl font-extrabold font-display">{totals.calories}</p>
+              <p className="text-sm opacity-80 font-medium">/ {dailyGoals.calories} kcal</p>
+            </div>
+            <div className="w-20 h-20 rounded-3xl bg-white/20 border-4 border-white/30 flex items-center justify-center shadow-lg">
+              <div className="text-center">
+                <Flame className="w-7 h-7 mx-auto" />
+                <span className="text-sm font-bold">{Math.round((totals.calories / dailyGoals.calories) * 100)}%</span>
+              </div>
             </div>
           </div>
+          <Progress value={(totals.calories / dailyGoals.calories) * 100} className="h-3 bg-white/20" />
         </div>
-        <Progress value={(totals.calories / dailyGoals.calories) * 100} className="h-2 bg-secondary-foreground/20" />
       </div>
 
       {/* Makroskładniki */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-card rounded-xl p-3 border border-border text-center">
-          <Beef className="w-5 h-5 mx-auto mb-1 text-destructive" />
-          <p className="text-lg font-bold text-foreground">{totals.protein}g</p>
-          <p className="text-[10px] text-muted-foreground">Białko</p>
-          <Progress value={(totals.protein / dailyGoals.protein) * 100} className="h-1 mt-2" />
-        </div>
-        <div className="bg-card rounded-xl p-3 border border-border text-center">
-          <Wheat className="w-5 h-5 mx-auto mb-1 text-accent" />
-          <p className="text-lg font-bold text-foreground">{totals.carbs}g</p>
-          <p className="text-[10px] text-muted-foreground">Węglowodany</p>
-          <Progress value={(totals.carbs / dailyGoals.carbs) * 100} className="h-1 mt-2" />
-        </div>
-        <div className="bg-card rounded-xl p-3 border border-border text-center">
-          <div className="w-5 h-5 mx-auto mb-1 rounded-full bg-primary/20 flex items-center justify-center">
-            <span className="text-xs">🧈</span>
+      <div className="grid grid-cols-3 gap-3 relative z-10">
+        {[
+          { icon: Beef, value: totals.protein, goal: dailyGoals.protein, label: 'Białko', color: 'text-destructive', unit: 'g' },
+          { icon: Wheat, value: totals.carbs, goal: dailyGoals.carbs, label: 'Węgle', color: 'text-accent', unit: 'g' },
+          { icon: null, value: totals.fat, goal: dailyGoals.fat, label: 'Tłuszcze', color: 'text-primary', unit: 'g', emoji: '🧈' },
+        ].map((item, index) => (
+          <div 
+            key={item.label}
+            className="bg-card rounded-3xl p-4 border-2 border-border/50 text-center shadow-card-playful hover:-translate-y-1 transition-all duration-300 animate-float"
+            style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+          >
+            {item.icon ? (
+              <item.icon className={cn("w-6 h-6 mx-auto mb-2", item.color)} />
+            ) : (
+              <div className="w-6 h-6 mx-auto mb-2 flex items-center justify-center text-lg">{item.emoji}</div>
+            )}
+            <p className="text-xl font-extrabold font-display text-foreground">{item.value}{item.unit}</p>
+            <p className="text-[10px] text-muted-foreground font-medium">{item.label}</p>
+            <Progress value={(item.value / item.goal) * 100} className="h-1.5 mt-2" />
           </div>
-          <p className="text-lg font-bold text-foreground">{totals.fat}g</p>
-          <p className="text-[10px] text-muted-foreground">Tłuszcze</p>
-          <Progress value={(totals.fat / dailyGoals.fat) * 100} className="h-1 mt-2" />
-        </div>
+        ))}
       </div>
 
       {/* Lista posiłków */}
-      <section className="space-y-3">
-        <h2 className="font-bold text-foreground">Dzisiejsze posiłki</h2>
+      <section className="space-y-4 relative z-10">
+        <h2 className="font-bold font-display text-foreground text-lg flex items-center gap-2">
+          Dzisiejsze posiłki
+          <span className="text-xl">🍴</span>
+        </h2>
         
-        {(Object.keys(mealConfig) as MealType[]).map(type => {
+        {(Object.keys(mealConfig) as MealType[]).map((type, index) => {
           const config = mealConfig[type];
           const Icon = config.icon;
           const typeMeals = getMealsByType(type);
@@ -113,42 +128,46 @@ export default function Nutrition() {
             <div 
               key={type}
               className={cn(
-                'bg-gradient-to-r rounded-2xl p-4 border border-border',
+                'bg-gradient-to-r rounded-3xl p-5 border-2 border-border/50 shadow-card-playful',
+                'hover:-translate-y-1 transition-all duration-300 animate-float',
                 config.gradient
               )}
+              style={{ animationDelay: `${0.5 + index * 0.1}s` }}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center shadow-sm">
-                    <Icon className="w-5 h-5 text-foreground" />
+                  <div className="w-12 h-12 rounded-2xl bg-card flex items-center justify-center shadow-sm">
+                    <Icon className="w-6 h-6 text-foreground" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-foreground">{config.label}</h3>
-                    <p className="text-xs text-muted-foreground">{typeCalories} kcal</p>
+                    <h3 className="font-bold font-display text-foreground flex items-center gap-2">
+                      {config.label}
+                      <span>{config.emoji}</span>
+                    </h3>
+                    <p className="text-xs text-muted-foreground font-medium">{typeCalories} kcal</p>
                   </div>
                 </div>
                 <Button 
                   size="icon"
-                  variant="secondary"
                   onClick={() => handleAddMeal(type)}
-                  className="rounded-full w-8 h-8"
+                  className="rounded-2xl w-10 h-10"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-5 h-5" />
                 </Button>
               </div>
               
               {typeMeals.length > 0 ? (
                 <div className="space-y-2">
                   {typeMeals.map(meal => (
-                    <div key={meal.id} className="flex justify-between items-center py-2 px-3 bg-card/50 rounded-xl">
-                      <span className="text-sm font-medium text-foreground">{meal.name}</span>
-                      <span className="text-xs text-muted-foreground">{meal.calories} kcal</span>
+                    <div key={meal.id} className="flex justify-between items-center py-3 px-4 bg-card/80 rounded-2xl border border-border/30">
+                      <span className="text-sm font-bold text-foreground">{meal.name}</span>
+                      <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-1 rounded-full">{meal.calories} kcal</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-2">
-                  Dodaj posiłek
+                <p className="text-sm text-muted-foreground text-center py-3 font-medium">
+                  Kliknij + aby dodać posiłek 😋
                 </p>
               )}
             </div>

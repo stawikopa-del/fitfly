@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trophy, Star, Play, Check, Zap } from 'lucide-react';
+import { Trophy, Star, Play, Check, Zap, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import mascotImage from '@/assets/fitfly-mascot.png';
@@ -73,44 +73,60 @@ export default function Challenges() {
   });
 
   return (
-    <div className="px-4 py-6 space-y-6">
+    <div className="px-4 py-6 space-y-6 relative overflow-hidden">
+      {/* Dekoracyjne tło */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute bottom-32 left-0 w-48 h-48 bg-fitfly-yellow/10 rounded-full blur-3xl -translate-x-1/2" />
+
       {/* Header z maskotką */}
-      <header className="flex items-center gap-3">
-        <img src={mascotImage} alt="FitFly" className="w-12 h-12 object-contain" />
+      <header className="flex items-center gap-3 relative z-10">
+        <div className="relative animate-float">
+          <img src={mascotImage} alt="FitFly" className="w-14 h-14 object-contain drop-shadow-md" />
+          <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-fitfly-yellow animate-pulse" />
+        </div>
         <div>
-          <h1 className="text-2xl font-extrabold text-foreground">Wyzwania</h1>
-          <p className="text-sm text-muted-foreground">Zdobywaj punkty ze mną! 🏆</p>
+          <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-accent to-fitfly-orange-light bg-clip-text text-transparent">
+            Wyzwania
+          </h1>
+          <p className="text-sm text-muted-foreground font-medium">Zdobywaj punkty ze mną! 🏆</p>
         </div>
       </header>
 
       {/* Karta punktów */}
-      <div className="bg-gradient-to-br from-accent to-accent/80 rounded-2xl p-5 text-accent-foreground shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="relative z-10 flex items-center justify-between">
-          <div>
-            <p className="text-sm opacity-80 font-medium">Twoje punkty</p>
-            <p className="text-4xl font-extrabold">{totalPoints}</p>
-            <p className="text-xs opacity-70">Tak trzymaj!</p>
-          </div>
-          <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">
-            <Star className="w-8 h-8" />
+      <div className="animate-float relative z-10" style={{ animationDelay: '0.2s' }}>
+        <div className="bg-gradient-to-br from-accent to-fitfly-orange-light rounded-3xl p-6 text-accent-foreground shadow-playful-orange relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <p className="text-sm opacity-80 font-medium">Twoje punkty</p>
+              <p className="text-5xl font-extrabold font-display">{totalPoints}</p>
+              <p className="text-sm opacity-80 font-medium">Tak trzymaj! ⭐</p>
+            </div>
+            <div className="w-20 h-20 rounded-3xl bg-white/20 flex items-center justify-center shadow-lg animate-bounce-soft">
+              <Star className="w-10 h-10" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filtry */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 relative z-10">
         {[
           { key: 'all', label: 'Wszystkie' },
           { key: 'active', label: 'Aktywne' },
           { key: 'completed', label: 'Ukończone' },
-        ].map(({ key, label }) => (
+        ].map(({ key, label }, index) => (
           <Button
             key={key}
             variant={filter === key ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter(key as typeof filter)}
-            className="rounded-full font-semibold"
+            className={cn(
+              "rounded-2xl font-bold h-10 px-4 animate-float",
+              filter === key ? 'shadow-playful' : 'border-2'
+            )}
+            style={{ animationDelay: `${0.3 + index * 0.1}s` }}
           >
             {label}
           </Button>
@@ -118,61 +134,67 @@ export default function Challenges() {
       </div>
 
       {/* Lista wyzwań */}
-      <section className="space-y-3">
-        {filteredChallenges.map(challenge => {
+      <section className="space-y-4 relative z-10">
+        {filteredChallenges.map((challenge, index) => {
           const percentage = Math.min((challenge.current / challenge.target) * 100, 100);
           
           return (
             <div 
               key={challenge.id}
               className={cn(
-                'bg-card rounded-2xl p-4 border shadow-sm transition-all',
+                'bg-card rounded-3xl p-5 border-2 shadow-card-playful transition-all duration-300',
+                'hover:-translate-y-1 hover:shadow-card-playful-hover animate-float',
                 challenge.isCompleted 
-                  ? 'border-secondary/50 bg-secondary/5' 
+                  ? 'border-secondary/50 bg-gradient-to-br from-secondary/10 to-secondary/5' 
                   : challenge.isActive 
-                    ? 'border-primary/30' 
-                    : 'border-border'
+                    ? 'border-primary/50 bg-gradient-to-br from-primary/10 to-primary/5' 
+                    : 'border-border/50'
               )}
+              style={{ animationDelay: `${0.4 + index * 0.1}s` }}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className={cn(
-                    'w-12 h-12 rounded-xl flex items-center justify-center',
+                    'w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm',
                     challenge.isCompleted 
-                      ? 'bg-secondary/20' 
+                      ? 'bg-secondary text-secondary-foreground shadow-playful-green' 
                       : challenge.isActive 
-                        ? 'bg-primary/10' 
-                        : 'bg-accent/10'
+                        ? 'bg-primary text-primary-foreground shadow-playful' 
+                        : 'bg-accent/20 text-accent'
                   )}>
                     {challenge.isCompleted ? (
-                      <Check className="w-6 h-6 text-secondary" />
+                      <Check className="w-7 h-7" />
                     ) : challenge.isActive ? (
-                      <Zap className="w-6 h-6 text-primary" />
+                      <Zap className="w-7 h-7 animate-pulse" />
                     ) : (
-                      <Trophy className="w-6 h-6 text-accent" />
+                      <Trophy className="w-7 h-7" />
                     )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-foreground">{challenge.title}</h3>
-                    <p className="text-xs text-muted-foreground">{challenge.duration} dni</p>
+                    <h3 className="font-bold font-display text-foreground text-lg">{challenge.title}</h3>
+                    <p className="text-xs text-muted-foreground font-medium">{challenge.duration} dni</p>
                   </div>
                 </div>
-                <span className="text-sm font-extrabold text-accent">+{challenge.points} pkt</span>
+                <span className="text-sm font-extrabold text-accent bg-accent/10 px-3 py-1.5 rounded-full">
+                  +{challenge.points} pkt
+                </span>
               </div>
               
-              <p className="text-sm text-muted-foreground mb-3">{challenge.description}</p>
+              <p className="text-sm text-muted-foreground mb-4 font-medium">{challenge.description}</p>
               
               {(challenge.isActive || challenge.isCompleted) && (
-                <div className="mb-3">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Postęp</span>
-                    <span className="font-bold">{challenge.current}/{challenge.target} {challenge.unit}</span>
+                <div className="mb-4">
+                  <div className="flex justify-between text-xs mb-2">
+                    <span className="text-muted-foreground font-medium">Postęp</span>
+                    <span className="font-bold text-foreground">{challenge.current}/{challenge.target} {challenge.unit}</span>
                   </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-3 bg-muted rounded-full overflow-hidden border border-border/50">
                     <div 
                       className={cn(
                         'h-full rounded-full transition-all duration-500',
-                        challenge.isCompleted ? 'bg-secondary' : 'bg-primary'
+                        challenge.isCompleted 
+                          ? 'bg-gradient-to-r from-secondary to-fitfly-green-light' 
+                          : 'bg-gradient-to-r from-primary to-fitfly-blue-light'
                       )}
                       style={{ width: `${percentage}%` }}
                     />
@@ -183,17 +205,18 @@ export default function Challenges() {
               {!challenge.isActive && !challenge.isCompleted && (
                 <Button 
                   onClick={() => handleStartChallenge(challenge.id)}
-                  className="w-full bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 shadow-sm"
+                  variant="accent"
+                  className="w-full"
                 >
-                  <Play className="w-4 h-4 mr-2" />
+                  <Play className="w-5 h-5 mr-2" />
                   Rozpocznij wyzwanie
                 </Button>
               )}
               
               {challenge.isCompleted && (
-                <div className="text-center text-sm text-secondary font-bold flex items-center justify-center gap-2">
-                  <Check className="w-4 h-4" />
-                  Ukończone!
+                <div className="text-center text-sm text-secondary font-bold flex items-center justify-center gap-2 bg-secondary/10 py-3 rounded-2xl">
+                  <Check className="w-5 h-5" />
+                  Ukończone! 🎉
                 </div>
               )}
             </div>
@@ -201,9 +224,9 @@ export default function Challenges() {
         })}
         
         {filteredChallenges.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <Trophy className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>Brak wyzwań w tej kategorii</p>
+          <div className="text-center py-12 text-muted-foreground bg-card rounded-3xl border-2 border-border/50">
+            <Trophy className="w-16 h-16 mx-auto mb-3 opacity-30" />
+            <p className="font-display font-bold text-lg">Brak wyzwań w tej kategorii 🤔</p>
           </div>
         )}
       </section>
