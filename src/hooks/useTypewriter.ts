@@ -1,47 +1,52 @@
 import { useState, useEffect, useRef } from 'react';
 
-export function useTypewriter(text: string, isActive: boolean, speed: number = 20) {
+export function useTypewriter(targetText: string, isStreaming: boolean, charDelay: number = 30) {
   const [displayedText, setDisplayedText] = useState('');
-  const indexRef = useRef(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const currentIndexRef = useRef(0);
+  const animationFrameRef = useRef<number | null>(null);
+  const lastUpdateRef = useRef<number>(0);
 
   useEffect(() => {
-    // Jeśli nie jest aktywne (streaming zakończony), pokaż cały tekst
-    if (!isActive) {
-      setDisplayedText(text);
-      indexRef.current = text.length;
+    // Jeśli streaming się skończył, pokaż cały tekst natychmiast
+    if (!isStreaming && targetText) {
+      setDisplayedText(targetText);
+      currentIndexRef.current = targetText.length;
       return;
     }
 
-    // Czyść poprzedni interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
-    // Animuj tekst litera po literze
-    intervalRef.current = setInterval(() => {
-      if (indexRef.current < text.length) {
-        // Dodaj kilka liter naraz dla płynności
-        const charsToAdd = Math.min(3, text.length - indexRef.current);
-        indexRef.current += charsToAdd;
-        setDisplayedText(text.slice(0, indexRef.current));
+    const animate = (timestamp: number) => {
+      // Sprawdź czy minęło wystarczająco czasu
+      if (timestamp - lastUpdateRef.current >= charDelay) {
+        if (currentIndexRef.current < targetText.length) {
+          currentIndexRef.current += 1;
+          setDisplayedText(targetText.slice(0, currentIndexRef.current));
+          lastUpdateRef.current = timestamp;
+        }
       }
-    }, speed);
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      // Kontynuuj animację jeśli jeszcze nie wyświetliliśmy całego tekstu
+      if (currentIndexRef.current < targetText.length) {
+        animationFrameRef.current = requestAnimationFrame(animate);
       }
     };
-  }, [text, isActive, speed]);
 
-  // Reset gdy tekst się zmienia na pusty
+    // Rozpocznij animację
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [targetText, isStreaming, charDelay]);
+
+  // Reset gdy nowa konwersacja
   useEffect(() => {
-    if (text === '') {
+    if (targetText === '') {
       setDisplayedText('');
-      indexRef.current = 0;
+      currentIndexRef.current = 0;
     }
-  }, [text]);
+  }, [targetText]);
 
   return displayedText;
 }
