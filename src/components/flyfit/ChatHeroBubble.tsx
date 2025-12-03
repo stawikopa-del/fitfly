@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, ChevronDown, ChevronUp, Send } from 'lucide-react';
-import waveAnimation from '@/assets/fitfly-wave.mov';
+import waveAnimation from '@/assets/fitfly-wave.mp4';
 
 export function ChatHeroBubble() {
   const navigate = useNavigate();
@@ -27,14 +27,14 @@ export function ChatHeroBubble() {
   return (
     <div className="flex items-end gap-3">
       {/* Mascot - po lewej, dostosowuje się do rozmiaru chatu */}
-      <div className={`flex-shrink-0 relative transition-all duration-300 ease-out ${isExpanded ? 'w-56 h-56' : 'w-44 h-44'}`}>
+      <div className={`flex-shrink-0 transition-all duration-300 ease-out ${isExpanded ? 'w-56 h-56' : 'w-44 h-44'}`}>
         <video 
           src={waveAnimation} 
           autoPlay 
           loop 
           muted 
           playsInline
-          className="w-full h-full object-contain drop-shadow-2xl relative z-10"
+          className="w-full h-full object-contain"
         />
       </div>
 
