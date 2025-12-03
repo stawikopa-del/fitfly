@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import fitekAvatar from '@/assets/fitek-avatar.png';
 import greetingVideo from '@/assets/fitfly-greeting.mp4';
+import { TypewriterText } from '@/components/flyfit/TypewriterText';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -192,7 +193,7 @@ export default function Chat() {
               className={cn(
                 'flex gap-3',
                 message.role === 'user' ? 'flex-row-reverse' : 'flex-row',
-                !isStreaming && 'animate-fade-in'
+                message.role === 'user' && 'animate-fade-in'
               )}
             >
               {message.role === 'assistant' && (
@@ -209,9 +210,10 @@ export default function Chat() {
                 )}
               >
                 <p className="text-sm font-medium whitespace-pre-wrap">
-                  {message.content}
-                  {isStreaming && (
-                    <span className="inline-block w-0.5 h-4 bg-primary ml-0.5 animate-pulse" />
+                  {message.role === 'assistant' ? (
+                    <TypewriterText text={message.content} isStreaming={isStreaming} />
+                  ) : (
+                    message.content
                   )}
                 </p>
               </div>
