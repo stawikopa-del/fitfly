@@ -4,11 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
 const defaultProgress: DailyProgress = {
-  steps: 3245,
+  steps: 0,
   stepsGoal: 10000,
-  water: 500,
+  water: 0,
   waterGoal: 2000,
-  activeMinutes: 15,
+  activeMinutes: 0,
   activeMinutesGoal: 30,
   calories: 0,
   caloriesGoal: 2000,
@@ -75,29 +75,74 @@ export function useUserProgress() {
     message: 'Cześć! Gotowy/a na świetny dzień?',
   });
 
-  // Pobierz cele z profilu użytkownika
+  const today = new Date().toISOString().split('T')[0];
+
+  // Pobierz cele z profilu i dzisiejszy postęp
   useEffect(() => {
     if (!user) return;
 
-    const fetchProfile = async () => {
-      const { data, error } = await supabase
+    const fetchData = async () => {
+      // Pobierz cele z profilu
+      const { data: profile } = await supabase
         .from('profiles')
         .select('daily_water, daily_calories, daily_steps_goal')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (!error && data) {
-        setProgress(prev => ({
-          ...prev,
-          waterGoal: data.daily_water || 2000,
-          caloriesGoal: data.daily_calories || 2000,
-          stepsGoal: data.daily_steps_goal || 10000,
-        }));
-      }
+      // Pobierz dzisiejszy postęp
+      const { data: dailyData } = await supabase
+        .from('daily_progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('progress_date', today)
+        .maybeSingle();
+
+      setProgress(prev => ({
+        ...prev,
+        waterGoal: profile?.daily_water || 2000,
+        caloriesGoal: profile?.daily_calories || 2000,
+        stepsGoal: profile?.daily_steps_goal || 10000,
+        water: dailyData?.water || 0,
+        steps: dailyData?.steps || 0,
+        activeMinutes: dailyData?.active_minutes || 0,
+      }));
     };
 
-    fetchProfile();
-  }, [user]);
+    fetchData();
+  }, [user, today]);
+
+  // Zapisz postęp do bazy
+  const saveProgress = useCallback(async (newProgress: Partial<{ water: number; steps: number; activeMinutes: number }>) => {
+    if (!user) return;
+
+    const { data: existing } = await supabase
+      .from('daily_progress')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('progress_date', today)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from('daily_progress')
+        .update({
+          water: newProgress.water,
+          steps: newProgress.steps,
+          active_minutes: newProgress.activeMinutes,
+        })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('daily_progress')
+        .insert({
+          user_id: user.id,
+          progress_date: today,
+          water: newProgress.water || 0,
+          steps: newProgress.steps || 0,
+          active_minutes: newProgress.activeMinutes || 0,
+        });
+    }
+  }, [user, today]);
 
   const getMascotEmotion = useCallback((newProgress: DailyProgress): MascotEmotion => {
     const waterPercent = newProgress.water / newProgress.waterGoal;
@@ -121,30 +166,42 @@ export function useUserProgress() {
 
   const addWater = useCallback((amount: number = 250) => {
     setProgress(prev => {
-      const newProgress = { ...prev, water: Math.min(prev.water + amount, prev.waterGoal + 500) };
+      const newWater = Math.min(prev.water + amount, prev.waterGoal + 500);
+      const newProgress = { ...prev, water: newWater };
       const emotion = getMascotEmotion(newProgress);
       updateMascotState(emotion);
+      
+      saveProgress({ water: newWater, steps: prev.steps, activeMinutes: prev.activeMinutes });
+      
       return newProgress;
     });
-  }, [getMascotEmotion, updateMascotState]);
+  }, [getMascotEmotion, updateMascotState, saveProgress]);
 
   const addSteps = useCallback((steps: number) => {
     setProgress(prev => {
-      const newProgress = { ...prev, steps: prev.steps + steps };
+      const newSteps = prev.steps + steps;
+      const newProgress = { ...prev, steps: newSteps };
       const emotion = getMascotEmotion(newProgress);
       updateMascotState(emotion);
+      
+      saveProgress({ water: prev.water, steps: newSteps, activeMinutes: prev.activeMinutes });
+      
       return newProgress;
     });
-  }, [getMascotEmotion, updateMascotState]);
+  }, [getMascotEmotion, updateMascotState, saveProgress]);
 
   const addActiveMinutes = useCallback((minutes: number) => {
     setProgress(prev => {
-      const newProgress = { ...prev, activeMinutes: prev.activeMinutes + minutes };
+      const newActiveMinutes = prev.activeMinutes + minutes;
+      const newProgress = { ...prev, activeMinutes: newActiveMinutes };
       const emotion = getMascotEmotion(newProgress);
       updateMascotState(emotion);
+      
+      saveProgress({ water: prev.water, steps: prev.steps, activeMinutes: newActiveMinutes });
+      
       return newProgress;
     });
-  }, [getMascotEmotion, updateMascotState]);
+  }, [getMascotEmotion, updateMascotState, saveProgress]);
 
   const addCalories = useCallback((calories: number) => {
     setProgress(prev => ({ ...prev, calories: prev.calories + calories }));
