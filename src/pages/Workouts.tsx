@@ -62,7 +62,7 @@ export default function Workouts() {
       </header>
 
       {/* Wyszukiwarka */}
-      <div className="relative z-10 animate-float" style={{ animationDelay: '0.2s' }}>
+      <div className="relative z-10">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
         <Input
           placeholder="Szukaj treningów..."
@@ -74,17 +74,16 @@ export default function Workouts() {
 
       {/* Filtry kategorii */}
       <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide relative z-10">
-        {categories.map((category, index) => (
+        {categories.map((category) => (
           <Button
             key={category}
             variant={selectedCategory === category ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedCategory(category)}
             className={cn(
-              'whitespace-nowrap rounded-2xl font-bold h-10 px-4 animate-float',
+              'whitespace-nowrap rounded-2xl font-bold h-10 px-4',
               selectedCategory === category ? 'shadow-playful' : 'border-2'
             )}
-            style={{ animationDelay: `${0.3 + index * 0.1}s` }}
           >
             {category}
           </Button>
@@ -93,13 +92,12 @@ export default function Workouts() {
 
       {/* Lista treningów */}
       <section className="space-y-4 relative z-10">
-        {filteredWorkouts.map((workout, index) => (
+        {filteredWorkouts.map((workout) => (
           <button
             key={workout.id}
             className="w-full bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful 
                        hover:-translate-y-1 hover:shadow-card-playful-hover transition-all duration-300 
-                       text-left flex items-center gap-4 animate-float active:scale-[0.98]"
-            style={{ animationDelay: `${0.4 + index * 0.1}s` }}
+                       text-left flex items-center gap-4 active:scale-[0.98]"
           >
             {/* Ikona/Placeholder */}
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-light flex items-center justify-center shrink-0 shadow-playful-sm">

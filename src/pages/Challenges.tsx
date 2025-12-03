@@ -93,7 +93,7 @@ export default function Challenges() {
       </header>
 
       {/* Karta punktów */}
-      <div className="animate-float relative z-10" style={{ animationDelay: '0.2s' }}>
+      <div className="relative z-10">
         <div className="bg-gradient-to-br from-accent to-fitfly-orange-light rounded-3xl p-6 text-accent-foreground shadow-playful-orange relative overflow-hidden">
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
@@ -116,17 +116,16 @@ export default function Challenges() {
           { key: 'all', label: 'Wszystkie' },
           { key: 'active', label: 'Aktywne' },
           { key: 'completed', label: 'Ukończone' },
-        ].map(({ key, label }, index) => (
+        ].map(({ key, label }) => (
           <Button
             key={key}
             variant={filter === key ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter(key as typeof filter)}
             className={cn(
-              "rounded-2xl font-bold h-10 px-4 animate-float",
+              "rounded-2xl font-bold h-10 px-4",
               filter === key ? 'shadow-playful' : 'border-2'
             )}
-            style={{ animationDelay: `${0.3 + index * 0.1}s` }}
           >
             {label}
           </Button>
@@ -135,7 +134,7 @@ export default function Challenges() {
 
       {/* Lista wyzwań */}
       <section className="space-y-4 relative z-10">
-        {filteredChallenges.map((challenge, index) => {
+        {filteredChallenges.map((challenge) => {
           const percentage = Math.min((challenge.current / challenge.target) * 100, 100);
           
           return (
@@ -143,14 +142,13 @@ export default function Challenges() {
               key={challenge.id}
               className={cn(
                 'bg-card rounded-3xl p-5 border-2 shadow-card-playful transition-all duration-300',
-                'hover:-translate-y-1 hover:shadow-card-playful-hover animate-float',
+                'hover:-translate-y-1 hover:shadow-card-playful-hover',
                 challenge.isCompleted 
                   ? 'border-secondary/50 bg-gradient-to-br from-secondary/10 to-secondary/5' 
                   : challenge.isActive 
                     ? 'border-primary/50 bg-gradient-to-br from-primary/10 to-primary/5' 
                     : 'border-border/50'
               )}
-              style={{ animationDelay: `${0.4 + index * 0.1}s` }}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">

@@ -67,7 +67,7 @@ export default function Nutrition() {
       </header>
 
       {/* Podsumowanie kalorii */}
-      <div className="animate-float relative z-10" style={{ animationDelay: '0.2s' }}>
+      <div className="relative z-10">
         <div className="bg-gradient-to-br from-secondary to-fitfly-green-dark rounded-3xl p-6 text-secondary-foreground shadow-playful-green relative overflow-hidden">
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="flex items-center justify-between mb-4 relative z-10">
@@ -93,11 +93,10 @@ export default function Nutrition() {
           { icon: Beef, value: totals.protein, goal: dailyGoals.protein, label: 'Białko', color: 'text-destructive', unit: 'g' },
           { icon: Wheat, value: totals.carbs, goal: dailyGoals.carbs, label: 'Węgle', color: 'text-accent', unit: 'g' },
           { icon: null, value: totals.fat, goal: dailyGoals.fat, label: 'Tłuszcze', color: 'text-primary', unit: 'g', emoji: '🧈' },
-        ].map((item, index) => (
+        ].map((item) => (
           <div 
             key={item.label}
-            className="bg-card rounded-3xl p-4 border-2 border-border/50 text-center shadow-card-playful hover:-translate-y-1 transition-all duration-300 animate-float"
-            style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+            className="bg-card rounded-3xl p-4 border-2 border-border/50 text-center shadow-card-playful hover:-translate-y-1 transition-all duration-300"
           >
             {item.icon ? (
               <item.icon className={cn("w-6 h-6 mx-auto mb-2", item.color)} />
@@ -118,7 +117,7 @@ export default function Nutrition() {
           <span className="text-xl">🍴</span>
         </h2>
         
-        {(Object.keys(mealConfig) as MealType[]).map((type, index) => {
+        {(Object.keys(mealConfig) as MealType[]).map((type) => {
           const config = mealConfig[type];
           const Icon = config.icon;
           const typeMeals = getMealsByType(type);
@@ -129,10 +128,9 @@ export default function Nutrition() {
               key={type}
               className={cn(
                 'bg-gradient-to-r rounded-3xl p-5 border-2 border-border/50 shadow-card-playful',
-                'hover:-translate-y-1 transition-all duration-300 animate-float',
+                'hover:-translate-y-1 transition-all duration-300',
                 config.gradient
               )}
-              style={{ animationDelay: `${0.5 + index * 0.1}s` }}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
