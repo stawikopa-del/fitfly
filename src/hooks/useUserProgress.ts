@@ -1,7 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { DailyProgress, MascotState, MascotEmotion } from '@/types/flyfit';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 
-const initialProgress: DailyProgress = {
+const defaultProgress: DailyProgress = {
   steps: 3245,
   stepsGoal: 10000,
   water: 500,
@@ -66,11 +68,36 @@ const motivationalMessages: Record<MascotEmotion, string[]> = {
 };
 
 export function useUserProgress() {
-  const [progress, setProgress] = useState<DailyProgress>(initialProgress);
+  const { user } = useAuth();
+  const [progress, setProgress] = useState<DailyProgress>(defaultProgress);
   const [mascotState, setMascotState] = useState<MascotState>({
     emotion: 'neutral',
     message: 'Cześć! Gotowy/a na świetny dzień?',
   });
+
+  // Pobierz cele z profilu użytkownika
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchProfile = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('daily_water, daily_calories, daily_steps_goal')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!error && data) {
+        setProgress(prev => ({
+          ...prev,
+          waterGoal: data.daily_water || 2000,
+          caloriesGoal: data.daily_calories || 2000,
+          stepsGoal: data.daily_steps_goal || 10000,
+        }));
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   const getMascotEmotion = useCallback((newProgress: DailyProgress): MascotEmotion => {
     const waterPercent = newProgress.water / newProgress.waterGoal;
