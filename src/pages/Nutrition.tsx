@@ -166,6 +166,28 @@ export default function Nutrition() {
                     </div>
                   ))}
                 </div>
+              ) : type === 'breakfast' ? (
+                <div 
+                  onClick={() => handleOpenAddMeal(type)}
+                  className="bg-card/60 rounded-2xl p-4 border-2 border-dashed border-accent/40 cursor-pointer hover:border-accent hover:bg-card/80 transition-all duration-300"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">Opisz co jadłeś</p>
+                      <p className="text-xs text-muted-foreground">AI oszacuje kalorie i makro!</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {['🥣 Owsianka', '🍳 Jajecznica', '🥪 Kanapki'].map((example) => (
+                      <span key={example} className="text-xs bg-accent/10 text-accent px-2 py-1 rounded-full">
+                        {example}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-3 font-medium">
                   Kliknij + aby dodać posiłek 😋
