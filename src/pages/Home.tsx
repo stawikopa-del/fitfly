@@ -1,11 +1,10 @@
-import { Footprints, Flame, Target, Dumbbell, Sparkles } from 'lucide-react';
+import { Footprints, Flame, Target, Dumbbell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ChatHeroBubble } from '@/components/flyfit/ChatHeroBubble';
 import { StatCard } from '@/components/flyfit/StatCard';
 import { WaterTracker } from '@/components/flyfit/WaterTracker';
 import { QuickAction } from '@/components/flyfit/QuickAction';
 import { useUserProgress } from '@/hooks/useUserProgress';
-import mascotImage from '@/assets/fitfly-mascot.png';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -13,20 +12,8 @@ export default function Home() {
 
   return (
     <div className="px-4 py-6 space-y-6 relative overflow-hidden">
-      {/* Header z logo */}
-      <header className="flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="relative animate-float">
-            <img src={mascotImage} alt="FitFly" className="w-12 h-12 object-contain drop-shadow-md" />
-            <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-fitfly-yellow animate-pulse" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-extrabold font-display text-foreground tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              FLYFIT
-            </h1>
-            <p className="text-xs text-muted-foreground font-medium">Cześć! Jak się dziś czujesz?</p>
-          </div>
-        </div>
+      {/* Header z datą */}
+      <header className="flex items-center justify-end relative z-10">
         <div className="text-right bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-border/50 shadow-sm">
           <p className="text-sm font-bold text-foreground capitalize">
             {new Date().toLocaleDateString('pl-PL', { weekday: 'long' })}
