@@ -7,6 +7,7 @@ import { Meal } from '@/types/flyfit';
 import { AddMealDialog } from '@/components/flyfit/AddMealDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -23,14 +24,18 @@ export default function Nutrition() {
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
+  const { user } = useAuth();
 
   // Pobierz posiłki z bazy danych
   useEffect(() => {
+    if (!user) return;
+    
     const fetchMeals = async () => {
       const today = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
         .from('meals')
         .select('*')
+        .eq('user_id', user.id)
         .eq('meal_date', today)
         .order('created_at', { ascending: true });
       
@@ -53,7 +58,7 @@ export default function Nutrition() {
     };
     
     fetchMeals();
-  }, []);
+  }, [user]);
 
   const dailyGoals = { calories: 2000, protein: 120, carbs: 250, fat: 65 };
   
@@ -72,6 +77,8 @@ export default function Nutrition() {
   };
 
   const handleAddMeal = async (mealData: Omit<Meal, 'id'>) => {
+    if (!user) return;
+    
     const today = new Date().toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('meals')
@@ -84,6 +91,7 @@ export default function Nutrition() {
         fat: mealData.fat,
         time: mealData.time,
         meal_date: today,
+        user_id: user.id,
       })
       .select()
       .single();
