@@ -308,7 +308,7 @@ export function WorkoutSession({
           </Button>
 
           <Button onClick={togglePlayPause} className={cn(
-            "w-24 h-24 rounded-full shadow-playful relative overflow-hidden border-0",
+            "w-24 h-24 rounded-full relative overflow-hidden border-0 shadow-lg",
             isRunning 
               ? "bg-fitfly-green hover:bg-fitfly-green-dark"
               : "bg-red-500 hover:bg-red-600"
