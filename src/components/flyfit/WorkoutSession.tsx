@@ -307,8 +307,13 @@ export function WorkoutSession({
             <ChevronLeft className="w-6 h-6" />
           </Button>
 
-          <Button onClick={togglePlayPause} className={cn("w-24 h-24 rounded-full shadow-playful", isBreak && 'bg-fitfly-green hover:bg-fitfly-green-dark')}>
-            {isRunning ? <Pause className="w-10 h-10" /> : <Play className="w-10 h-10 ml-1" />}
+          <Button onClick={togglePlayPause} className={cn(
+            "w-24 h-24 rounded-full shadow-playful relative overflow-hidden",
+            isBreak ? 'bg-fitfly-green hover:bg-fitfly-green-dark' : 'bg-gradient-to-br from-primary to-fitfly-blue-light hover:from-primary/90 hover:to-fitfly-blue-light/90',
+            !isRunning && "animate-pulse"
+          )}>
+            <div className="absolute inset-0 bg-white/10 rounded-full" />
+            {isRunning ? <Pause className="w-10 h-10 relative z-10" /> : <Play className="w-10 h-10 ml-1 relative z-10" />}
           </Button>
 
           <Button variant="outline" size="icon" onClick={skipExercise} className="w-14 h-14 rounded-full border-2">
