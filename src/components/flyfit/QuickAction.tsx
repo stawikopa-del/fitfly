@@ -11,17 +11,30 @@ interface QuickActionProps {
 }
 
 const colorClasses = {
-  blue: 'from-primary/20 to-primary/5 border-primary/20',
-  green: 'from-secondary/20 to-secondary/5 border-secondary/20',
-  orange: 'from-accent/20 to-accent/5 border-accent/20',
-  purple: 'from-purple-500/20 to-purple-500/5 border-purple-500/20',
-};
-
-const iconColors = {
-  blue: 'text-primary',
-  green: 'text-secondary',
-  orange: 'text-accent',
-  purple: 'text-purple-500',
+  blue: {
+    bg: 'bg-gradient-to-r from-primary/15 via-primary/10 to-transparent',
+    border: 'border-primary/30',
+    icon: 'bg-primary text-primary-foreground shadow-playful-sm',
+    hover: 'hover:from-primary/20 hover:via-primary/15',
+  },
+  green: {
+    bg: 'bg-gradient-to-r from-secondary/15 via-secondary/10 to-transparent',
+    border: 'border-secondary/30',
+    icon: 'bg-secondary text-secondary-foreground shadow-playful-green',
+    hover: 'hover:from-secondary/20 hover:via-secondary/15',
+  },
+  orange: {
+    bg: 'bg-gradient-to-r from-accent/15 via-accent/10 to-transparent',
+    border: 'border-accent/30',
+    icon: 'bg-accent text-accent-foreground shadow-playful-orange',
+    hover: 'hover:from-accent/20 hover:via-accent/15',
+  },
+  purple: {
+    bg: 'bg-gradient-to-r from-fitfly-purple/15 via-fitfly-purple/10 to-transparent',
+    border: 'border-fitfly-purple/30',
+    icon: 'bg-fitfly-purple text-white shadow-md',
+    hover: 'hover:from-fitfly-purple/20 hover:via-fitfly-purple/15',
+  },
 };
 
 export function QuickAction({ icon, title, description, color, onClick }: QuickActionProps) {
@@ -29,20 +42,27 @@ export function QuickAction({ icon, title, description, color, onClick }: QuickA
     <button
       onClick={onClick}
       className={cn(
-        'w-full flex items-center gap-4 p-4 rounded-2xl border',
-        'bg-gradient-to-r transition-all duration-200',
-        'hover:shadow-md hover:scale-[1.01] active:scale-[0.99]',
-        colorClasses[color]
+        'w-full flex items-center gap-4 p-4 rounded-3xl border-2',
+        'transition-all duration-300',
+        'hover:-translate-y-1 hover:shadow-card-playful active:translate-y-0 active:scale-[0.98]',
+        colorClasses[color].bg,
+        colorClasses[color].border,
+        colorClasses[color].hover
       )}
     >
-      <div className={cn('w-12 h-12 rounded-xl bg-card flex items-center justify-center shadow-sm', iconColors[color])}>
+      <div className={cn(
+        'w-14 h-14 rounded-2xl flex items-center justify-center',
+        colorClasses[color].icon
+      )}>
         {icon}
       </div>
       <div className="flex-1 text-left">
-        <h4 className="font-bold text-foreground">{title}</h4>
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <h4 className="font-bold font-display text-foreground text-lg">{title}</h4>
+        <p className="text-sm text-muted-foreground font-medium">{description}</p>
       </div>
-      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+      <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center shadow-sm">
+        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+      </div>
     </button>
   );
 }
