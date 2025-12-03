@@ -292,11 +292,20 @@ export function WorkoutSession({
               variant="outline" 
               size="sm" 
               onClick={() => {
-                if (!showInstructions && isRunning) {
-                  setIsRunning(false);
-                  workoutFeedback.pause();
+                if (!showInstructions) {
+                  // Opening instructions - pause if running
+                  if (isRunning) {
+                    setIsRunning(false);
+                    workoutFeedback.pause();
+                  }
+                  setShowInstructions(true);
+                } else {
+                  // Closing instructions - resume
+                  setShowInstructions(false);
+                  resumeAudioContext();
+                  setIsRunning(true);
+                  workoutFeedback.start();
                 }
-                setShowInstructions(!showInstructions);
               }} 
               className="rounded-full border-2 gap-1.5 h-auto text-sm px-4 py-2 mt-2 max-w-[280px]"
             >
