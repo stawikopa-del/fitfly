@@ -39,28 +39,25 @@ serve(async (req) => {
 
     let userContent: any[];
 
-    if (imageBase64) {
-      // Analyze fridge image
-      userContent = [
-        {
-          type: "text",
-          text: `Przeanalizuj zdjęcie lodówki i zidentyfikuj wszystkie widoczne produkty spożywcze. Następnie zaproponuj 3 przepisy, które można przygotować z tych składników.
-
-Dla każdego przepisu podaj:
-- Nazwa przepisu
-- Lista składników z ilościami
-- Krótki opis przygotowania (max 3 zdania)
-- Wartości odżywcze na porcję: kalorie, białko (g), węglowodany (g), tłuszcze (g)
-
-Odpowiedz w formacie JSON:
-{
-  "detected_ingredients": ["składnik1", "składnik2", ...],
+    const recipeJsonStructure = `{
+  "detected_ingredients": ["składnik1", "składnik2", ...], // tylko przy analizie zdjęcia
   "recipes": [
     {
       "name": "Nazwa przepisu",
       "ingredients": ["100g składnik1", "2 składnik2"],
-      "description": "Krótki opis przygotowania...",
+      "description": "Krótki opis dania",
       "servings": 2,
+      "total_time_minutes": 45,
+      "tools_needed": ["patelnia", "garnek", "deska do krojenia"],
+      "steps": [
+        {
+          "step_number": 1,
+          "instruction": "Szczegółowa instrukcja kroku...",
+          "duration_minutes": 5,
+          "ingredients_needed": ["100g składnik1"],
+          "tip": "Opcjonalna wskazówka"
+        }
+      ],
       "macros": {
         "calories": 350,
         "protein": 25,
@@ -69,7 +66,27 @@ Odpowiedz w formacie JSON:
       }
     }
   ]
-}`
+}`;
+
+    if (imageBase64) {
+      // Analyze fridge image
+      userContent = [
+        {
+          type: "text",
+          text: `Przeanalizuj zdjęcie lodówki i zidentyfikuj wszystkie widoczne produkty spożywcze. Następnie zaproponuj 3 przepisy, które można przygotować z tych składników.
+
+Dla każdego przepisu podaj szczegółowe informacje:
+- Nazwa przepisu
+- Pełna lista składników z ilościami
+- Krótki opis dania
+- Liczba porcji
+- Całkowity czas przygotowania w minutach
+- Lista potrzebnych narzędzi kuchennych
+- Kroki wykonania (każdy krok osobno z czasem trwania, składnikami potrzebnymi w danym kroku i opcjonalną wskazówką)
+- Wartości odżywcze na porcję
+
+Odpowiedz TYLKO w formacie JSON (bez markdown):
+${recipeJsonStructure}`
         },
         {
           type: "image_url",
@@ -87,29 +104,18 @@ Odpowiedz w formacie JSON:
 
 Zaproponuj 3 przepisy, które można przygotować z tych składników (możesz założyć, że mam podstawowe przyprawy).
 
-Dla każdego przepisu podaj:
+Dla każdego przepisu podaj szczegółowe informacje:
 - Nazwa przepisu
-- Lista składników z ilościami
-- Krótki opis przygotowania (max 3 zdania)
-- Wartości odżywcze na porcję: kalorie, białko (g), węglowodany (g), tłuszcze (g)
+- Pełna lista składników z ilościami
+- Krótki opis dania
+- Liczba porcji
+- Całkowity czas przygotowania w minutach
+- Lista potrzebnych narzędzi kuchennych
+- Kroki wykonania (każdy krok osobno z czasem trwania, składnikami potrzebnymi w danym kroku i opcjonalną wskazówką)
+- Wartości odżywcze na porcję
 
 Odpowiedz TYLKO w formacie JSON (bez markdown):
-{
-  "recipes": [
-    {
-      "name": "Nazwa przepisu",
-      "ingredients": ["100g składnik1", "2 składnik2"],
-      "description": "Krótki opis przygotowania...",
-      "servings": 2,
-      "macros": {
-        "calories": 350,
-        "protein": 25,
-        "carbs": 30,
-        "fat": 15
-      }
-    }
-  ]
-}`
+${recipeJsonStructure}`
         }
       ];
     } else {
