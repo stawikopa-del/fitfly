@@ -118,7 +118,7 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
   // Overview screen
   if (currentStep === -1) {
     return (
-      <div className="fixed inset-0 bg-background z-50 overflow-auto">
+      <div className="fixed inset-0 bg-background z-[100] overflow-auto">
         <div className="min-h-full flex flex-col">
           {/* Header */}
           <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-border p-4 flex items-center gap-3 z-10">
@@ -257,7 +257,7 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
 
   // Step view
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col">
+    <div className="fixed inset-0 bg-background z-[100] flex flex-col">
       {/* Header */}
       <div className="bg-background border-b border-border p-4 flex items-center gap-3">
         <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors">
