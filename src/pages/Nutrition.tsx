@@ -164,13 +164,13 @@ export default function Nutrition() {
               {typeMeals.length > 0 ? (
                 <div className="space-y-2">
                   {typeMeals.map(meal => (
-                    <div key={meal.id} className="flex justify-between items-center py-3 px-4 bg-card/80 rounded-2xl border border-border/30 group">
+                    <div key={meal.id} className="flex justify-between items-center py-3 px-4 bg-card/80 rounded-2xl border border-border/30">
                       <span className="text-sm font-bold text-foreground">{meal.name}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-1 rounded-full">{meal.calories} kcal</span>
                         <button
                           onClick={() => handleDeleteMeal(meal.id)}
-                          className="w-6 h-6 rounded-full bg-destructive/10 text-destructive flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="w-6 h-6 rounded-full bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 transition-colors"
                         >
                           <X className="w-3 h-3" />
                         </button>
