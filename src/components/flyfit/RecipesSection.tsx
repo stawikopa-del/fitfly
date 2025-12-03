@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
-import { Camera, ChefHat, Sparkles, Plus, X, Loader2, PlayCircle, Clock, Utensils } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Camera, ChefHat, Sparkles, Plus, X, Loader2, PlayCircle, Clock, Utensils, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface RecipeStep {
   step_number: number;
@@ -35,6 +36,13 @@ interface RecipeResponse {
   recipes: DetailedRecipe[];
 }
 
+interface FavoriteRecipe {
+  id: string;
+  recipe_name: string;
+  recipe_data: DetailedRecipe;
+  created_at: string;
+}
+
 interface RecipesSectionProps {
   onStartCooking: (recipe: DetailedRecipe) => void;
 }
@@ -46,7 +54,86 @@ export function RecipesSection({ onStartCooking }: RecipesSectionProps) {
   const [loading, setLoading] = useState(false);
   const [recipes, setRecipes] = useState<DetailedRecipe[]>([]);
   const [detectedIngredients, setDetectedIngredients] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteRecipe[]>([]);
+  const [savingFavorite, setSavingFavorite] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+
+  // Fetch favorites on mount
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchFavorites = async () => {
+      const { data, error } = await supabase
+        .from('favorite_recipes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        setFavorites(data.map(f => ({
+          ...f,
+          recipe_data: f.recipe_data as unknown as DetailedRecipe
+        })));
+      }
+    };
+    
+    fetchFavorites();
+  }, [user]);
+
+  const isFavorite = (recipeName: string) => {
+    return favorites.some(f => f.recipe_name === recipeName);
+  };
+
+  const toggleFavorite = async (recipe: DetailedRecipe) => {
+    if (!user) {
+      toast.error('Musisz być zalogowany');
+      return;
+    }
+
+    setSavingFavorite(recipe.name);
+
+    try {
+      const existing = favorites.find(f => f.recipe_name === recipe.name);
+      
+      if (existing) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorite_recipes')
+          .delete()
+          .eq('id', existing.id);
+        
+        if (error) throw error;
+        
+        setFavorites(favorites.filter(f => f.id !== existing.id));
+        toast.success('Usunięto z ulubionych');
+      } else {
+        // Add to favorites
+        const { data, error } = await supabase
+          .from('favorite_recipes')
+          .insert({
+            user_id: user.id,
+            recipe_name: recipe.name,
+            recipe_data: recipe as unknown as Record<string, unknown>
+          } as any)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        setFavorites([{
+          ...data,
+          recipe_data: data.recipe_data as unknown as DetailedRecipe
+        }, ...favorites]);
+        toast.success('Dodano do ulubionych! ❤️');
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Wystąpił błąd');
+    } finally {
+      setSavingFavorite(null);
+    }
+  };
 
   const handleScanFridge = () => {
     fileInputRef.current?.click();
@@ -143,6 +230,56 @@ export function RecipesSection({ onStartCooking }: RecipesSectionProps) {
         Przepisy AI
         <ChefHat className="w-5 h-5 text-accent" />
       </h2>
+
+      {/* Ulubione przepisy */}
+      {favorites.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Heart className="w-4 h-4 text-destructive fill-destructive" />
+            <p className="text-sm font-bold text-foreground">Ulubione przepisy</p>
+          </div>
+          
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+            {favorites.map((fav) => (
+              <div
+                key={fav.id}
+                className="bg-card rounded-2xl p-4 border-2 border-destructive/20 shadow-card-playful min-w-[200px] shrink-0"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-bold text-foreground text-sm line-clamp-2 flex-1">{fav.recipe_name}</h4>
+                  <button
+                    onClick={() => toggleFavorite(fav.recipe_data)}
+                    className="p-1 text-destructive"
+                  >
+                    <Heart className="w-4 h-4 fill-current" />
+                  </button>
+                </div>
+                
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                  <span>{fav.recipe_data.macros?.calories} kcal</span>
+                  {fav.recipe_data.total_time_minutes && (
+                    <>
+                      <span>•</span>
+                      <span>{fav.recipe_data.total_time_minutes} min</span>
+                    </>
+                  )}
+                </div>
+                
+                {fav.recipe_data.steps && fav.recipe_data.steps.length > 0 && (
+                  <Button 
+                    onClick={() => onStartCooking(fav.recipe_data)}
+                    size="sm"
+                    className="w-full rounded-xl text-xs"
+                  >
+                    <PlayCircle className="w-4 h-4 mr-1" />
+                    Gotuj
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Opcje wyboru */}
       {mode === 'idle' && !recipes.length && (
@@ -271,7 +408,27 @@ export function RecipesSection({ onStartCooking }: RecipesSectionProps) {
               key={index}
               className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful"
             >
-              <h4 className="font-bold font-display text-foreground text-lg mb-2">{recipe.name}</h4>
+              <div className="flex items-start justify-between mb-2">
+                <h4 className="font-bold font-display text-foreground text-lg flex-1">{recipe.name}</h4>
+                <button
+                  onClick={() => toggleFavorite(recipe)}
+                  disabled={savingFavorite === recipe.name}
+                  className={cn(
+                    "p-2 rounded-full transition-all duration-300",
+                    isFavorite(recipe.name) 
+                      ? "text-destructive bg-destructive/10" 
+                      : "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  )}
+                >
+                  <Heart 
+                    className={cn(
+                      "w-5 h-5 transition-all",
+                      isFavorite(recipe.name) && "fill-current",
+                      savingFavorite === recipe.name && "animate-pulse"
+                    )} 
+                  />
+                </button>
+              </div>
               
               {/* Time & Tools summary */}
               <div className="flex items-center gap-3 mb-3 text-xs text-muted-foreground">
