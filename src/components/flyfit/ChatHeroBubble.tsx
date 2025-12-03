@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, ChevronDown, ChevronUp, Send } from 'lucide-react';
-import greetingVideo from '@/assets/fitfly-greeting.mp4';
 import mascotImage from '@/assets/fitfly-mascot.png';
 
 export function ChatHeroBubble() {
@@ -26,54 +25,68 @@ export function ChatHeroBubble() {
   };
 
   return (
-    <div className="flex items-end gap-3 justify-between">
-      {/* Chat bubble - po lewej */}
+    <div className="flex items-center gap-2">
+      {/* Mascot - po lewej, z animacją */}
+      <div className="flex-shrink-0 w-40 h-40 relative">
+        <div className="absolute inset-2 bg-fitfly-green/30 rounded-full blur-2xl animate-pulse" />
+        <img 
+          src={mascotImage} 
+          alt="FITEK" 
+          className="w-full h-full object-contain drop-shadow-2xl animate-float relative z-10"
+        />
+        {/* Efekt machania */}
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-2xl animate-bounce">
+          👋
+        </div>
+      </div>
+
+      {/* Chat bubble - po prawej */}
       <div className="flex-1 min-w-0">
         {/* Glow effect */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-br from-fitfly-green/30 to-emerald-400/30 rounded-3xl blur-xl" />
           
           {/* Main bubble */}
-          <div className="relative bg-gradient-to-br from-fitfly-green via-emerald-500 to-teal-500 rounded-3xl p-4 shadow-xl border border-fitfly-green/20 overflow-hidden">
+          <div className="relative bg-gradient-to-br from-fitfly-green via-emerald-500 to-teal-500 rounded-3xl p-5 shadow-xl border border-fitfly-green/20 overflow-hidden">
             {/* Decorative bubbles */}
-            <div className="absolute top-2 right-2 w-6 h-6 bg-white/10 rounded-full" />
-            <div className="absolute top-6 right-6 w-3 h-3 bg-white/15 rounded-full" />
-            <div className="absolute bottom-3 left-3 w-4 h-4 bg-white/10 rounded-full" />
+            <div className="absolute top-3 right-3 w-8 h-8 bg-white/10 rounded-full" />
+            <div className="absolute top-8 right-8 w-4 h-4 bg-white/15 rounded-full" />
+            <div className="absolute bottom-4 left-4 w-5 h-5 bg-white/10 rounded-full" />
             
             {/* Header - always visible */}
             <div 
               className="flex items-center justify-between cursor-pointer"
               onClick={() => setIsExpanded(!isExpanded)}
             >
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
-                  <MessageCircle className="w-4 h-4 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-base font-display">Hej! Jestem FITEK!</h3>
-                  <p className="text-white/80 text-xs">Kliknij, żeby pogadać 🐦</p>
+                  <h3 className="text-white font-bold text-lg font-display">Hej! Jestem FITEK!</h3>
+                  <p className="text-white/80 text-sm">Kliknij, żeby pogadać 🐦</p>
                 </div>
               </div>
-              <div className="bg-white/20 rounded-full p-1.5">
+              <div className="bg-white/20 rounded-full p-2">
                 {isExpanded ? (
-                  <ChevronUp className="w-4 h-4 text-white" />
+                  <ChevronUp className="w-5 h-5 text-white" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-white" />
+                  <ChevronDown className="w-5 h-5 text-white" />
                 )}
               </div>
             </div>
 
             {/* Expandable content */}
-            <div className={`overflow-hidden transition-all duration-300 ease-out ${isExpanded ? 'max-h-60 mt-4' : 'max-h-0'}`}>
+            <div className={`overflow-hidden transition-all duration-300 ease-out ${isExpanded ? 'max-h-72 mt-4' : 'max-h-0'}`}>
               {/* Quick replies */}
-              <div className="space-y-2 mb-3">
-                <p className="text-white/70 text-xs">Szybkie odpowiedzi:</p>
+              <div className="space-y-2 mb-4">
+                <p className="text-white/70 text-sm">Szybkie odpowiedzi:</p>
                 <div className="flex flex-wrap gap-2">
                   {quickReplies.map((reply, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleQuickReply(reply)}
-                      className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full transition-colors"
+                      className="bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-full transition-colors"
                     >
                       {reply}
                     </button>
@@ -82,27 +95,27 @@ export function ChatHeroBubble() {
               </div>
 
               {/* Input field */}
-              <div className="flex items-center gap-2 bg-white/20 rounded-xl p-2">
+              <div className="flex items-center gap-2 bg-white/20 rounded-xl p-3">
                 <input
                   type="text"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                   placeholder="Napisz coś..."
-                  className="flex-1 bg-transparent text-white placeholder:text-white/50 text-sm outline-none"
+                  className="flex-1 bg-transparent text-white placeholder:text-white/50 text-base outline-none"
                 />
                 <button
                   onClick={handleSend}
-                  className="bg-white/30 hover:bg-white/40 p-2 rounded-lg transition-colors"
+                  className="bg-white/30 hover:bg-white/40 p-2.5 rounded-lg transition-colors"
                 >
-                  <Send className="w-4 h-4 text-white" />
+                  <Send className="w-5 h-5 text-white" />
                 </button>
               </div>
 
               {/* Full chat CTA */}
               <button
                 onClick={() => navigate('/czat')}
-                className="w-full mt-3 bg-white/20 hover:bg-white/30 text-white text-sm font-medium py-2 rounded-xl transition-colors"
+                className="w-full mt-4 bg-white/20 hover:bg-white/30 text-white text-base font-medium py-3 rounded-xl transition-colors"
               >
                 Otwórz pełny czat →
               </button>
@@ -110,34 +123,14 @@ export function ChatHeroBubble() {
 
             {/* Typing indicator when collapsed */}
             {!isExpanded && (
-              <div className="flex items-center gap-1 mt-3">
-                <span className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                <span className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
-                <span className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+              <div className="flex items-center gap-1.5 mt-4">
+                <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
               </div>
             )}
           </div>
         </div>
-      </div>
-
-      {/* Mascot - po prawej, z animacją powitania */}
-      <div className="flex-shrink-0 w-32 h-32 relative">
-        <div className="absolute inset-0 bg-fitfly-green/20 rounded-full blur-xl animate-pulse" />
-        <video
-          src={greetingVideo}
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-contain drop-shadow-lg z-10"
-          poster={mascotImage}
-        />
-        {/* Fallback image underneath */}
-        <img 
-          src={mascotImage} 
-          alt="FITEK" 
-          className="w-full h-full object-contain drop-shadow-lg animate-float"
-        />
       </div>
     </div>
   );
