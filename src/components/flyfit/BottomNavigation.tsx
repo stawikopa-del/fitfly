@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, Utensils, Trophy, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { soundFeedback } from '@/utils/soundFeedback';
 
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
@@ -24,6 +25,7 @@ export function BottomNavigation() {
               <NavLink
                 key={to}
                 to={to}
+                onClick={() => soundFeedback.navTap()}
                 className={cn(
                   'relative flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all duration-300',
                   isActive 

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import mascotImage from '@/assets/fitek-pompki.png';
-import { workoutFeedback, resumeAudioContext } from '@/utils/workoutFeedback';
+import { workoutFeedback, resumeAudioContext } from '@/utils/soundFeedback';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 export interface Exercise {
   id: string;
