@@ -236,84 +236,81 @@ export function WorkoutSession({
         </div>
       </div>;
   }
-  return <div className="fixed inset-0 bg-background z-50 flex flex-col">
-      {/* Header with back arrow */}
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-border">
-        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full w-9 h-9">
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex-1">
-          <h2 className="font-bold font-display text-base">{workout.name}</h2>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-semibold text-primary">{currentExerciseIndex + 1}/{totalExercises}</span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {formatTime(totalRemainingTime)}
-            </span>
-          </div>
-        </div>
-      </header>
+  return <div className="fixed inset-0 bg-fitfly-cream z-[100] flex flex-col items-center justify-center px-4">
+      {/* Back button */}
+      <Button variant="ghost" size="icon" onClick={onClose} className="absolute top-4 left-4 rounded-full w-10 h-10">
+        <ArrowLeft className="w-5 h-5" />
+      </Button>
 
-      {/* Progress bar */}
-      <div className="px-4 py-2">
-        <Progress value={progressPercent} className="h-1.5" />
+      {/* Progress indicator */}
+      <div className="absolute top-4 right-4 flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="font-bold text-primary">{currentExerciseIndex + 1}/{totalExercises}</span>
+        <span>•</span>
+        <Clock className="w-4 h-4" />
+        <span>{formatTime(totalRemainingTime)}</span>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex-col px-4 gap-2 overflow-hidden border-none flex items-center justify-center bg-fitfly-cream">
-        {/* Mascot with transition */}
-        <img key={`mascot-${transitionKey}`} src={mascotImage} alt="FITEK" className={cn("w-52 h-52 object-contain animate-pushup transition-all duration-300", isTransitioning && "opacity-0 scale-90")} />
+      {/* Centered content */}
+      <div className="flex flex-col items-center gap-3">
+        {/* Mascot */}
+        <img 
+          key={`mascot-${transitionKey}`} 
+          src={mascotImage} 
+          alt="FITEK" 
+          className={cn(
+            "w-48 h-48 object-contain animate-pushup transition-all duration-300", 
+            isTransitioning && "opacity-0 scale-90"
+          )} 
+        />
         
-        {/* Speech bubble with transition */}
-        <div key={`bubble-${transitionKey}`} className={cn("relative max-w-[240px] transition-all duration-300", isTransitioning && "opacity-0 translate-y-2")}>
-          <div className={cn("relative px-4 py-2 rounded-xl border-2 transition-colors duration-300", isBreak ? 'bg-fitfly-green/10 border-fitfly-green' : 'bg-primary/10 border-primary')}>
-            <div className={cn("absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[8px] transition-colors duration-300", isBreak ? 'border-b-fitfly-green' : 'border-b-primary')} />
-            <p className="text-sm text-foreground text-center font-bold py-0 my-px">
+        {/* Speech bubble */}
+        <div key={`bubble-${transitionKey}`} className={cn("relative max-w-[260px] transition-all duration-300", isTransitioning && "opacity-0 translate-y-2")}>
+          <div className={cn("relative px-5 py-3 rounded-2xl border-2 transition-colors duration-300", isBreak ? 'bg-fitfly-green/10 border-fitfly-green' : 'bg-primary/10 border-primary')}>
+            <div className={cn("absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[10px] transition-colors duration-300", isBreak ? 'border-b-fitfly-green' : 'border-b-primary')} />
+            <p className="text-sm text-foreground text-center font-bold">
               {motivationMessage}
             </p>
           </div>
         </div>
 
-        {/* Timer with transition */}
-        <div key={`timer-${transitionKey}`} className={cn("text-center transition-all duration-300", isTransitioning && "opacity-0 scale-95")}>
-          <div className={cn("text-5xl font-extrabold font-display transition-colors duration-300", isBreak ? 'text-fitfly-green' : 'bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent')}>
+        {/* Timer */}
+        <div key={`timer-${transitionKey}`} className={cn("text-center transition-all duration-300 mt-2", isTransitioning && "opacity-0 scale-95")}>
+          <div className={cn("text-6xl font-extrabold font-display transition-colors duration-300", isBreak ? 'text-fitfly-green' : 'bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent')}>
             {formatTime(timeLeft)}
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-sm mt-1">
             {isBreak ? 'przerwa' : 'pozostało'}
           </p>
         </div>
 
-        {/* Exercise name with transition */}
-        <div key={`exercise-${transitionKey}`} className={cn("text-center transition-all duration-300", isTransitioning && "opacity-0 translate-y-2")}>
-          <h3 className={cn("text-lg font-bold font-display mb-1 transition-colors duration-300", isBreak ? 'text-fitfly-green' : 'text-foreground')}>
+        {/* Exercise name */}
+        <div key={`exercise-${transitionKey}`} className={cn("text-center transition-all duration-300 mt-2", isTransitioning && "opacity-0 translate-y-2")}>
+          <h3 className={cn("text-xl font-bold font-display transition-colors duration-300", isBreak ? 'text-fitfly-green' : 'text-foreground')}>
             {isBreak ? '☕ Przerwa' : currentExercise.name}
           </h3>
-          {!isBreak && <Button variant="outline" size="sm" onClick={() => setShowInstructions(true)} className="rounded-full border-2 gap-1 h-8 text-xs px-3 py-[4px] my-0">
-              <Info className="w-3.5 h-3.5" />
+          {!isBreak && (
+            <Button variant="outline" size="sm" onClick={() => setShowInstructions(true)} className="rounded-full border-2 gap-1.5 h-9 text-sm px-4 mt-2">
+              <Info className="w-4 h-4" />
               Instrukcja
-            </Button>}
-          {isBreak && <p className="text-xs text-muted-foreground">
+            </Button>
+          )}
+          {isBreak && (
+            <p className="text-sm text-muted-foreground mt-1">
               Następne: <span className="font-semibold">{workout.exercises[currentExerciseIndex + 1]?.name || 'Koniec!'}</span>
-            </p>}
+            </p>
+          )}
         </div>
-      </div>
 
-      {/* Controls - fixed at bottom with safe area */}
-      <div className="px-4 pb-6 pt-3 bg-fitfly-cream border-t border-border/30 safe-area-bottom">
-        <div className="flex items-center justify-center gap-5">
-          {/* Previous */}
+        {/* Controls */}
+        <div className="flex items-center justify-center gap-6 mt-6">
           <Button variant="outline" size="icon" onClick={previousExercise} disabled={currentExerciseIndex === 0 && !isBreak} className="w-14 h-14 rounded-full border-2">
             <ChevronLeft className="w-6 h-6" />
           </Button>
 
-          {/* Play/Pause */}
-          <Button onClick={togglePlayPause} className={cn("w-20 h-20 rounded-full shadow-playful", isBreak && 'bg-fitfly-green hover:bg-fitfly-green-dark')}>
-            {isRunning ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-0.5" />}
+          <Button onClick={togglePlayPause} className={cn("w-24 h-24 rounded-full shadow-playful", isBreak && 'bg-fitfly-green hover:bg-fitfly-green-dark')}>
+            {isRunning ? <Pause className="w-10 h-10" /> : <Play className="w-10 h-10 ml-1" />}
           </Button>
 
-          {/* Skip/Next */}
           <Button variant="outline" size="icon" onClick={skipExercise} className="w-14 h-14 rounded-full border-2">
             <ChevronRight className="w-6 h-6" />
           </Button>
