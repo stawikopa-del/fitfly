@@ -309,7 +309,7 @@ export function WorkoutSession({
 
           <Button onClick={togglePlayPause} className={cn(
             "w-24 h-24 rounded-full shadow-playful relative overflow-hidden",
-            isBreak ? 'bg-fitfly-green hover:bg-fitfly-green-dark' : 'bg-gradient-to-br from-primary to-fitfly-blue-light hover:from-primary/90 hover:to-fitfly-blue-light/90',
+            "bg-gradient-to-br from-fitfly-green to-fitfly-green-dark hover:from-fitfly-green/90 hover:to-fitfly-green-dark/90",
             !isRunning && "animate-pulse"
           )}>
             <div className="absolute inset-0 bg-white/10 rounded-full" />
