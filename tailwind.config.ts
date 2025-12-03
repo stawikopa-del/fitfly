@@ -142,6 +142,10 @@ export default {
           "80%": { transform: "translateY(5%)" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
+        "slide-up-fade": {
+          "0%": { transform: "translateY(12px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
         "pop": {
           "0%": { transform: "scale(1)" },
           "50%": { transform: "scale(1.15)" },
@@ -166,6 +170,7 @@ export default {
         "celebrate": "celebrate 0.6s ease-in-out",
         "bounce-in": "bounce-in 0.6s ease-out",
         "slide-up-bounce": "slide-up-bounce 0.5s ease-out",
+        "slide-up-fade": "slide-up-fade 0.3s ease-out",
         "pop": "pop 0.3s ease-out",
         "shake": "shake 0.5s ease-in-out",
       },

@@ -186,7 +186,7 @@ export default function Chat() {
           <div
             key={index}
             className={cn(
-              'flex gap-3 animate-fade-in',
+              'flex gap-3 animate-slide-up-fade',
               message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
             )}
           >
