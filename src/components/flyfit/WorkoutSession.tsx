@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Play, Pause, SkipForward, X, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Play, Pause, X, Info, ChevronLeft, ChevronRight, Trophy, Clock, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
 import mascotImage from '@/assets/fitek-pompki.png';
 import {
   Dialog,
@@ -31,6 +30,8 @@ interface WorkoutSessionProps {
   onComplete: () => void;
 }
 
+const BREAK_DURATION = 15; // seconds
+
 const motivationalMessages = [
   "Świetnie ci idzie! 💪",
   "Jeszcze trochę, dasz radę!",
@@ -46,45 +47,93 @@ const motivationalMessages = [
   "Super forma!",
 ];
 
+const breakMessages = [
+  "Czas na przerwę! 😌",
+  "Złap oddech! 🌬️",
+  "Dobra robota! Odpocznij chwilę",
+  "Świetnie! Regeneruj siły 💚",
+  "Przerwa zasłużona! ✨",
+];
+
+const completionMessages = [
+  "BRAWO! Dałeś radę! 🎉",
+  "Jesteś MISTRZEM! 🏆",
+  "Niesamowite! To był świetny trening! 💪",
+  "Super! Jestem z Ciebie dumny! ⭐",
+];
+
 export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionProps) {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(workout.exercises[0]?.duration || 30);
   const [isRunning, setIsRunning] = useState(false);
   const [motivationMessage, setMotivationMessage] = useState(motivationalMessages[0]);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [isBreak, setIsBreak] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   const currentExercise = workout.exercises[currentExerciseIndex];
   const totalExercises = workout.exercises.length;
-  const progressPercent = ((currentExerciseIndex) / totalExercises) * 100;
+  const progressPercent = ((currentExerciseIndex + (isBreak ? 0.5 : 0)) / totalExercises) * 100;
 
-  // Change motivational message every 5 seconds when running
+  // Calculate total remaining time
+  const totalRemainingTime = useMemo(() => {
+    let remaining = timeLeft;
+    for (let i = currentExerciseIndex + 1; i < totalExercises; i++) {
+      remaining += workout.exercises[i].duration + BREAK_DURATION;
+    }
+    if (!isBreak && currentExerciseIndex < totalExercises - 1) {
+      remaining += BREAK_DURATION; // Add break after current exercise
+    }
+    return remaining;
+  }, [timeLeft, currentExerciseIndex, totalExercises, workout.exercises, isBreak]);
+
+  // Change motivational message every 4 seconds when running
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isRunning || isCompleted) return;
 
+    const messages = isBreak ? breakMessages : motivationalMessages;
     const interval = setInterval(() => {
-      const randomIndex = Math.floor(Math.random() * motivationalMessages.length);
-      setMotivationMessage(motivationalMessages[randomIndex]);
-    }, 5000);
+      const randomIndex = Math.floor(Math.random() * messages.length);
+      setMotivationMessage(messages[randomIndex]);
+    }, 4000);
 
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [isRunning, isBreak, isCompleted]);
 
   // Timer countdown
   useEffect(() => {
-    if (!isRunning || timeLeft <= 0) return;
+    if (!isRunning || timeLeft <= 0 || isCompleted) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          // Exercise complete, move to next
-          if (currentExerciseIndex < totalExercises - 1) {
-            setCurrentExerciseIndex((idx) => idx + 1);
-            return workout.exercises[currentExerciseIndex + 1]?.duration || 30;
+          if (isBreak) {
+            // Break finished, move to next exercise
+            setIsBreak(false);
+            if (currentExerciseIndex < totalExercises - 1) {
+              setCurrentExerciseIndex((idx) => idx + 1);
+              return workout.exercises[currentExerciseIndex + 1]?.duration || 30;
+            } else {
+              // Workout complete
+              setIsRunning(false);
+              setIsCompleted(true);
+              setMotivationMessage(completionMessages[Math.floor(Math.random() * completionMessages.length)]);
+              return 0;
+            }
           } else {
-            // Workout complete
-            setIsRunning(false);
-            onComplete();
-            return 0;
+            // Exercise finished
+            if (currentExerciseIndex < totalExercises - 1) {
+              // Start break
+              setIsBreak(true);
+              setMotivationMessage(breakMessages[Math.floor(Math.random() * breakMessages.length)]);
+              return BREAK_DURATION;
+            } else {
+              // Last exercise - workout complete
+              setIsRunning(false);
+              setIsCompleted(true);
+              setMotivationMessage(completionMessages[Math.floor(Math.random() * completionMessages.length)]);
+              return 0;
+            }
           }
         }
         return prev - 1;
@@ -92,27 +141,40 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isRunning, timeLeft, currentExerciseIndex, totalExercises, workout.exercises, onComplete]);
+  }, [isRunning, timeLeft, currentExerciseIndex, totalExercises, workout.exercises, isBreak, isCompleted]);
 
   const togglePlayPause = useCallback(() => {
     setIsRunning((prev) => !prev);
   }, []);
 
   const skipExercise = useCallback(() => {
-    if (currentExerciseIndex < totalExercises - 1) {
-      setCurrentExerciseIndex((idx) => idx + 1);
-      setTimeLeft(workout.exercises[currentExerciseIndex + 1]?.duration || 30);
+    if (isBreak) {
+      // Skip break
+      setIsBreak(false);
+      if (currentExerciseIndex < totalExercises - 1) {
+        setCurrentExerciseIndex((idx) => idx + 1);
+        setTimeLeft(workout.exercises[currentExerciseIndex + 1]?.duration || 30);
+      }
+    } else if (currentExerciseIndex < totalExercises - 1) {
+      // Skip to break then next exercise
+      setIsBreak(true);
+      setTimeLeft(BREAK_DURATION);
+      setMotivationMessage(breakMessages[Math.floor(Math.random() * breakMessages.length)]);
     } else {
-      onComplete();
+      setIsCompleted(true);
+      setMotivationMessage(completionMessages[Math.floor(Math.random() * completionMessages.length)]);
     }
-  }, [currentExerciseIndex, totalExercises, workout.exercises, onComplete]);
+  }, [currentExerciseIndex, totalExercises, workout.exercises, isBreak]);
 
   const previousExercise = useCallback(() => {
-    if (currentExerciseIndex > 0) {
+    if (isBreak) {
+      setIsBreak(false);
+      setTimeLeft(workout.exercises[currentExerciseIndex]?.duration || 30);
+    } else if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex((idx) => idx - 1);
       setTimeLeft(workout.exercises[currentExerciseIndex - 1]?.duration || 30);
     }
-  }, [currentExerciseIndex, workout.exercises]);
+  }, [currentExerciseIndex, workout.exercises, isBreak]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -120,7 +182,78 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!currentExercise) return null;
+  const handleFinish = () => {
+    onComplete();
+    onClose();
+  };
+
+  if (!currentExercise && !isCompleted) return null;
+
+  // Completion Screen
+  if (isCompleted) {
+    return (
+      <div className="fixed inset-0 bg-background z-50 flex flex-col">
+        <header className="flex items-center justify-between p-4 border-b border-border">
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
+            <X className="w-6 h-6" />
+          </Button>
+          <h2 className="font-bold font-display text-lg">{workout.name}</h2>
+          <div className="w-10" />
+        </header>
+
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 gap-8">
+          {/* Trophy */}
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full bg-fitfly-yellow/20 flex items-center justify-center animate-pulse">
+              <Trophy className="w-14 h-14 text-fitfly-yellow" />
+            </div>
+          </div>
+
+          {/* Mascot */}
+          <img 
+            src={mascotImage} 
+            alt="FITEK" 
+            className="w-40 h-40 object-contain animate-float-gentle"
+          />
+          
+          {/* Completion bubble */}
+          <div className="relative">
+            <div className="bg-fitfly-green/10 border-2 border-fitfly-green rounded-[2rem] px-8 py-4 max-w-[300px] relative">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-b-[16px] border-b-fitfly-green" />
+              <p className="text-lg text-foreground text-center font-bold">
+                {motivationMessage}
+              </p>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="flex gap-6 mt-4">
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Flame className="w-7 h-7 text-primary" />
+              </div>
+              <span className="text-xs text-muted-foreground">Ćwiczeń</span>
+              <span className="font-bold text-lg">{totalExercises}</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-14 h-14 rounded-2xl bg-fitfly-green/10 flex items-center justify-center">
+                <Clock className="w-7 h-7 text-fitfly-green" />
+              </div>
+              <span className="text-xs text-muted-foreground">Czas</span>
+              <span className="font-bold text-lg">{workout.exercises.reduce((acc, ex) => acc + ex.duration, 0) / 60} min</span>
+            </div>
+          </div>
+
+          <Button 
+            onClick={handleFinish}
+            className="w-full max-w-xs rounded-full h-14 text-lg font-bold shadow-playful-green mt-4"
+          >
+            Zakończ trening
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col">
@@ -130,63 +263,88 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
           <X className="w-6 h-6" />
         </Button>
         <h2 className="font-bold font-display text-lg">{workout.name}</h2>
-        <div className="w-10" /> {/* Spacer */}
+        <div className="w-10" />
       </header>
 
-      {/* Progress bar */}
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-          <span>Ćwiczenie {currentExerciseIndex + 1} z {totalExercises}</span>
-          <span>{Math.round(progressPercent)}%</span>
+      {/* Progress bar and counters */}
+      <div className="px-4 py-3">
+        <div className="flex items-center justify-between text-sm mb-2">
+          <span className="font-bold text-primary">
+            {currentExerciseIndex + 1}/{totalExercises}
+          </span>
+          <span className="text-muted-foreground flex items-center gap-1">
+            <Clock className="w-4 h-4" />
+            {formatTime(totalRemainingTime)} pozostało
+          </span>
         </div>
         <Progress value={progressPercent} className="h-2" />
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 gap-6">
-        {/* Mascot with motivation */}
-        <div className="flex flex-col items-center gap-4">
-          <img 
-            src={mascotImage} 
-            alt="FITEK" 
-            className="w-48 h-48 object-contain animate-float-slow"
-          />
-          
-          {/* Motivational bubble */}
-          <div className="relative animate-bounce-in">
-            <div className="bg-card border-2 border-primary/30 rounded-3xl px-6 py-3 shadow-card-playful max-w-[280px]">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <div className="w-5 h-5 bg-card border-l-2 border-t-2 border-primary/30 rotate-45 rounded-tl-md" />
-              </div>
-              <p className="text-sm text-foreground text-center font-bold relative z-10">
-                {motivationMessage}
-              </p>
-            </div>
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 gap-5 overflow-hidden">
+        {/* Mascot */}
+        <img 
+          src={mascotImage} 
+          alt="FITEK" 
+          className="w-44 h-44 object-contain animate-float-gentle"
+        />
+        
+        {/* Speech bubble - nicer design */}
+        <div className="relative max-w-[280px]">
+          <div className={`relative px-6 py-3 rounded-[1.5rem] border-2 ${
+            isBreak 
+              ? 'bg-fitfly-green/10 border-fitfly-green' 
+              : 'bg-primary/10 border-primary'
+          }`}>
+            {/* Triangle pointer */}
+            <div className={`absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 
+              border-l-[10px] border-l-transparent 
+              border-r-[10px] border-r-transparent 
+              border-b-[12px] ${isBreak ? 'border-b-fitfly-green' : 'border-b-primary'}`} 
+            />
+            <p className="text-sm text-foreground text-center font-bold">
+              {motivationMessage}
+            </p>
           </div>
         </div>
 
         {/* Timer */}
         <div className="text-center">
-          <div className="text-7xl font-extrabold font-display bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent">
+          <div className={`text-7xl font-extrabold font-display ${
+            isBreak 
+              ? 'text-fitfly-green' 
+              : 'bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent'
+          }`}>
             {formatTime(timeLeft)}
           </div>
-          <p className="text-muted-foreground text-sm mt-1">pozostało</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            {isBreak ? 'przerwa' : 'pozostało'}
+          </p>
         </div>
 
         {/* Exercise name */}
         <div className="text-center">
-          <h3 className="text-2xl font-bold font-display text-foreground mb-2">
-            {currentExercise.name}
+          <h3 className={`text-2xl font-bold font-display mb-2 ${
+            isBreak ? 'text-fitfly-green' : 'text-foreground'
+          }`}>
+            {isBreak ? '☕ Przerwa' : currentExercise.name}
           </h3>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setShowInstructions(true)}
-            className="rounded-full border-2 gap-2"
-          >
-            <Info className="w-4 h-4" />
-            Instrukcja
-          </Button>
+          {!isBreak && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowInstructions(true)}
+              className="rounded-full border-2 gap-2"
+            >
+              <Info className="w-4 h-4" />
+              Instrukcja
+            </Button>
+          )}
+          {isBreak && (
+            <p className="text-sm text-muted-foreground">
+              Następne: <span className="font-semibold">{workout.exercises[currentExerciseIndex + 1]?.name || 'Koniec!'}</span>
+            </p>
+          )}
         </div>
       </div>
 
@@ -198,7 +356,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
             variant="outline"
             size="icon"
             onClick={previousExercise}
-            disabled={currentExerciseIndex === 0}
+            disabled={currentExerciseIndex === 0 && !isBreak}
             className="w-14 h-14 rounded-full border-2"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -207,7 +365,7 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
           {/* Play/Pause */}
           <Button
             onClick={togglePlayPause}
-            className="w-20 h-20 rounded-full shadow-playful"
+            className={`w-20 h-20 rounded-full ${isBreak ? 'bg-fitfly-green hover:bg-fitfly-green-dark' : ''} shadow-playful`}
           >
             {isRunning ? (
               <Pause className="w-10 h-10" />
@@ -233,10 +391,10 @@ export function WorkoutSession({ workout, onClose, onComplete }: WorkoutSessionP
         <DialogContent className="rounded-3xl border-2">
           <DialogHeader>
             <DialogTitle className="font-display text-xl">
-              {currentExercise.name}
+              {currentExercise?.name}
             </DialogTitle>
             <DialogDescription className="text-base pt-4 leading-relaxed">
-              {currentExercise.instruction}
+              {currentExercise?.instruction}
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
