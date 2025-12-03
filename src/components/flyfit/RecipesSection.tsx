@@ -1,16 +1,28 @@
 import { useState, useRef } from 'react';
-import { Camera, ChefHat, Sparkles, Plus, X, Loader2, Beef, Wheat } from 'lucide-react';
+import { Camera, ChefHat, Sparkles, Plus, X, Loader2, PlayCircle, Clock, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { CookingMode } from './CookingMode';
+
+interface RecipeStep {
+  step_number: number;
+  instruction: string;
+  duration_minutes?: number;
+  ingredients_needed?: string[];
+  tip?: string;
+}
 
 interface Recipe {
   name: string;
   ingredients: string[];
   description: string;
   servings: number;
+  total_time_minutes?: number;
+  tools_needed?: string[];
+  steps?: RecipeStep[];
   macros: {
     calories: number;
     protein: number;
@@ -31,6 +43,7 @@ export function RecipesSection() {
   const [loading, setLoading] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [detectedIngredients, setDetectedIngredients] = useState<string[]>([]);
+  const [cookingRecipe, setCookingRecipe] = useState<Recipe | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleScanFridge = () => {
@@ -254,10 +267,31 @@ export function RecipesSection() {
           {recipes.map((recipe, index) => (
             <div
               key={index}
-              className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful hover:-translate-y-1 transition-all duration-300"
+              className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful"
             >
               <h4 className="font-bold font-display text-foreground text-lg mb-2">{recipe.name}</h4>
               
+              {/* Time & Tools summary */}
+              <div className="flex items-center gap-3 mb-3 text-xs text-muted-foreground">
+                {recipe.total_time_minutes && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    {recipe.total_time_minutes} min
+                  </span>
+                )}
+                {recipe.tools_needed && recipe.tools_needed.length > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Utensils className="w-3.5 h-3.5" />
+                    {recipe.tools_needed.length} narzędzi
+                  </span>
+                )}
+                {recipe.steps && (
+                  <span className="text-primary font-medium">
+                    {recipe.steps.length} kroków
+                  </span>
+                )}
+              </div>
+
               {/* Makra */}
               <div className="grid grid-cols-4 gap-2 mb-3">
                 <div className="bg-secondary/10 rounded-xl p-2 text-center">
@@ -291,11 +325,34 @@ export function RecipesSection() {
               </div>
 
               {/* Opis */}
-              <p className="text-sm text-muted-foreground">{recipe.description}</p>
-              <p className="text-xs text-primary mt-2 font-medium">Porcje: {recipe.servings}</p>
+              <p className="text-sm text-muted-foreground mb-4">{recipe.description}</p>
+              
+              {/* Przycisk gotowania */}
+              {recipe.steps && recipe.steps.length > 0 && (
+                <Button 
+                  onClick={() => setCookingRecipe(recipe)}
+                  className="w-full rounded-2xl h-12 bg-gradient-to-r from-primary to-fitfly-purple hover:opacity-90 transition-opacity"
+                >
+                  <PlayCircle className="w-5 h-5 mr-2" />
+                  Gotuj krok po kroku
+                </Button>
+              )}
             </div>
           ))}
         </div>
+      )}
+
+      {/* Cooking Mode */}
+      {cookingRecipe && cookingRecipe.steps && (
+        <CookingMode 
+          recipe={{
+            ...cookingRecipe,
+            total_time_minutes: cookingRecipe.total_time_minutes || 30,
+            tools_needed: cookingRecipe.tools_needed || [],
+            steps: cookingRecipe.steps
+          }} 
+          onClose={() => setCookingRecipe(null)} 
+        />
       )}
 
       {/* Ukryty input do uploadu */}
