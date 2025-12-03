@@ -3,7 +3,7 @@ import { Send, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import mascotImage from '@/assets/fitfly-mascot.png';
+import fitekAvatar from '@/assets/fitek-avatar.png';
 import greetingVideo from '@/assets/fitfly-greeting.mp4';
 
 interface Message {
@@ -129,8 +129,8 @@ export default function Chat() {
       <header className="px-4 py-3 border-b border-border/50 bg-card/80 backdrop-blur-sm relative z-10">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-light flex items-center justify-center shadow-playful overflow-hidden">
-              <img src={mascotImage} alt="FITEK" className="w-10 h-10 object-contain" />
+            <div className="w-12 h-12 rounded-full bg-white border-2 border-primary/20 shadow-playful overflow-hidden">
+              <img src={fitekAvatar} alt="FITEK" className="w-full h-full object-cover" />
             </div>
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-secondary rounded-full border-2 border-card" />
           </div>
@@ -191,8 +191,8 @@ export default function Chat() {
             )}
           >
             {message.role === 'assistant' && (
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-light flex items-center justify-center shadow-playful-sm shrink-0">
-                <img src={mascotImage} alt="FITEK" className="w-8 h-8 object-contain" />
+              <div className="w-10 h-10 rounded-full bg-white border-2 border-primary/20 shadow-playful-sm shrink-0 overflow-hidden">
+                <img src={fitekAvatar} alt="FITEK" className="w-full h-full object-cover" />
               </div>
             )}
             <div
@@ -210,8 +210,8 @@ export default function Chat() {
 
         {isTyping && messages[messages.length - 1]?.role === 'user' && (
           <div className="flex gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-light flex items-center justify-center shadow-playful-sm shrink-0 animate-bounce-soft">
-              <img src={mascotImage} alt="FITEK" className="w-8 h-8 object-contain" />
+            <div className="w-10 h-10 rounded-full bg-white border-2 border-primary/20 shadow-playful-sm shrink-0 overflow-hidden animate-bounce-soft">
+              <img src={fitekAvatar} alt="FITEK" className="w-full h-full object-cover" />
             </div>
             <div className="bg-card border-2 border-border/50 rounded-3xl rounded-bl-lg px-4 py-3 shadow-card-playful">
               <div className="flex gap-1">
