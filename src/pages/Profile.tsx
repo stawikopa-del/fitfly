@@ -150,7 +150,13 @@ export default function Profile() {
             placeholder="Twoje imię"
           />
         ) : (
-          <h1 className="text-2xl font-extrabold font-display text-foreground">{displayName}</h1>
+          <button 
+            onClick={() => setIsEditing(true)}
+            className="inline-flex items-center gap-1.5 group"
+          >
+            <h1 className="text-2xl font-extrabold font-display text-foreground">{displayName}</h1>
+            <Edit3 className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </button>
         )}
         <p className="text-sm text-muted-foreground font-medium mt-1">{weight} kg • {height} cm</p>
         
