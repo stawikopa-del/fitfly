@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar } from 'recharts';
+import { PageHeader } from '@/components/flyfit/PageHeader';
 
 interface DailyData {
   date: string;
@@ -118,14 +119,9 @@ export default function Progress() {
   }
 
   return (
-    <div className="px-4 py-6 space-y-6 pb-32">
-      {/* Header */}
-      <header className="relative z-10">
-        <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          Twoje postępy
-        </h1>
-        <p className="text-sm text-muted-foreground font-medium">Ostatnie 7 dni aktywności 📊</p>
-      </header>
+    <div className="min-h-screen bg-background">
+      <PageHeader title="Twoje postępy" emoji="📊" icon={<TrendingUp className="w-5 h-5 text-primary" />} />
+      <div className="px-4 py-4 space-y-6 pb-32">
 
       {/* Podsumowanie tygodnia */}
       <div className="grid grid-cols-3 gap-3 relative z-10">
@@ -307,6 +303,7 @@ export default function Progress() {
                 : 'Każdy krok się liczy! Zacznij od małych celów.'}
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

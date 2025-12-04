@@ -1,17 +1,11 @@
-import { Smartphone, Code, Shield, FileText } from 'lucide-react';
+import { Smartphone, Code, Shield, FileText, Info as InfoIcon } from 'lucide-react';
+import { PageHeader } from '@/components/flyfit/PageHeader';
 
 export default function Info() {
   return (
-    <div className="px-4 py-6 space-y-6">
-      {/* Header */}
-      <header>
-        <h1 className="text-3xl font-extrabold font-display text-foreground">
-          Informacje ℹ️
-        </h1>
-        <p className="text-muted-foreground font-medium mt-1">
-          Wersja i szczegóły techniczne
-        </p>
-      </header>
+    <div className="min-h-screen bg-background">
+      <PageHeader title="Informacje" emoji="ℹ️" icon={<InfoIcon className="w-5 h-5 text-primary" />} />
+      <div className="px-4 py-4 space-y-6 pb-24">
 
       {/* Wersja */}
       <div className="bg-card rounded-3xl p-6 border-2 border-primary/30 shadow-card-playful relative z-10 text-center">
@@ -83,6 +77,7 @@ export default function Info() {
         <p className="text-xs text-muted-foreground">
           © 2024 FITFLY. Wszystkie prawa zastrzeżone.
         </p>
+      </div>
       </div>
     </div>
   );

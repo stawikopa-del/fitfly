@@ -7,6 +7,7 @@ import { AddHabitDialog } from '@/components/flyfit/AddHabitDialog';
 import { AddChallengeDialog } from '@/components/flyfit/AddChallengeDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '@/components/flyfit/PageHeader';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,14 +61,9 @@ export default function Challenges() {
   }
 
   return (
-    <div className="px-4 py-6 space-y-6 pb-24">
-      {/* Header */}
-      <header>
-        <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-accent to-fitfly-orange-light bg-clip-text text-transparent">
-          Nawyki i Wyzwania
-        </h1>
-        <p className="text-sm text-muted-foreground font-medium">Buduj lepszą wersję siebie! 🏆</p>
-      </header>
+    <div className="min-h-screen bg-background">
+      <PageHeader title="Nawyki i Wyzwania" emoji="🏆" icon={<Trophy className="w-5 h-5 text-primary" />} />
+      <div className="px-4 py-4 space-y-6 pb-24">
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3">
@@ -428,6 +424,7 @@ export default function Challenges() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Target, Bell, Settings, ChevronRight, Footprints, Droplets, Flame, Trophy, Edit3, LogOut } from 'lucide-react';
+import { Target, Bell, Settings, ChevronRight, Footprints, Droplets, Flame, Trophy, Edit3, LogOut, User } from 'lucide-react';
+import { PageHeader } from '@/components/flyfit/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -126,7 +127,9 @@ export default function Profile() {
   }
 
   return (
-    <div className="px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-background">
+      <PageHeader title="Mój Profil" emoji="👤" icon={<User className="w-5 h-5 text-primary" />} />
+      <div className="px-4 py-4 space-y-6 pb-24">
       {/* Profil użytkownika */}
       <header className="text-center relative z-10">
         <div className="mb-4">
@@ -326,6 +329,7 @@ export default function Profile() {
         </span>
         <ChevronRight className="w-5 h-5" />
       </Button>
+      </div>
     </div>
   );
 }

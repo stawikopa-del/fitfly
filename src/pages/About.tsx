@@ -1,18 +1,12 @@
-import { Heart, Target, Users, Sparkles } from 'lucide-react';
+import { Heart, Target, Users, Sparkles, Info } from 'lucide-react';
 import flyflyMascot from '@/assets/fitfly-mascot.png';
+import { PageHeader } from '@/components/flyfit/PageHeader';
 
 export default function About() {
   return (
-    <div className="px-4 py-6 space-y-6">
-      {/* Header */}
-      <header className="relative z-10 text-center">
-        <h1 className="text-3xl font-extrabold font-display text-foreground">
-          O nas 💚
-        </h1>
-        <p className="text-muted-foreground font-medium mt-1">
-          Poznaj FITFLY bliżej
-        </p>
-      </header>
+    <div className="min-h-screen bg-background">
+      <PageHeader title="O nas" emoji="💚" icon={<Info className="w-5 h-5 text-primary" />} />
+      <div className="px-4 py-4 space-y-6 pb-24">
 
       {/* Mascot */}
       <div className="flex justify-center relative z-10">
@@ -92,6 +86,7 @@ export default function About() {
         <p className="text-xs text-muted-foreground mt-1">
           © 2024 FITFLY. Wszystkie prawa zastrzeżone.
         </p>
+      </div>
       </div>
     </div>
   );
