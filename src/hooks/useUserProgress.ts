@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { DailyProgress, MascotState, MascotEmotion } from '@/types/flyfit';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useGamification } from './useGamification';
 
 const defaultProgress: DailyProgress = {
   steps: 0,
@@ -69,11 +70,13 @@ const motivationalMessages: Record<MascotEmotion, string[]> = {
 
 export function useUserProgress() {
   const { user } = useAuth();
+  const { onWaterGoalReached } = useGamification();
   const [progress, setProgress] = useState<DailyProgress>(defaultProgress);
   const [mascotState, setMascotState] = useState<MascotState>({
     emotion: 'neutral',
     message: 'Cześć! Gotowy/a na świetny dzień?',
   });
+  const waterGoalRewardedRef = useRef(false);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -173,9 +176,15 @@ export function useUserProgress() {
       
       saveProgress({ water: newWater, steps: prev.steps, activeMinutes: prev.activeMinutes });
       
+      // Award XP when water goal is reached (only once per day)
+      if (newWater >= prev.waterGoal && prev.water < prev.waterGoal && !waterGoalRewardedRef.current) {
+        waterGoalRewardedRef.current = true;
+        onWaterGoalReached();
+      }
+      
       return newProgress;
     });
-  }, [getMascotEmotion, updateMascotState, saveProgress]);
+  }, [getMascotEmotion, updateMascotState, saveProgress, onWaterGoalReached]);
 
   const addSteps = useCallback((steps: number) => {
     setProgress(prev => {

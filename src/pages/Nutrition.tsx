@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProgress } from '@/hooks/useUserProgress';
+import { useGamification } from '@/hooks/useGamification';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -30,6 +31,7 @@ export default function Nutrition() {
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
   const { user } = useAuth();
   const { progress } = useUserProgress();
+  const { onMealLogged } = useGamification();
 
   // Pobierz posiłki z bazy danych
   useEffect(() => {
@@ -123,6 +125,9 @@ export default function Nutrition() {
         time: data.time || undefined,
       }]);
       toast.success('Posiłek dodany!');
+      
+      // Award XP for logging meal
+      onMealLogged();
     }
   };
 
