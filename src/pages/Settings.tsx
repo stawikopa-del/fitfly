@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Bell, Moon, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint } from 'lucide-react';
+import { Bell, Moon, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -38,6 +49,27 @@ export default function Settings() {
     await signOut();
     toast.success('Wylogowano pomyślnie');
     navigate('/auth');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    try {
+      // Delete user data from profiles table
+      await supabase.from('profiles').delete().eq('user_id', user.id);
+      await supabase.from('daily_progress').delete().eq('user_id', user.id);
+      await supabase.from('meals').delete().eq('user_id', user.id);
+      await supabase.from('chat_messages').delete().eq('user_id', user.id);
+      await supabase.from('calendar_events').delete().eq('user_id', user.id);
+      await supabase.from('favorite_recipes').delete().eq('user_id', user.id);
+      
+      // Sign out the user
+      await signOut();
+      toast.success('Konto zostało usunięte');
+      navigate('/auth');
+    } catch (error) {
+      toast.error('Nie udało się usunąć konta');
+    }
   };
 
   const toggleSetting = (key: keyof typeof settings) => {
@@ -226,20 +258,58 @@ export default function Settings() {
         </Button>
       </div>
 
-      {/* Wyloguj */}
-      <Button 
-        variant="outline" 
-        onClick={handleSignOut}
-        className="w-full justify-between rounded-3xl h-14 border-2 border-destructive/30 text-destructive font-bold relative z-10 hover:-translate-y-1 transition-all hover:bg-destructive/10"
-      >
-        <span className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-destructive/10 flex items-center justify-center">
-            <LogOut className="w-5 h-5" />
-          </div>
-          Wyloguj się
-        </span>
-        <ChevronRight className="w-5 h-5" />
-      </Button>
+      {/* Wyloguj i Usuń konto */}
+      <div className="space-y-3 relative z-10">
+        <Button 
+          variant="outline" 
+          onClick={handleSignOut}
+          className="w-full justify-between rounded-3xl h-14 border-2 border-destructive/30 text-destructive font-bold hover:-translate-y-1 transition-all hover:bg-destructive/10"
+        >
+          <span className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-destructive/10 flex items-center justify-center">
+              <LogOut className="w-5 h-5" />
+            </div>
+            Wyloguj się
+          </span>
+          <ChevronRight className="w-5 h-5" />
+        </Button>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              className="w-full justify-between rounded-3xl h-14 border-2 border-destructive text-destructive font-bold hover:-translate-y-1 transition-all hover:bg-destructive hover:text-destructive-foreground"
+            >
+              <span className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-destructive/10 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                Usuń konto 🗑️
+              </span>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="rounded-3xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-display text-xl">
+                Czy na pewno chcesz usunąć konto? 😢
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">
+                Ta akcja jest nieodwracalna. Wszystkie Twoje dane, postępy, przepisy i historia czatu zostaną trwale usunięte.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-2xl">Anuluj</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteAccount}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-2xl"
+              >
+                Usuń konto
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
 
       {/* Wersja */}
       <p className="text-center text-xs text-muted-foreground relative z-10">
