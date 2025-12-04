@@ -12,7 +12,7 @@ export default function Home() {
   const { progress, mascotState, addWater } = useUserProgress();
 
   return (
-    <div className="px-4 py-6 space-y-6 relative overflow-hidden">
+    <div className="px-4 py-6 space-y-6">
       {/* Header z logo */}
       <header className="flex items-center justify-between relative z-10">
         <div>

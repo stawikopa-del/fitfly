@@ -6,13 +6,9 @@ export default function Privacy() {
   const navigate = useNavigate();
 
   return (
-    <div className="px-4 py-6 space-y-6 relative overflow-hidden">
-      {/* Dekoracyjne tło */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-32 left-0 w-48 h-48 bg-fitfly-purple/10 rounded-full blur-3xl -translate-x-1/2" />
-
+    <div className="px-4 py-6 space-y-6">
       {/* Header */}
-      <header className="relative z-10">
+      <header>
         <h1 className="text-3xl font-extrabold font-display text-foreground">
           Prywatność 🔒
         </h1>
@@ -22,7 +18,7 @@ export default function Privacy() {
       </header>
 
       {/* Główna sekcja */}
-      <div className="bg-card rounded-3xl p-6 border-2 border-primary/30 shadow-card-playful relative z-10">
+      <div className="bg-card rounded-3xl p-6 border-2 border-primary/30 shadow-card-playful">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
           <Shield className="w-8 h-8 text-primary" />
         </div>

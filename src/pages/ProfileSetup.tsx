@@ -197,17 +197,14 @@ export default function ProfileSetup() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-80 h-80 bg-primary/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/15 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6">
       {/* Progress indicator */}
-      <div className="flex items-center gap-2 mb-6 relative z-10">
+      <div className="flex items-center gap-2 mb-6">
         {[1, 2, 3, 4].map((s) => (
           <div key={s} className="flex items-center">
             <div className={cn(
               'w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all',
-              step >= s 
+              step >= s
                 ? 'bg-primary text-primary-foreground' 
                 : 'bg-muted text-muted-foreground'
             )}>

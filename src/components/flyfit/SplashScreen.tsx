@@ -28,11 +28,6 @@ export function SplashScreen({ onComplete, minDuration = 2000 }: SplashScreenPro
         isExiting ? 'opacity-0' : 'opacity-100'
       )}
     >
-      {/* Background decorations */}
-      <div className="absolute top-20 left-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-32 right-10 w-40 h-40 bg-secondary/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
-      <div className="absolute top-1/3 right-20 w-24 h-24 bg-fitfly-purple/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-
       {/* FITEK mascot */}
       <div className={cn(
         'relative mb-6 transition-all duration-700',

@@ -50,13 +50,9 @@ export default function More() {
   };
 
   return (
-    <div className="px-4 py-6 space-y-6 relative overflow-hidden">
-      {/* Dekoracyjne tło */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-32 left-0 w-48 h-48 bg-fitfly-purple/10 rounded-full blur-3xl -translate-x-1/2" />
-
+    <div className="px-4 py-6 space-y-6">
       {/* Header */}
-      <header className="relative z-10 text-center">
+      <header className="text-center">
         <h1 className="text-3xl font-extrabold font-display text-foreground">
           Więcej opcji ✨
         </h1>
@@ -66,7 +62,7 @@ export default function More() {
       </header>
 
       {/* Główne opcje */}
-      <div className="space-y-3 relative z-10">
+      <div className="space-y-3">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide px-1">
           Menu główne
         </h2>

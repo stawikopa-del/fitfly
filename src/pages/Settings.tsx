@@ -130,13 +130,9 @@ export default function Settings() {
   ];
 
   return (
-    <div className="px-4 py-6 space-y-6 relative overflow-hidden">
-      {/* Dekoracyjne tło */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-32 left-0 w-48 h-48 bg-fitfly-purple/10 rounded-full blur-3xl -translate-x-1/2" />
-
+    <div className="px-4 py-6 space-y-6">
       {/* Header */}
-      <header className="relative z-10">
+      <header>
         <h1 className="text-3xl font-extrabold font-display text-foreground">
           Ustawienia ⚙️
         </h1>
@@ -147,7 +143,7 @@ export default function Settings() {
 
       {/* Biometric Login Section */}
       {isBiometricSupported && (
-        <div className="bg-card rounded-3xl p-5 border-2 border-primary/30 shadow-card-playful relative z-10 animate-float">
+        <div className="bg-card rounded-3xl p-5 border-2 border-primary/30 shadow-card-playful animate-float">
           <h2 className="font-bold font-display text-foreground mb-4 flex items-center gap-2 text-lg">
             <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
               <Fingerprint className="w-5 h-5 text-primary" />

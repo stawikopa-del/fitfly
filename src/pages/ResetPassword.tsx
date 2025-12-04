@@ -76,9 +76,7 @@ export default function ResetPassword() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-secondary/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
         <div className="w-48 h-48 mb-6 animate-float-slow">
           <img 
             src={fitekDetective} 
@@ -103,16 +101,12 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden">
-      {/* Dekoracyjne tło */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-primary/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/15 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
       {/* FITEK Detektyw */}
-      <div className="relative z-10 mb-6">
+      <div className="mb-6">
         <div className="w-40 h-40 animate-float-slow">
           <img 
-            src={fitekDetective} 
+            src={fitekDetective}
             alt="FITEK Detektyw" 
             className="w-full h-full object-contain drop-shadow-2xl"
           />

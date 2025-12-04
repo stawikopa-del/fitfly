@@ -360,9 +360,7 @@ export default function Auth() {
   // Reset sent success view
   if (resetSent) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-secondary/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
         <div className="w-40 h-40 mb-6 animate-float-slow">
           <img src={fitekDetective} alt="FITEK Detektyw" className="w-full h-full object-contain drop-shadow-2xl" />
         </div>
@@ -400,10 +398,7 @@ export default function Auth() {
     const bmiCategory = getBMICategory(bmi);
 
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/15 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6">
         {/* Progress indicator */}
         <div className="flex items-center gap-2 mb-6 relative z-10">
           {[1, 2, 3, 4, 5].map((step) => (
@@ -807,16 +802,12 @@ export default function Auth() {
 
   // Login / Forgot password form
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-80 h-80 bg-primary/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/15 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-      <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-accent/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-
-      <div className="w-64 h-64 mb-4 animate-float-slow relative z-10">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
+      <div className="w-64 h-64 mb-4 animate-float-slow">
         <img src={fitekDetective} alt="FITEK Detektyw" className="w-full h-full object-contain drop-shadow-2xl" />
       </div>
 
-      <div className="text-center mb-8 relative z-10">
+      <div className="text-center mb-8">
         <h1 className="text-3xl font-extrabold font-display bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2 flex items-center justify-center gap-2">
           {mode === 'forgot' ? 'Reset hasła' : 'FLYFIT'}
           <Sparkles className="w-6 h-6 text-fitfly-yellow" />

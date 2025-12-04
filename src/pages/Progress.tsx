@@ -118,11 +118,7 @@ export default function Progress() {
   }
 
   return (
-    <div className="px-4 py-6 space-y-6 relative overflow-hidden pb-32">
-      {/* Dekoracyjne tło */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-32 left-0 w-48 h-48 bg-secondary/10 rounded-full blur-3xl -translate-x-1/2" />
-
+    <div className="px-4 py-6 space-y-6 pb-32">
       {/* Header */}
       <header className="relative z-10">
         <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
