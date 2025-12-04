@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2, CheckCircle2, RefreshCw, ArrowRight, Sparkles, Scale, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
+import { TestimonialsCarousel } from '@/components/flyfit/TestimonialsCarousel';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -455,16 +456,8 @@ export default function More() {
           </div>
         </div>
 
-        {/* Social proof */}
-        <div className="animate-float text-center bg-muted/30 rounded-2xl p-4 border border-border/30" style={{ animationDelay: '0.5s' }}>
-          <div className="flex justify-center gap-1 mb-2">
-            {[...Array(5)].map((_, i) => (
-              <span key={i} className="text-yellow-500">⭐</span>
-            ))}
-          </div>
-          <p className="text-sm font-medium text-foreground">"FITFLY zmienił moje podejście do zdrowia!"</p>
-          <p className="text-xs text-muted-foreground mt-1">— Anna, użytkowniczka pakietu FIT</p>
-        </div>
+        {/* Social proof carousel */}
+        <TestimonialsCarousel />
       </div>
 
       {/* Dodatkowe opcje */}
