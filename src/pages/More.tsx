@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2, CheckCircle2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
@@ -239,6 +239,27 @@ export default function More() {
               </span>
             ))}
           </div>
+          
+          {/* Przycisk przedłużenia dla aktywnego pakietu */}
+          {isCurrentTier && !isFree && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePurchase(product);
+              }}
+              disabled={isLoading}
+              className="relative mt-3 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 hover:from-green-600 hover:to-emerald-600 transition-all disabled:opacity-50"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  Przedłuż subskrypcję
+                </>
+              )}
+            </button>
+          )}
         </button>
       </div>
     );
