@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import fitekDetective from '@/assets/fitek-detective.png';
+import { supabase } from '@/integrations/supabase/client';
 
 const emailSchema = z.string().email('Nieprawidłowy adres email');
 const passwordSchema = z.string().min(6, 'Hasło musi mieć minimum 6 znaków');
@@ -98,9 +100,32 @@ export default function Auth() {
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   
   const { signIn, signUp, resetPassword, user, loading } = useAuth();
   const navigate = useNavigate();
+
+  // Load saved email on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('flyfit_remembered_email');
+    if (savedEmail) {
+      setLoginEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
+  // Handle session cleanup when rememberMe is false
+  useEffect(() => {
+    if (!rememberMe && user) {
+      const handleBeforeUnload = () => {
+        // Clear session on browser close if not remembered
+        supabase.auth.signOut();
+      };
+      
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [rememberMe, user]);
 
   useEffect(() => {
     if (!loading && user) {
@@ -156,6 +181,12 @@ export default function Auth() {
           toast.error('Błąd logowania');
         }
       } else {
+        // Handle remember me
+        if (rememberMe) {
+          localStorage.setItem('flyfit_remembered_email', loginEmail);
+        } else {
+          localStorage.removeItem('flyfit_remembered_email');
+        }
         toast.success('Zalogowano! 🎉');
         navigate('/');
       }
@@ -746,9 +777,29 @@ export default function Auth() {
             )}
 
             {mode === 'login' && (
-              <button type="button" onClick={() => setMode('forgot')} className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium">
-                Nie pamiętasz hasła?
-              </button>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="rememberMe" 
+                    checked={rememberMe} 
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    className="rounded-md"
+                  />
+                  <label 
+                    htmlFor="rememberMe" 
+                    className="text-sm font-medium text-foreground cursor-pointer"
+                  >
+                    Zapamiętaj mnie
+                  </label>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setMode('forgot')} 
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
+                >
+                  Nie pamiętasz hasła?
+                </button>
+              </div>
             )}
 
             <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-2xl font-bold text-base">
