@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { User, Target, Bell, Settings, ChevronRight, Footprints, Droplets, Flame, Trophy, Edit3, Sparkles, LogOut } from 'lucide-react';
+import { Target, Bell, Settings, ChevronRight, Footprints, Droplets, Flame, Trophy, Edit3, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import mascotImage from '@/assets/fitfly-mascot.png';
+import { ProfileAvatar } from '@/components/flyfit/ProfileAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -23,6 +23,7 @@ interface ProfileData {
   daily_calories: number | null;
   daily_water: number | null;
   daily_steps_goal: number | null;
+  avatar_url: string | null;
 }
 
 export default function Profile() {
@@ -130,20 +131,15 @@ export default function Profile() {
       <div className="absolute top-0 left-1/2 w-80 h-80 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2" />
       <div className="absolute bottom-32 right-0 w-48 h-48 bg-fitfly-purple/10 rounded-full blur-3xl translate-x-1/2" />
 
-      {/* Profil użytkownika z maskotką */}
+      {/* Profil użytkownika */}
       <header className="text-center relative z-10">
-        <div className="relative inline-block mb-4 animate-float">
-          <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-primary to-fitfly-blue-light flex items-center justify-center shadow-playful-lg">
-            <User className="w-14 h-14 text-primary-foreground" />
-          </div>
-          <div className="absolute -bottom-2 -right-2 animate-bounce-soft">
-            <img 
-              src={mascotImage} 
-              alt="FitFly" 
-              className="w-14 h-14 object-contain drop-shadow-md"
-            />
-            <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-fitfly-yellow animate-pulse" />
-          </div>
+        <div className="mb-4">
+          <ProfileAvatar
+            userId={user?.id || ''}
+            avatarUrl={profile?.avatar_url || null}
+            displayName={displayName}
+            onAvatarChange={(url) => setProfile(prev => prev ? { ...prev, avatar_url: url } : prev)}
+          />
         </div>
         <h1 className="text-2xl font-extrabold font-display text-foreground">{displayName}</h1>
         <p className="text-sm text-muted-foreground font-medium">{weight} kg • {height} cm</p>
