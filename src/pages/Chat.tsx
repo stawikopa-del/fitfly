@@ -198,11 +198,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)] relative overflow-hidden">
-      {/* Dekoracyjne tło */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-32 left-0 w-48 h-48 bg-fitfly-purple/10 rounded-full blur-3xl -translate-x-1/2" />
-
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
       {/* Header */}
       <header className="px-4 py-3 border-b border-border/50 bg-card/80 backdrop-blur-sm relative z-10">
         <div className="flex items-center justify-between">

@@ -126,11 +126,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="px-4 py-6 space-y-6 relative overflow-hidden">
-      {/* Dekoracyjne tło */}
-      <div className="absolute top-0 left-1/2 w-80 h-80 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2" />
-      <div className="absolute bottom-32 right-0 w-48 h-48 bg-fitfly-purple/10 rounded-full blur-3xl translate-x-1/2" />
-
+    <div className="px-4 py-6 space-y-6">
       {/* Profil użytkownika */}
       <header className="text-center relative z-10">
         <div className="mb-4">
