@@ -1,15 +1,18 @@
-import { useState } from 'react';
-import { Bell, Moon, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bell, Moon, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useWebAuthn } from '@/hooks/useWebAuthn';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Settings() {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const { isSupported: isBiometricSupported, hasRegisteredBiometric, registerBiometric, removeBiometric, isRegistering } = useWebAuthn();
   const navigate = useNavigate();
 
   const [settings, setSettings] = useState({
@@ -20,7 +23,16 @@ export default function Settings() {
     sounds: true,
     vibrations: true,
     darkMode: false,
+    biometricLogin: false,
   });
+
+  // Check if biometric is already registered
+  useEffect(() => {
+    setSettings(prev => ({
+      ...prev,
+      biometricLogin: hasRegisteredBiometric(),
+    }));
+  }, [hasRegisteredBiometric]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -31,6 +43,35 @@ export default function Settings() {
   const toggleSetting = (key: keyof typeof settings) => {
     setSettings(prev => ({ ...prev, [key]: !prev[key] }));
     toast.success('Ustawienia zapisane');
+  };
+
+  const handleBiometricToggle = async () => {
+    if (!user) return;
+
+    if (settings.biometricLogin) {
+      // Disable biometric
+      removeBiometric();
+      localStorage.removeItem('flyfit_biometric_auth');
+      setSettings(prev => ({ ...prev, biometricLogin: false }));
+      toast.success('Face ID wyłączone');
+    } else {
+      // Enable biometric - register credential
+      const result = await registerBiometric(user.id, user.email || '');
+      if (result.success) {
+        // Store refresh token for biometric login
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          localStorage.setItem('flyfit_biometric_auth', JSON.stringify({
+            email: user.email,
+            token: sessionData.session.refresh_token,
+          }));
+        }
+        setSettings(prev => ({ ...prev, biometricLogin: true }));
+        toast.success('Face ID włączone! 🎉');
+      } else {
+        toast.error(result.error || 'Nie udało się włączyć Face ID');
+      }
+    }
   };
 
   const settingsSections = [
@@ -71,6 +112,40 @@ export default function Settings() {
           Dostosuj aplikację do swoich potrzeb
         </p>
       </header>
+
+      {/* Biometric Login Section */}
+      {isBiometricSupported && (
+        <div className="bg-card rounded-3xl p-5 border-2 border-primary/30 shadow-card-playful relative z-10 animate-float">
+          <h2 className="font-bold font-display text-foreground mb-4 flex items-center gap-2 text-lg">
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Fingerprint className="w-5 h-5 text-primary" />
+            </div>
+            Logowanie biometryczne 🔐
+          </h2>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between bg-muted/50 rounded-2xl p-4">
+              <div className="flex-1">
+                <Label 
+                  htmlFor="biometricLogin" 
+                  className="text-sm text-foreground font-medium flex items-center gap-2 cursor-pointer"
+                >
+                  Face ID / Touch ID 📱
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Loguj się szybciej używając biometrii
+                </p>
+              </div>
+              <Switch 
+                id="biometricLogin"
+                checked={settings.biometricLogin}
+                onCheckedChange={handleBiometricToggle}
+                disabled={isRegistering}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Settings sections */}
       {settingsSections.map((section) => (
