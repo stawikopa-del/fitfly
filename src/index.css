@@ -250,7 +250,7 @@
   }
 
   .floating-gentle {
-    animation: float-gentle 5s ease-in-out infinite;
+    animation: float-gentle 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
   }
 
   /* Bounce on tap */
@@ -291,11 +291,14 @@
 }
 
 @keyframes float-gentle {
-  0%, 100% {
+  0% {
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-4px);
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(0px);
   }
 }
 
