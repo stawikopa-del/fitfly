@@ -327,8 +327,7 @@ export function BarcodeScanner({
                   getScoreColor(product.score)
                 )}>
                   <div className="text-center">
-                    <span className="text-2xl font-extrabold font-display block leading-none">{product.score}</span>
-                    <span className="text-[10px] font-bold opacity-70">/10</span>
+                    <span className="text-3xl font-extrabold font-display block leading-none">{product.score}</span>
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -404,10 +403,7 @@ export function BarcodeScanner({
                   {multiplier && servingLabel && (
                     <div className="bg-primary/10 rounded-3xl border-2 border-primary/30 p-5 shadow-card-playful">
                       <h3 className="font-extrabold font-display text-foreground mb-4 flex items-center gap-2">
-                        🍽️ Na porcję 
-                        <span className="text-xs text-primary font-bold bg-primary/20 px-2 py-0.5 rounded-full">
-                          {servingLabel}
-                        </span>
+                        🍽️ {servingLabel}
                       </h3>
                       
                       <div className="grid grid-cols-4 gap-3">
@@ -468,29 +464,6 @@ export function BarcodeScanner({
                       </div>
                     </div>
 
-                    {/* Extra nutrients */}
-                    {(product.sugar !== undefined || product.fiber !== undefined || product.salt !== undefined) && (
-                      <div className="mt-3 pt-3 border-t border-border/30 grid grid-cols-3 gap-2">
-                        {product.sugar !== undefined && (
-                          <div className="text-center">
-                            <p className="text-xs font-bold text-foreground">{Math.round(product.sugar * 10) / 10}g</p>
-                            <p className="text-[9px] text-muted-foreground">cukry</p>
-                          </div>
-                        )}
-                        {product.fiber !== undefined && (
-                          <div className="text-center">
-                            <p className="text-xs font-bold text-foreground">{Math.round(product.fiber * 10) / 10}g</p>
-                            <p className="text-[9px] text-muted-foreground">błonnik</p>
-                          </div>
-                        )}
-                        {product.salt !== undefined && (
-                          <div className="text-center">
-                            <p className="text-xs font-bold text-foreground">{Math.round(product.salt * 100) / 100}g</p>
-                            <p className="text-[9px] text-muted-foreground">sól</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </>
               );
