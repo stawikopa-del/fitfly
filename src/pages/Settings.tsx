@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Bell, Moon, Sun, Palette, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2 } from 'lucide-react';
+import { Bell, Moon, Sun, Palette, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2, Settings as SettingsIcon } from 'lucide-react';
 import { useTheme, Theme } from '@/hooks/useTheme';
+import { PageHeader } from '@/components/flyfit/PageHeader';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -132,16 +133,9 @@ export default function Settings() {
   ];
 
   return (
-    <div className="px-4 py-6 space-y-6">
-      {/* Header */}
-      <header>
-        <h1 className="text-3xl font-extrabold font-display text-foreground">
-          Ustawienia ⚙️
-        </h1>
-        <p className="text-muted-foreground font-medium mt-1">
-          Dostosuj aplikację do swoich potrzeb
-        </p>
-      </header>
+    <div className="min-h-screen bg-background">
+      <PageHeader title="Ustawienia" emoji="⚙️" icon={<SettingsIcon className="w-5 h-5 text-primary" />} />
+      <div className="px-4 py-4 space-y-6 pb-24">
 
       {/* Biometric Login Section */}
       {isBiometricSupported && (
@@ -395,6 +389,7 @@ export default function Settings() {
       <p className="text-center text-xs text-muted-foreground relative z-10">
         FITFLY v1.0.0 • Made with 💚
       </p>
+      </div>
     </div>
   );
 }

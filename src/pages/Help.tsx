@@ -1,4 +1,4 @@
-import { ChevronDown, MessageCircle, Mail, ExternalLink } from 'lucide-react';
+import { ChevronDown, MessageCircle, Mail, ExternalLink, HelpCircle } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -6,6 +6,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/flyfit/PageHeader';
 
 const faqItems = [
   {
@@ -44,16 +45,9 @@ const faqItems = [
 
 export default function Help() {
   return (
-    <div className="px-4 py-6 space-y-6">
-      {/* Header */}
-      <header className="relative z-10">
-        <h1 className="text-3xl font-extrabold font-display text-foreground">
-          Pomoc ❓
-        </h1>
-        <p className="text-muted-foreground font-medium mt-1">
-          Znajdź odpowiedzi na swoje pytania
-        </p>
-      </header>
+    <div className="min-h-screen bg-background">
+      <PageHeader title="Pomoc" emoji="❓" icon={<HelpCircle className="w-5 h-5 text-primary" />} />
+      <div className="px-4 py-4 space-y-6 pb-24">
 
       {/* FAQ */}
       <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful relative z-10">
@@ -104,6 +98,7 @@ export default function Help() {
             Napisz na Instagram @fitfly_app
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );

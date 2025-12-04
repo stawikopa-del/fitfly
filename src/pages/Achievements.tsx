@@ -1,4 +1,3 @@
-import { AppLayout } from '@/components/flyfit/AppLayout';
 import { useGamification } from '@/hooks/useGamification';
 import { LevelProgress } from '@/components/flyfit/LevelProgress';
 import { BadgeCard } from '@/components/flyfit/BadgeCard';
@@ -7,13 +6,15 @@ import { BADGE_DEFINITIONS, XP_REWARDS } from '@/types/gamification';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Star, Flame, Target } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeader } from '@/components/flyfit/PageHeader';
 
 export default function Achievements() {
   const { gamification, badges, loading } = useGamification();
 
   if (loading) {
     return (
-      <AppLayout>
+      <div className="min-h-screen bg-background">
+        <PageHeader title="Osiągnięcia" emoji="🏆" icon={<Trophy className="w-5 h-5 text-primary" />} />
         <div className="p-4 space-y-4">
           <Skeleton className="h-32 w-full rounded-2xl" />
           <Skeleton className="h-12 w-full rounded-xl" />
@@ -23,7 +24,7 @@ export default function Achievements() {
             ))}
           </div>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
@@ -32,20 +33,14 @@ export default function Achievements() {
   const totalBadges = BADGE_DEFINITIONS.length;
 
   return (
-    <AppLayout>
+    <div className="min-h-screen bg-background">
+      <PageHeader 
+        title="Osiągnięcia" 
+        emoji="🏆" 
+        subtitle={`Zdobyto ${earnedCount}/${totalBadges} odznak`}
+        icon={<Trophy className="w-5 h-5 text-primary" />} 
+      />
       <div className="p-4 space-y-6 pb-24">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-fitfly-green/20 flex items-center justify-center">
-            <Trophy className="w-6 h-6 text-fitfly-green" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-extrabold italic text-foreground">Osiągnięcia</h1>
-            <p className="text-sm text-muted-foreground">
-              Zdobyto {earnedCount}/{totalBadges} odznak
-            </p>
-          </div>
-        </div>
 
         {/* Level Progress */}
         {gamification && (
@@ -113,6 +108,6 @@ export default function Achievements() {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    </div>
   );
 }
