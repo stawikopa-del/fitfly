@@ -93,13 +93,13 @@ export function CalendarDialog({ trigger }: CalendarDialogProps) {
 
         <div className="space-y-4">
           {/* Calendar */}
-          <div className="bg-card rounded-2xl p-3 border border-border/50">
+          <div className="bg-card rounded-2xl p-3 border border-border/50 flex justify-center">
             <CalendarComponent
               mode="single"
               selected={selectedDate}
               onSelect={(date) => date && setSelectedDate(date)}
               locale={pl}
-              className="pointer-events-auto"
+              className="pointer-events-auto mx-auto"
               modifiers={{
                 hasEvent: datesWithEvents,
               }}
