@@ -144,14 +144,27 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
     hasScannedRef.current = false;
 
     try {
+      // Request camera permission first
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      // Stop the stream immediately, we just needed permission
+      stream.getTracks().forEach(track => track.stop());
+
       const html5Qrcode = new Html5Qrcode('barcode-reader');
       scannerRef.current = html5Qrcode;
+
+      // Get container dimensions for responsive qrbox
+      const container = document.getElementById('barcode-reader');
+      const containerWidth = container?.clientWidth || 300;
+      const qrboxWidth = Math.min(250, containerWidth - 50);
+      const qrboxHeight = Math.round(qrboxWidth * 0.6);
 
       await html5Qrcode.start(
         { facingMode: 'environment' },
         {
           fps: 10,
-          qrbox: { width: 250, height: 150 },
+          qrbox: { width: qrboxWidth, height: qrboxHeight },
           aspectRatio: 1.5,
         },
         async (decodedText) => {
@@ -181,9 +194,19 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
       );
 
       setIsScanning(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Scanner error:', err);
-      setError('Nie udało się uruchomić aparatu. Użyj ręcznego wpisywania kodu poniżej.');
+      
+      let errorMessage = 'Nie udało się uruchomić aparatu.';
+      if (err.name === 'NotAllowedError' || err.message?.includes('Permission')) {
+        errorMessage = 'Brak uprawnień do kamery. Zezwól na dostęp do aparatu w ustawieniach przeglądarki.';
+      } else if (err.name === 'NotFoundError') {
+        errorMessage = 'Nie znaleziono kamery na tym urządzeniu.';
+      } else if (err.name === 'NotReadableError') {
+        errorMessage = 'Kamera jest używana przez inną aplikację.';
+      }
+      
+      setError(`${errorMessage} Użyj ręcznego wpisywania kodu poniżej.`);
       soundFeedback.error();
     }
   };
