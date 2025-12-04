@@ -26,15 +26,15 @@ export default function Home() {
         
         <button 
           onClick={() => navigate('/kalendarz')}
-          className="relative text-right bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group"
+          className="relative text-center bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group"
         >
           {/* Red "Kalendarz" badge */}
-          <span className="absolute -top-2 -left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+          <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
             <Calendar className="w-3 h-3" />
             Kalendarz
           </span>
           
-          <p className="text-sm font-bold text-foreground capitalize group-hover:text-primary transition-colors">
+          <p className="text-xs font-bold text-foreground capitalize group-hover:text-primary transition-colors">
             {new Date().toLocaleDateString('pl-PL', { weekday: 'long' })}
           </p>
           <p className="text-xs text-muted-foreground">
