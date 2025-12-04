@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import annaAvatar from '@/assets/testimonial-anna.jpg';
+import michalAvatar from '@/assets/testimonial-michal.jpg';
+import kasiaAvatar from '@/assets/testimonial-kasia.jpg';
 
 const testimonials = [
   {
@@ -7,18 +10,21 @@ const testimonials = [
     author: "Anna K.",
     role: "użytkowniczka pakietu FIT",
     rating: 5,
+    avatar: annaAvatar,
   },
   {
     text: "Dzięki FITKOWI mam motywację każdego dnia. To jak posiadanie osobistego trenera w kieszeni!",
     author: "Michał W.",
     role: "użytkownik pakietu PREMIUM",
     rating: 5,
+    avatar: michalAvatar,
   },
   {
     text: "Proste śledzenie posiłków i wody pomogło mi wypracować zdrowe nawyki. Polecam każdemu!",
     author: "Kasia M.",
     role: "użytkowniczka pakietu FIT",
     rating: 5,
+    avatar: kasiaAvatar,
   },
 ];
 
@@ -51,28 +57,41 @@ export function TestimonialsCarousel() {
 
   return (
     <div className="text-center bg-muted/30 rounded-2xl p-5 border border-border/30 overflow-hidden">
-      <div className="flex justify-center gap-1 mb-3">
-        {[...Array(current.rating)].map((_, i) => (
-          <span key={i} className="text-yellow-500">⭐</span>
-        ))}
-      </div>
-      
-      <div className="min-h-[70px] flex items-center justify-center">
-        <div 
-          className={cn(
-            "transition-all duration-300 ease-in-out",
-            isAnimating 
-              ? "opacity-0 translate-y-4" 
-              : "opacity-100 translate-y-0"
-          )}
-        >
+      <div 
+        className={cn(
+          "transition-all duration-300 ease-in-out",
+          isAnimating 
+            ? "opacity-0 translate-y-4" 
+            : "opacity-100 translate-y-0"
+        )}
+      >
+        {/* Avatar */}
+        <div className="flex justify-center mb-3">
+          <img 
+            src={current.avatar} 
+            alt={current.author}
+            className="w-16 h-16 rounded-full object-cover border-3 border-primary/30 shadow-lg"
+          />
+        </div>
+
+        {/* Stars */}
+        <div className="flex justify-center gap-1 mb-3">
+          {[...Array(current.rating)].map((_, i) => (
+            <span key={i} className="text-yellow-500">⭐</span>
+          ))}
+        </div>
+        
+        {/* Text */}
+        <div className="min-h-[60px] flex items-center justify-center">
           <p className="text-sm font-medium text-foreground">
             "{current.text}"
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            — {current.author}, {current.role}
-          </p>
         </div>
+        
+        {/* Author */}
+        <p className="text-xs text-muted-foreground mt-2">
+          — {current.author}, {current.role}
+        </p>
       </div>
 
       {/* Dots navigation */}
