@@ -454,6 +454,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          id: string
+          shopify_customer_id: string | null
+          shopify_order_id: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          shopify_customer_id?: string | null
+          shopify_order_id?: string | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          shopify_customer_id?: string | null
+          shopify_order_id?: string | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       xp_transactions: {
         Row: {
           amount: number
@@ -486,7 +525,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_subscription_tier: {
+        Args: { p_user_id: string }
+        Returns: Database["public"]["Enums"]["subscription_tier"]
+      }
     }
     Enums: {
       badge_type:
@@ -504,6 +546,8 @@ export type Database = {
         | "zdrowy_duch"
         | "fit_guru"
         | "legenda"
+      subscription_status: "active" | "cancelled" | "expired" | "pending"
+      subscription_tier: "start" | "fit" | "premium"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -647,6 +691,8 @@ export const Constants = {
         "fit_guru",
         "legenda",
       ],
+      subscription_status: ["active", "cancelled", "expired", "pending"],
+      subscription_tier: ["start", "fit", "premium"],
     },
   },
 } as const

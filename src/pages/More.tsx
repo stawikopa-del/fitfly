@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2 } from 'lucide-react';
+import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { fetchSubscriptionProducts, createStorefrontCheckout, ShopifyProduct } from '@/lib/shopify';
+import { useSubscription, SubscriptionTier } from '@/hooks/useSubscription';
 
 const menuItems = [
   { to: '/postepy', icon: TrendingUp, label: 'Postępy', emoji: '📊', description: 'Sprawdź swoje statystyki' },
@@ -49,8 +50,16 @@ const packageConfig: Record<string, { icon: typeof Zap; emoji: string; features:
   },
 };
 
+// Map handles to tiers
+const HANDLE_TO_TIER: Record<string, SubscriptionTier> = {
+  'pakiet-start': 'start',
+  'pakiet-fit': 'fit',
+  'pakiet-premium': 'premium',
+};
+
 export default function More() {
   const { isInstallable, isInstalled, promptInstall, showIOSInstructions } = usePWAInstall();
+  const { currentTier, isActive, loading: subscriptionLoading } = useSubscription();
   const [showIOSDialog, setShowIOSDialog] = useState(false);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -127,20 +136,29 @@ export default function More() {
     const price = variant ? parseFloat(variant.price.amount) : 0;
     const isFree = price === 0;
     const isLoading = purchasingId === product.node.id;
+    const productTier = HANDLE_TO_TIER[product.node.handle] || 'start';
+    const isCurrentTier = currentTier === productTier && isActive;
 
     return (
       <button
         key={product.node.id}
-        onClick={() => handlePurchase(product)}
-        disabled={isLoading}
+        onClick={() => !isCurrentTier && handlePurchase(product)}
+        disabled={isLoading || isCurrentTier}
         className={cn(
-          "relative p-4 rounded-2xl border-2 shadow-lg hover:-translate-y-0.5 transition-all text-left overflow-hidden group w-full",
+          "relative p-4 rounded-2xl border-2 shadow-lg transition-all text-left overflow-hidden group w-full",
           config.gradient ? `bg-gradient-to-br ${config.gradient}` : 'bg-card',
           config.borderColor || 'border-border/50',
-          isLoading && 'opacity-70'
+          isLoading && 'opacity-70',
+          isCurrentTier && 'ring-2 ring-green-500 border-green-500',
+          !isCurrentTier && 'hover:-translate-y-0.5'
         )}
       >
-        {config.popular && (
+        {isCurrentTier && (
+          <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" /> TWÓJ PAKIET
+          </div>
+        )}
+        {config.popular && !isCurrentTier && (
           <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">
             POPULARNE ⭐
           </div>
