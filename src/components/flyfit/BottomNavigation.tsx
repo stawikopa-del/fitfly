@@ -87,14 +87,14 @@ export function BottomNavigation() {
           >
             <div className={cn(
               'w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300',
-              'bg-gradient-to-br from-primary to-fitfly-blue-light shadow-playful-lg',
-              'hover:scale-105 hover:shadow-xl',
-              location.pathname === '/czat' && 'ring-4 ring-primary/30 scale-105'
+              'bg-[#fdfeea] border-4 border-primary/20 shadow-lg',
+              'hover:scale-105 hover:shadow-xl hover:border-primary/40',
+              location.pathname === '/czat' && 'ring-4 ring-primary/30 scale-105 border-primary/50'
             )}>
               <img 
                 src={fitekAvatar} 
                 alt="FITEK" 
-                className="w-12 h-12 rounded-full object-cover"
+                className="w-11 h-11 rounded-full object-cover"
               />
             </div>
             <span className={cn(
