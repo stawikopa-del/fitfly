@@ -314,8 +314,7 @@ export default function Profile() {
       {/* Link do ustawień */}
       <Button 
         variant="outline" 
-        className="w-full justify-between rounded-3xl h-14 border-2 font-bold relative z-10 animate-float hover:-translate-y-1 transition-all"
-        style={{ animationDelay: '0.6s' }}
+        className="w-full justify-between rounded-3xl h-14 border-2 font-bold relative z-10 floating-gentle hover:-translate-y-1 transition-all"
       >
         <span className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center">
