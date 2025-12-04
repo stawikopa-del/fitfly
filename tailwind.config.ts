@@ -179,6 +179,7 @@ export default {
         "playful-sm": "0 2px 0 hsl(var(--fitfly-blue-dark)), 0 4px 10px hsl(var(--fitfly-blue) / 0.2)",
         "playful-lg": "0 6px 0 hsl(var(--fitfly-blue-dark)), 0 10px 30px hsl(var(--fitfly-blue) / 0.4)",
         "playful-green": "0 4px 0 hsl(var(--fitfly-green-dark)), 0 6px 20px hsl(var(--fitfly-green) / 0.3)",
+        "playful-green-lg": "0 6px 0 hsl(var(--fitfly-green-dark)), 0 10px 30px hsl(var(--fitfly-green) / 0.4)",
         "playful-orange": "0 4px 0 hsl(var(--fitfly-orange) / 0.8), 0 6px 20px hsl(var(--fitfly-orange) / 0.3)",
         "card-playful": "0 8px 30px -10px hsl(var(--fitfly-blue) / 0.2)",
         "card-playful-hover": "0 12px 40px -10px hsl(var(--fitfly-blue) / 0.3)",
