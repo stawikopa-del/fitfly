@@ -74,6 +74,7 @@
     --sidebar-ring: 195 90% 50%;
   }
 
+  /* Ciemny kolorowy (dark) */
   .dark {
     --background: 220 35% 10%;
     --foreground: 45 30% 95%;
@@ -125,6 +126,114 @@
     --sidebar-accent-foreground: 145 60% 80%;
     --sidebar-border: 220 30% 25%;
     --sidebar-ring: 195 85% 55%;
+  }
+
+  /* Minimalistyczny ciemny - bez kolorów */
+  .minimal-dark {
+    --background: 0 0% 12%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 16%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 16%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 0 0% 85%;
+    --primary-foreground: 0 0% 10%;
+
+    --secondary: 0 0% 25%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 0 0% 30%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 0% 50%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 0 0% 70%;
+
+    --fitfly-blue: 0 0% 70%;
+    --fitfly-blue-light: 0 0% 80%;
+    --fitfly-blue-dark: 0 0% 50%;
+    --fitfly-green: 0 0% 70%;
+    --fitfly-green-light: 0 0% 80%;
+    --fitfly-green-dark: 0 0% 50%;
+    --fitfly-orange: 0 0% 70%;
+    --fitfly-orange-light: 0 0% 80%;
+    --fitfly-yellow: 0 0% 70%;
+    --fitfly-pink: 0 0% 70%;
+    --fitfly-purple: 0 0% 70%;
+    --fitfly-cream: 0 0% 12%;
+    --fitfly-navy: 0 0% 80%;
+
+    --sidebar-background: 0 0% 14%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 0 0% 85%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 0 0% 25%;
+    --sidebar-accent-foreground: 0 0% 80%;
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: 0 0% 70%;
+  }
+
+  /* Minimalistyczny jasny - bez kolorów */
+  .minimal-light {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
+
+    --primary: 0 0% 20%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 0 0% 15%;
+
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 0 0% 85%;
+    --accent-foreground: 0 0% 15%;
+
+    --destructive: 0 0% 40%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 88%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 30%;
+
+    --fitfly-blue: 0 0% 30%;
+    --fitfly-blue-light: 0 0% 50%;
+    --fitfly-blue-dark: 0 0% 20%;
+    --fitfly-green: 0 0% 30%;
+    --fitfly-green-light: 0 0% 50%;
+    --fitfly-green-dark: 0 0% 20%;
+    --fitfly-orange: 0 0% 30%;
+    --fitfly-orange-light: 0 0% 50%;
+    --fitfly-yellow: 0 0% 30%;
+    --fitfly-pink: 0 0% 30%;
+    --fitfly-purple: 0 0% 30%;
+    --fitfly-cream: 0 0% 98%;
+    --fitfly-navy: 0 0% 20%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 15%;
+    --sidebar-primary: 0 0% 20%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 94%;
+    --sidebar-accent-foreground: 0 0% 30%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 0 0% 30%;
   }
 }
 

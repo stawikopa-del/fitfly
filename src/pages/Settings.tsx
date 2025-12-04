@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Bell, Moon, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2 } from 'lucide-react';
+import { Bell, Moon, Sun, Palette, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2 } from 'lucide-react';
+import { useTheme, Theme } from '@/hooks/useTheme';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,7 @@ import { supabase } from '@/integrations/supabase/client';
 export default function Settings() {
   const { user, signOut } = useAuth();
   const { isSupported: isBiometricSupported, hasRegisteredBiometric, registerBiometric, removeBiometric, isRegistering } = useWebAuthn();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   const [settings, setSettings] = useState({
@@ -174,6 +176,82 @@ export default function Settings() {
           </div>
         </div>
       )}
+
+      {/* Theme Section */}
+      <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful relative z-10 animate-float">
+        <h2 className="font-bold font-display text-foreground mb-4 flex items-center gap-2 text-lg">
+          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Palette className="w-5 h-5 text-primary" />
+          </div>
+          Motyw aplikacji 🎨
+        </h2>
+        
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => { setTheme('default'); toast.success('Motyw zmieniony'); }}
+            className={cn(
+              "p-4 rounded-2xl border-2 transition-all text-left",
+              theme === 'default' 
+                ? "border-primary bg-primary/10" 
+                : "border-border/50 bg-muted/30 hover:border-primary/50"
+            )}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[hsl(195,90%,50%)] to-[hsl(145,70%,45%)]" />
+              <span className="font-bold text-sm">Domyślny</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Kolorowy, wesoły</p>
+          </button>
+
+          <button
+            onClick={() => { setTheme('dark'); toast.success('Motyw zmieniony'); }}
+            className={cn(
+              "p-4 rounded-2xl border-2 transition-all text-left",
+              theme === 'dark' 
+                ? "border-primary bg-primary/10" 
+                : "border-border/50 bg-muted/30 hover:border-primary/50"
+            )}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[hsl(195,85%,55%)] to-[hsl(145,65%,50%)]" />
+              <span className="font-bold text-sm">Ciemny</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Kolorowy, ciemny</p>
+          </button>
+
+          <button
+            onClick={() => { setTheme('minimal-dark'); toast.success('Motyw zmieniony'); }}
+            className={cn(
+              "p-4 rounded-2xl border-2 transition-all text-left",
+              theme === 'minimal-dark' 
+                ? "border-primary bg-primary/10" 
+                : "border-border/50 bg-muted/30 hover:border-primary/50"
+            )}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Moon className="w-6 h-6 text-foreground" />
+              <span className="font-bold text-sm">Minimal ciemny</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Szary, bez kolorów</p>
+          </button>
+
+          <button
+            onClick={() => { setTheme('minimal-light'); toast.success('Motyw zmieniony'); }}
+            className={cn(
+              "p-4 rounded-2xl border-2 transition-all text-left",
+              theme === 'minimal-light' 
+                ? "border-primary bg-primary/10" 
+                : "border-border/50 bg-muted/30 hover:border-primary/50"
+            )}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Sun className="w-6 h-6 text-foreground" />
+              <span className="font-bold text-sm">Minimal jasny</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Biały, bez kolorów</p>
+          </button>
+        </div>
+      </div>
 
       {/* Settings sections */}
       {settingsSections.map((section) => (
