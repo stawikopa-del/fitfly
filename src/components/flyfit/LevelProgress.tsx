@@ -45,7 +45,12 @@ export function LevelProgress({ level, totalXP, compact = false }: LevelProgress
       </div>
       
       <div className="space-y-1">
-        <Progress value={progress.percentage} className="h-3" />
+        <div className="relative h-3 w-full overflow-hidden rounded-full bg-muted/30 border border-border/50">
+          <div 
+            className="h-full bg-gradient-to-r from-fitfly-green to-fitfly-green/80 transition-all rounded-full"
+            style={{ width: `${progress.percentage}%` }}
+          />
+        </div>
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{progress.current} XP</span>
           <span>{progress.required} XP</span>
