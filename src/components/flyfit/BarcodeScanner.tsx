@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { toast } from 'sonner';
-
 interface ProductData {
   name: string;
   brand?: string;
@@ -21,25 +20,31 @@ interface ProductData {
   score: number;
   description: string;
 }
-
 interface BarcodeScannerProps {
   onClose: () => void;
-  onAddMeal?: (meal: { name: string; calories: number; protein: number; carbs: number; fat: number }) => void;
+  onAddMeal?: (meal: {
+    name: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  }) => void;
 }
 
 // Funkcja do oceny produktu
-const evaluateProduct = (product: Omit<ProductData, 'score' | 'description'>): { score: number; description: string } => {
+const evaluateProduct = (product: Omit<ProductData, 'score' | 'description'>): {
+  score: number;
+  description: string;
+} => {
   let score = 5;
   const issues: string[] = [];
   const positives: string[] = [];
-
   if (product.protein >= 20) {
     score += 2;
     positives.push('wysokie białko');
   } else if (product.protein >= 10) {
     score += 1;
   }
-
   if (product.sugar && product.sugar > 15) {
     score -= 2;
     issues.push('dużo cukru');
@@ -47,31 +52,25 @@ const evaluateProduct = (product: Omit<ProductData, 'score' | 'description'>): {
     score += 1;
     positives.push('mało cukru');
   }
-
   if (product.fat > 20) {
     score -= 1;
     issues.push('wysoki tłuszcz');
   }
-
   if (product.fiber && product.fiber >= 5) {
     score += 1;
     positives.push('dobre źródło błonnika');
   }
-
   if (product.salt && product.salt > 1.5) {
     score -= 1;
     issues.push('wysoka zawartość soli');
   }
-
   if (product.calories < 150) {
     score += 1;
     positives.push('niskokaloryczny');
   } else if (product.calories > 400) {
     score -= 1;
   }
-
   score = Math.max(1, Math.min(10, score));
-
   let description = '';
   if (score >= 8) {
     description = `Świetny wybór! ${positives.length > 0 ? positives.slice(0, 2).join(', ') + '.' : ''} Ten produkt wspiera Twoje cele zdrowotne.`;
@@ -82,8 +81,10 @@ const evaluateProduct = (product: Omit<ProductData, 'score' | 'description'>): {
   } else {
     description = `Słaby wybór dla zdrowia. ${issues.length > 0 ? issues.join(', ') + '.' : ''} Szukaj zdrowszych alternatyw.`;
   }
-
-  return { score, description };
+  return {
+    score,
+    description
+  };
 };
 
 // Pobierz dane produktu z Open Food Facts
@@ -91,14 +92,11 @@ const fetchProductData = async (barcode: string): Promise<ProductData | null> =>
   try {
     const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
     const data = await response.json();
-
     if (data.status !== 1 || !data.product) {
       return null;
     }
-
     const p = data.product;
     const nutrients = p.nutriments || {};
-
     const productBase = {
       name: p.product_name_pl || p.product_name || 'Nieznany produkt',
       brand: p.brands,
@@ -110,32 +108,30 @@ const fetchProductData = async (barcode: string): Promise<ProductData | null> =>
       fiber: nutrients.fiber_100g || nutrients.fiber,
       salt: nutrients.salt_100g || nutrients.salt,
       serving_size: p.serving_size,
-      image_url: p.image_url || p.image_front_url,
+      image_url: p.image_url || p.image_front_url
     };
-
     const evaluation = evaluateProduct(productBase);
-
     return {
       ...productBase,
-      ...evaluation,
+      ...evaluation
     };
   } catch (error) {
     console.error('Error fetching product:', error);
     return null;
   }
 };
-
-export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
+export function BarcodeScanner({
+  onClose,
+  onAddMeal
+}: BarcodeScannerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [product, setProduct] = useState<ProductData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [manualBarcode, setManualBarcode] = useState('');
-
   const handleClose = () => {
     soundFeedback.navTap();
     onClose();
   };
-
   const handleAddToMeal = () => {
     if (product && onAddMeal) {
       soundFeedback.success();
@@ -144,33 +140,28 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
         calories: product.calories,
         protein: product.protein,
         carbs: product.carbs,
-        fat: product.fat,
+        fat: product.fat
       });
       toast.success('Dodano do dziennika posiłków!');
       onClose();
     }
   };
-
   const resetScan = () => {
     setProduct(null);
     setError(null);
     setManualBarcode('');
   };
-
   const handleManualSearch = async () => {
     if (!manualBarcode.trim()) {
       toast.error('Wpisz kod kreskowy');
       return;
     }
-
     setError(null);
     setProduct(null);
     setIsLoading(true);
     soundFeedback.buttonClick();
-
     const productData = await fetchProductData(manualBarcode.trim());
     setIsLoading(false);
-
     if (productData) {
       setProduct(productData);
       soundFeedback.success();
@@ -179,23 +170,17 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
       soundFeedback.error();
     }
   };
-
   const getScoreColor = (score: number) => {
     if (score >= 8) return 'text-green-500 bg-green-500/20';
     if (score >= 6) return 'text-yellow-500 bg-yellow-500/20';
     if (score >= 4) return 'text-orange-500 bg-orange-500/20';
     return 'text-red-500 bg-red-500/20';
   };
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-background">
+  return <div className="fixed inset-0 z-[100] bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border/50 px-4 py-3 safe-area-pt">
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleClose}
-            className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
-          >
+          <button onClick={handleClose} className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <div>
@@ -217,94 +202,58 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
             <h3 className="font-bold text-foreground">Skanowanie aparatem</h3>
           </div>
           <p className="text-sm text-muted-foreground">
-            Automatyczne skanowanie kodów kreskowych aparatem będzie dostępne w aplikacji mobilnej FITFLY.
+            Automatyczne skanowanie kodów kreskowych aparatem będzie dostępne w aplikacji mobilnej.
           </p>
         </div>
 
         {/* Manual barcode input */}
-        {!product && (
-          <div className="bg-card rounded-3xl border-2 border-border/50 p-5 shadow-card-playful">
+        {!product && <div className="bg-card rounded-3xl border-2 border-border/50 p-5 shadow-card-playful">
             <p className="text-base font-bold text-foreground mb-3 flex items-center gap-2">
               <Search className="w-5 h-5 text-primary" />
               Wpisz kod kreskowy
             </p>
             <div className="flex gap-2">
-              <Input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="np. 5900617001696"
-                value={manualBarcode}
-                onChange={(e) => setManualBarcode(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleManualSearch()}
-                className="flex-1 rounded-xl text-base"
-                disabled={isLoading}
-              />
-              <Button
-                onClick={handleManualSearch}
-                disabled={isLoading || !manualBarcode.trim()}
-                className="rounded-xl font-bold px-5"
-              >
+              <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="np. 5900617001696" value={manualBarcode} onChange={e => setManualBarcode(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleManualSearch()} className="flex-1 rounded-xl text-base" disabled={isLoading} />
+              <Button onClick={handleManualSearch} disabled={isLoading || !manualBarcode.trim()} className="rounded-xl font-bold px-5">
                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-3">
               Znajdziesz go pod kodem kreskowym na opakowaniu produktu
             </p>
-          </div>
-        )}
+          </div>}
 
         {/* Loading state */}
-        {isLoading && (
-          <div className="bg-card rounded-3xl border-2 border-border/50 p-8 shadow-card-playful">
+        {isLoading && <div className="bg-card rounded-3xl border-2 border-border/50 p-8 shadow-card-playful">
             <div className="text-center">
               <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-3" />
               <p className="text-sm text-muted-foreground font-medium">Szukam produktu...</p>
             </div>
-          </div>
-        )}
+          </div>}
 
         {/* Error message */}
-        {error && (
-          <div className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-4 flex items-center gap-3">
+        {error && <div className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-4 flex items-center gap-3">
             <AlertCircle className="w-6 h-6 text-destructive flex-shrink-0" />
             <div>
               <p className="text-sm font-bold text-destructive">{error}</p>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={resetScan}
-                className="mt-2 text-destructive hover:text-destructive"
-              >
+              <Button variant="ghost" size="sm" onClick={resetScan} className="mt-2 text-destructive hover:text-destructive">
                 Spróbuj ponownie
               </Button>
             </div>
-          </div>
-        )}
+          </div>}
 
         {/* Product result */}
-        {product && (
-          <div className="space-y-4 animate-fade-in">
+        {product && <div className="space-y-4 animate-fade-in">
             {/* Product header */}
             <div className="bg-card rounded-3xl border-2 border-border/50 p-5 shadow-card-playful">
               <div className="flex gap-4">
-                {product.image_url && (
-                  <img 
-                    src={product.image_url} 
-                    alt={product.name}
-                    className="w-20 h-20 rounded-2xl object-cover border border-border/50"
-                  />
-                )}
+                {product.image_url && <img src={product.image_url} alt={product.name} className="w-20 h-20 rounded-2xl object-cover border border-border/50" />}
                 <div className="flex-1 min-w-0">
                   <h2 className="font-extrabold font-display text-foreground text-lg leading-tight">
                     {product.name}
                   </h2>
-                  {product.brand && (
-                    <p className="text-sm text-muted-foreground font-medium">{product.brand}</p>
-                  )}
-                  {product.serving_size && (
-                    <p className="text-xs text-muted-foreground mt-1">Porcja: {product.serving_size}</p>
-                  )}
+                  {product.brand && <p className="text-sm text-muted-foreground font-medium">{product.brand}</p>}
+                  {product.serving_size && <p className="text-xs text-muted-foreground mt-1">Porcja: {product.serving_size}</p>}
                 </div>
               </div>
             </div>
@@ -312,10 +261,7 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
             {/* Score */}
             <div className="bg-card rounded-3xl border-2 border-border/50 p-5 shadow-card-playful">
               <div className="flex items-center gap-4 mb-3">
-                <div className={cn(
-                  "w-16 h-16 rounded-2xl flex items-center justify-center",
-                  getScoreColor(product.score)
-                )}>
+                <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center", getScoreColor(product.score))}>
                   <div className="text-center">
                     <Star className="w-5 h-5 mx-auto mb-0.5" />
                     <span className="text-2xl font-extrabold font-display">{product.score}</span>
@@ -361,53 +307,34 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
               </div>
 
               {/* Extra nutrients */}
-              {(product.sugar !== undefined || product.fiber !== undefined || product.salt !== undefined) && (
-                <div className="mt-4 pt-4 border-t border-border/50 grid grid-cols-3 gap-3">
-                  {product.sugar !== undefined && (
-                    <div className="text-center">
+              {(product.sugar !== undefined || product.fiber !== undefined || product.salt !== undefined) && <div className="mt-4 pt-4 border-t border-border/50 grid grid-cols-3 gap-3">
+                  {product.sugar !== undefined && <div className="text-center">
                       <p className="text-sm font-bold text-foreground">{Math.round(product.sugar * 10) / 10}g</p>
                       <p className="text-[10px] text-muted-foreground">cukry</p>
-                    </div>
-                  )}
-                  {product.fiber !== undefined && (
-                    <div className="text-center">
+                    </div>}
+                  {product.fiber !== undefined && <div className="text-center">
                       <p className="text-sm font-bold text-foreground">{Math.round(product.fiber * 10) / 10}g</p>
                       <p className="text-[10px] text-muted-foreground">błonnik</p>
-                    </div>
-                  )}
-                  {product.salt !== undefined && (
-                    <div className="text-center">
+                    </div>}
+                  {product.salt !== undefined && <div className="text-center">
                       <p className="text-sm font-bold text-foreground">{Math.round(product.salt * 100) / 100}g</p>
                       <p className="text-[10px] text-muted-foreground">sól</p>
-                    </div>
-                  )}
-                </div>
-              )}
+                    </div>}
+                </div>}
             </div>
 
             {/* Action buttons */}
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={resetScan}
-                className="flex-1 rounded-2xl font-bold"
-              >
+              <Button variant="outline" onClick={resetScan} className="flex-1 rounded-2xl font-bold">
                 <Search className="w-4 h-4 mr-2" />
                 Szukaj inny
               </Button>
-              {onAddMeal && (
-                <Button
-                  onClick={handleAddToMeal}
-                  className="flex-1 rounded-2xl font-bold"
-                >
+              {onAddMeal && <Button onClick={handleAddToMeal} className="flex-1 rounded-2xl font-bold">
                   <Plus className="w-4 h-4 mr-2" />
                   Dodaj do posiłku
-                </Button>
-              )}
+                </Button>}
             </div>
-          </div>
-        )}
+          </div>}
       </div>
-    </div>
-  );
+    </div>;
 }
