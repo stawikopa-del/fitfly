@@ -2,7 +2,6 @@ import { NavLink } from 'react-router-dom';
 import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
-import mascotImage from '@/assets/fitfly-mascot.png';
 
 const menuItems = [
   { to: '/postepy', icon: TrendingUp, label: 'Postępy', emoji: '📊', description: 'Sprawdź swoje statystyki' },
@@ -24,17 +23,8 @@ export default function More() {
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-32 left-0 w-48 h-48 bg-fitfly-purple/10 rounded-full blur-3xl -translate-x-1/2" />
 
-      {/* Header z maskotką */}
+      {/* Header */}
       <header className="relative z-10 text-center">
-        <div className="flex justify-center mb-4">
-          <div className="relative animate-float">
-            <img 
-              src={mascotImage} 
-              alt="FLYFIT" 
-              className="w-24 h-24 object-contain drop-shadow-lg"
-            />
-          </div>
-        </div>
         <h1 className="text-3xl font-extrabold font-display text-foreground">
           Więcej opcji ✨
         </h1>
