@@ -213,11 +213,13 @@ export function useGamification() {
 
   const onWaterGoalReached = useCallback(async () => {
     await addXP(XP_REWARDS.water_goal_reached, 'water', 'Osiągnięto cel wody');
-  }, [addXP]);
+    await awardBadge('wodny_wojownik');
+  }, [addXP, awardBadge]);
 
   const onMealLogged = useCallback(async () => {
     await addXP(XP_REWARDS.meal_logged, 'meal', 'Zalogowano posiłek');
-  }, [addXP]);
+    await awardBadge('dietetyk');
+  }, [addXP, awardBadge]);
 
   const onHabitCompleted = useCallback(async () => {
     await addXP(XP_REWARDS.habit_completed, 'habit', 'Ukończono nawyk');

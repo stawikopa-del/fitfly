@@ -6,12 +6,16 @@ import { cn } from '@/lib/utils';
 import { WorkoutSession } from '@/components/flyfit/WorkoutSession';
 import { workouts, categories, difficultyConfig, WorkoutData } from '@/data/workouts';
 import { useToast } from '@/hooks/use-toast';
+import { useGamification } from '@/hooks/useGamification';
+import { useUserProgress } from '@/hooks/useUserProgress';
 
 export default function Workouts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Wszystkie');
   const [activeWorkout, setActiveWorkout] = useState<WorkoutData | null>(null);
   const { toast } = useToast();
+  const { onWorkoutCompleted } = useGamification();
+  const { addActiveMinutes } = useUserProgress();
 
   const filteredWorkouts = workouts.filter(workout => {
     const matchesSearch = workout.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -28,6 +32,14 @@ export default function Workouts() {
   };
 
   const handleCompleteWorkout = () => {
+    if (activeWorkout) {
+      // Add active minutes based on workout duration
+      addActiveMinutes(activeWorkout.duration);
+      
+      // Award XP for completing workout
+      onWorkoutCompleted();
+    }
+    
     setActiveWorkout(null);
     toast({
       title: "Brawo! 🎉",

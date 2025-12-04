@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { format, isToday, subDays, differenceInDays } from 'date-fns';
+import { useGamification } from './useGamification';
 
 export interface Habit {
   id: string;
@@ -178,6 +179,7 @@ export const suggestedChallenges = [
 
 export function useHabitsAndChallenges() {
   const { user } = useAuth();
+  const { onHabitCompleted, onChallengeCompleted, awardBadge } = useGamification();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [todayLogs, setTodayLogs] = useState<HabitLog[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -298,9 +300,10 @@ export function useHabitsAndChallenges() {
         return;
       }
       
-      // Update streak
+      // Update streak and award XP
       if (newCompleted) {
         await updateStreak(habitId, true);
+        onHabitCompleted();
       }
     } else {
       // Create new log
@@ -320,6 +323,13 @@ export function useHabitsAndChallenges() {
       }
       
       await updateStreak(habitId, true);
+      onHabitCompleted();
+      
+      // Check for habit streak badges
+      const newStreak = habit.streak_current + 1;
+      if (newStreak === 7) awardBadge('konsekwentny');
+      if (newStreak === 30) awardBadge('niezniszczalny');
+      if (habit.total_completions + 1 >= 100) awardBadge('mistrz_nawykow');
     }
     
     fetchTodayLogs();
@@ -425,6 +435,7 @@ export function useHabitsAndChallenges() {
     if (!challenge) return;
     
     const isCompleted = newCurrent >= challenge.target;
+    const wasNotCompleted = !challenge.is_completed;
     
     const { error } = await supabase
       .from('challenges')
@@ -440,8 +451,9 @@ export function useHabitsAndChallenges() {
       return;
     }
     
-    if (isCompleted) {
+    if (isCompleted && wasNotCompleted) {
       toast.success(`Wyzwanie ukończone! +${challenge.points} punktów 🎉`);
+      onChallengeCompleted();
     }
     
     fetchChallenges();
