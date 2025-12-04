@@ -133,7 +133,7 @@ export default function Auth() {
 
   // Load saved email on mount
   useEffect(() => {
-    const savedEmail = localStorage.getItem('flyfit_remembered_email');
+    const savedEmail = localStorage.getItem('fitfly_remembered_email');
     if (savedEmail) {
       setLoginEmail(savedEmail);
       setRememberMe(true);
@@ -222,9 +222,9 @@ export default function Auth() {
       } else {
         // Handle remember me
         if (rememberMe) {
-          localStorage.setItem('flyfit_remembered_email', loginEmail);
+          localStorage.setItem('fitfly_remembered_email', loginEmail);
         } else {
-          localStorage.removeItem('flyfit_remembered_email');
+          localStorage.removeItem('fitfly_remembered_email');
         }
         toast.success('Zalogowano! 🎉');
         navigate('/');
@@ -255,7 +255,7 @@ export default function Auth() {
     const result = await authenticateWithBiometric();
     if (result.success && result.email) {
       // Get stored password from secure storage
-      const storedAuth = localStorage.getItem('flyfit_biometric_auth');
+      const storedAuth = localStorage.getItem('fitfly_biometric_auth');
       if (storedAuth) {
         try {
           const { email, token } = JSON.parse(storedAuth);
@@ -431,7 +431,7 @@ export default function Auth() {
           {registerStep === 1 && (
             <div className="bg-card border-2 border-border/50 rounded-3xl p-6 shadow-card-playful animate-fade-in">
               <h2 className="text-xl font-bold font-display text-foreground text-center mb-1">Stwórz konto 🚀</h2>
-              <p className="text-muted-foreground text-sm text-center mb-6">Dołącz do FLYFIT!</p>
+              <p className="text-muted-foreground text-sm text-center mb-6">Dołącz do FITFLY!</p>
               
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -809,7 +809,7 @@ export default function Auth() {
 
       <div className="text-center mb-8">
         <h1 className="text-3xl font-extrabold font-display bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2 flex items-center justify-center gap-2">
-          {mode === 'forgot' ? 'Reset hasła' : 'FLYFIT'}
+          {mode === 'forgot' ? 'Reset hasła' : 'FITFLY'}
           <Sparkles className="w-6 h-6 text-fitfly-yellow" />
         </h1>
         <p className="text-muted-foreground font-medium">

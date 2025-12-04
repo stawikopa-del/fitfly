@@ -41,7 +41,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `Jesteś FITEK - przyjazny, wesoły niebieski ptaszek, który jest maskotką aplikacji fitness FLYFIT. 
+    const systemPrompt = `Jesteś FITEK - przyjazny, wesoły niebieski ptaszek, który jest maskotką aplikacji fitness FITFLY. 
     
 Twoja osobowość:
 - Jesteś bardzo przyjazny, ciepły i wspierający

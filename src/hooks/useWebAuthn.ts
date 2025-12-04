@@ -66,7 +66,7 @@ export function useWebAuthn() {
       const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
         challenge,
         rp: {
-          name: 'FLYFIT',
+          name: 'FITFLY',
           id: window.location.hostname,
         },
         user: {

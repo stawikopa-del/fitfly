@@ -10,7 +10,7 @@ export default function About() {
           O nas 💚
         </h1>
         <p className="text-muted-foreground font-medium mt-1">
-          Poznaj FLYFIT bliżej
+          Poznaj FITFLY bliżej
         </p>
       </header>
 
@@ -32,7 +32,7 @@ export default function About() {
         </h2>
         <p className="text-muted-foreground leading-relaxed">
           Wierzymy, że dbanie o zdrowie może być <strong className="text-foreground">przyjemne i zabawne</strong>! 
-          FLYFIT powstał z myślą o młodych ludziach, którzy chcą żyć zdrowiej, 
+          FITFLY powstał z myślą o młodych ludziach, którzy chcą żyć zdrowiej, 
           ale nie lubią nudnych aplikacji fitness.
         </p>
       </div>
@@ -87,10 +87,10 @@ export default function About() {
       {/* Footer */}
       <div className="text-center relative z-10 pt-4">
         <p className="text-muted-foreground text-sm">
-          Stworzone z 💚 przez zespół FLYFIT
+          Stworzone z 💚 przez zespół FITFLY
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          © 2024 FLYFIT. Wszystkie prawa zastrzeżone.
+          © 2024 FITFLY. Wszystkie prawa zastrzeżone.
         </p>
       </div>
     </div>

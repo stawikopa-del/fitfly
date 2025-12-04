@@ -83,7 +83,7 @@ export default function Settings() {
     if (settings.biometricLogin) {
       // Disable biometric
       removeBiometric();
-      localStorage.removeItem('flyfit_biometric_auth');
+      localStorage.removeItem('fitfly_biometric_auth');
       setSettings(prev => ({ ...prev, biometricLogin: false }));
       toast.success('Face ID wyłączone');
     } else {
@@ -93,7 +93,7 @@ export default function Settings() {
         // Store refresh token for biometric login
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData.session) {
-          localStorage.setItem('flyfit_biometric_auth', JSON.stringify({
+          localStorage.setItem('fitfly_biometric_auth', JSON.stringify({
             email: user.email,
             token: sessionData.session.refresh_token,
           }));
@@ -311,7 +311,7 @@ export default function Settings() {
 
       {/* Wersja */}
       <p className="text-center text-xs text-muted-foreground relative z-10">
-        FLYFIT v1.0.0 • Made with 💚
+        FITFLY v1.0.0 • Made with 💚
       </p>
     </div>
   );

@@ -26,7 +26,7 @@ export default function Privacy() {
           Twoja prywatność to nasz priorytet
         </h2>
         <p className="text-muted-foreground text-center text-sm leading-relaxed">
-          W FLYFIT dbamy o bezpieczeństwo Twoich danych. Nigdy nie sprzedajemy 
+          W FITFLY dbamy o bezpieczeństwo Twoich danych. Nigdy nie sprzedajemy 
           ani nie udostępniamy Twoich informacji osobom trzecim.
         </p>
       </div>

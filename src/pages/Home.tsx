@@ -17,7 +17,7 @@ export default function Home() {
       <header className="flex items-center justify-between relative z-10">
         <div>
           <h1 className="text-2xl font-extrabold font-display text-foreground tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            FLYFIT
+            FITFLY
           </h1>
           <p className="text-xs text-muted-foreground font-medium">Cześć! Jak się dziś czujesz?</p>
         </div>

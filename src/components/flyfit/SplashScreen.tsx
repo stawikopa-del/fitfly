@@ -54,7 +54,7 @@ export function SplashScreen({ onComplete, minDuration = 2000 }: SplashScreenPro
         'transition-all duration-500',
         isExiting ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'
       )}>
-        FLYFIT
+        FITFLY
       </h1>
       
       <p className={cn(
