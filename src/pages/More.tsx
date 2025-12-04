@@ -318,16 +318,18 @@ export default function More() {
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
             Pakiety FITFLY 💎
           </h2>
-          <button
-            onClick={() => {
-              soundFeedback.buttonClick();
-              document.getElementById('comparison-section')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="animate-float px-4 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-sm rounded-xl flex items-center gap-2 shadow-playful hover:shadow-playful-hover transition-all duration-300 hover:scale-105"
-          >
-            <Sparkles className="w-4 h-4" />
-            Porównaj pakiety
-          </button>
+          <div className="animate-float" style={{ animationDelay: '0s' }}>
+            <button
+              onClick={() => {
+                soundFeedback.buttonClick();
+                document.getElementById('comparison-section')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-4 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-sm rounded-xl flex items-center gap-2 shadow-playful hover:shadow-playful-hover transition-all duration-300 hover:scale-105"
+            >
+              <Sparkles className="w-4 h-4" />
+              Porównaj pakiety
+            </button>
+          </div>
         </div>
         <div className="grid gap-4">
           {loadingProducts ? (
