@@ -174,11 +174,24 @@ ${recipeJsonStructure}`
     let parsedContent;
     try {
       // Remove markdown code blocks if present
-      const cleanContent = content.replace(/```json\n?|\n?```/g, '').trim();
+      let cleanContent = content.replace(/```json\n?|\n?```/g, '').trim();
+      
+      // Fix common AI hallucination issues - remove invalid patterns
+      cleanContent = cleanContent.replace(/\s*plugins:\s*\{\},?\s*/g, '');
+      cleanContent = cleanContent.replace(/,\s*,/g, ','); // double commas
+      cleanContent = cleanContent.replace(/,\s*\]/g, ']'); // trailing comma in array
+      cleanContent = cleanContent.replace(/,\s*\}/g, '}'); // trailing comma in object
+      
       parsedContent = JSON.parse(cleanContent);
     } catch (parseError) {
       console.error("JSON parse error:", parseError);
-      throw new Error("Nie udało się przetworzyć odpowiedzi AI");
+      console.error("Content that failed to parse:", content?.substring(0, 500));
+      
+      // Return empty recipes as fallback
+      parsedContent = {
+        detected_ingredients: [],
+        recipes: []
+      };
     }
 
     return new Response(JSON.stringify(parsedContent), {
