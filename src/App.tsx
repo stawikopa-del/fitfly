@@ -20,6 +20,10 @@ import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import ProfileSetup from "./pages/ProfileSetup";
+import Help from "./pages/Help";
+import About from "./pages/About";
+import Info from "./pages/Info";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -172,6 +176,46 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <AppLayout>
             <More />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/pomoc"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Help />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/o-nas"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <About />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/informacje"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Info />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/prywatnosc"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Privacy />
           </AppLayout>
         </ProtectedRoute>
       }
