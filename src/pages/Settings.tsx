@@ -234,6 +234,7 @@ export default function Settings() {
         <Button 
           variant="outline" 
           className="w-full justify-between rounded-3xl h-14 border-2 font-bold hover:-translate-y-1 transition-all"
+          onClick={() => navigate('/prywatnosc')}
         >
           <span className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center">
@@ -247,6 +248,7 @@ export default function Settings() {
         <Button 
           variant="outline" 
           className="w-full justify-between rounded-3xl h-14 border-2 font-bold hover:-translate-y-1 transition-all"
+          onClick={() => navigate('/pomoc')}
         >
           <span className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center">

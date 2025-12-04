@@ -16,9 +16,9 @@ const menuItems = [
 ];
 
 const additionalItems = [
-  { id: 'about', icon: Heart, label: 'O nas', emoji: '💚', description: 'Poznaj FLYFIT' },
-  { id: 'help', icon: HelpCircle, label: 'Pomoc', emoji: '❓', description: 'FAQ i wsparcie' },
-  { id: 'info', icon: Info, label: 'Informacje', emoji: 'ℹ️', description: 'Wersja i licencje' },
+  { to: '/o-nas', icon: Heart, label: 'O nas', emoji: '💚', description: 'Poznaj FLYFIT' },
+  { to: '/pomoc', icon: HelpCircle, label: 'Pomoc', emoji: '❓', description: 'FAQ i wsparcie' },
+  { to: '/informacje', icon: Info, label: 'Informacje', emoji: 'ℹ️', description: 'Wersja i licencje' },
 ];
 
 export default function More() {
@@ -133,10 +133,11 @@ export default function More() {
             </div>
           </button>
 
-          {additionalItems.map(({ id, icon: Icon, label, emoji, description }) => (
-            <button
-              key={id}
-              onClick={() => soundFeedback.buttonClick()}
+          {additionalItems.map(({ to, icon: Icon, label, emoji, description }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => soundFeedback.navTap()}
               className={cn(
                 'flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 w-full text-left',
                 'bg-muted/50 border-2 border-border/30',
@@ -152,7 +153,7 @@ export default function More() {
                 </p>
                 <p className="text-xs text-muted-foreground">{description}</p>
               </div>
-            </button>
+            </NavLink>
           ))}
         </div>
       </div>
