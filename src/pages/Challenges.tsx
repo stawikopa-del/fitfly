@@ -230,7 +230,7 @@ export default function Challenges() {
           <Button
             variant="outline"
             className="w-full rounded-2xl h-14 border-2 justify-between"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/kalendarz')}
           >
             <span className="flex items-center gap-3">
               <Calendar className="w-5 h-5 text-primary" />
