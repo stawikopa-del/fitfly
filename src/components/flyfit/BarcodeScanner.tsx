@@ -330,14 +330,14 @@ export function BarcodeScanner({
                     <span className="text-3xl font-extrabold font-display block leading-none">{product.score}</span>
                   </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-extrabold font-display text-foreground mb-1.5 flex items-center gap-2">
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <h3 className="font-extrabold font-display text-foreground mb-1.5 flex items-center gap-2 flex-wrap">
                     FITEK mówi: 
                     <span className="text-lg">
                       {product.score >= 8 ? "🤩" : product.score >= 6 ? "😊" : product.score >= 4 ? "🤔" : "😬"}
                     </span>
                   </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed break-words hyphens-auto">
+                  <p className="text-sm text-muted-foreground leading-relaxed break-words hyphens-auto whitespace-normal" style={{ wordBreak: 'break-word' }}>
                     {product.description}
                   </p>
                 </div>
