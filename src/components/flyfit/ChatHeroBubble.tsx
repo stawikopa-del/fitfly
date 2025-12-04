@@ -18,7 +18,7 @@ export function ChatHeroBubble() {
   return (
     <div className="flex gap-3 items-end">
       {/* Mascot */}
-      <div className="flex-shrink-0 w-32">
+      <div className="flex-shrink-0 w-40">
         <video 
           src={waveAnimation} 
           autoPlay 
