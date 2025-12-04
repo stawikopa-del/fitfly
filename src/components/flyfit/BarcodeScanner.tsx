@@ -470,14 +470,14 @@ export function BarcodeScanner({
             })()}
 
             {/* Action buttons */}
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={resetScan} className="flex-1 rounded-2xl font-bold">
-                <Search className="w-4 h-4 mr-2" />
-                Szukaj inny
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={resetScan} className="flex-1 rounded-2xl font-bold text-sm px-3">
+                <Search className="w-4 h-4 mr-1" />
+                Szukaj
               </Button>
-              {onAddMeal && <Button onClick={handleAddToMeal} className="flex-1 rounded-2xl font-bold">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Dodaj do posiłku
+              {onAddMeal && <Button onClick={handleAddToMeal} className="flex-1 rounded-2xl font-bold text-sm px-3">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Dodaj
                 </Button>}
             </div>
           </div>}
