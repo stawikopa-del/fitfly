@@ -176,6 +176,10 @@ export default function Auth() {
       const { error } = await signIn(loginEmail, loginPassword);
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
+          setErrors({ 
+            email: 'Nieprawidłowe dane', 
+            password: 'Nieprawidłowe dane' 
+          });
           toast.error('Nieprawidłowy email lub hasło');
         } else {
           toast.error('Błąd logowania');
@@ -738,7 +742,14 @@ export default function Auth() {
         <div className="bg-card border-2 border-border/50 rounded-3xl p-6 shadow-card-playful">
           <form onSubmit={mode === 'forgot' ? handleForgotPassword : handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label className="font-bold">Email</Label>
+              <div className="flex items-center gap-2">
+                <Label className="font-bold">Email</Label>
+                {errors.email && (
+                  <span className="text-destructive text-xs font-medium flex items-center gap-1">
+                    • {errors.email}
+                  </span>
+                )}
+              </div>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -746,15 +757,24 @@ export default function Auth() {
                   value={loginEmail}
                   onChange={(e) => { setLoginEmail(e.target.value); setErrors({ ...errors, email: undefined }); }}
                   placeholder="twoj@email.pl"
-                  className="pl-12 h-12 rounded-2xl border-2"
+                  className={cn(
+                    "pl-12 h-12 rounded-2xl border-2",
+                    errors.email && "border-destructive focus-visible:ring-destructive"
+                  )}
                 />
               </div>
-              {errors.email && <p className="text-destructive text-xs font-medium">{errors.email}</p>}
             </div>
 
             {mode !== 'forgot' && (
               <div className="space-y-2">
-                <Label className="font-bold">Hasło</Label>
+                <div className="flex items-center gap-2">
+                  <Label className="font-bold">Hasło</Label>
+                  {errors.password && (
+                    <span className="text-destructive text-xs font-medium flex items-center gap-1">
+                      • {errors.password}
+                    </span>
+                  )}
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
@@ -762,7 +782,10 @@ export default function Auth() {
                     value={loginPassword}
                     onChange={(e) => { setLoginPassword(e.target.value); setErrors({ ...errors, password: undefined }); }}
                     placeholder="••••••••"
-                    className="pl-12 pr-12 h-12 rounded-2xl border-2"
+                    className={cn(
+                      "pl-12 pr-12 h-12 rounded-2xl border-2",
+                      errors.password && "border-destructive focus-visible:ring-destructive"
+                    )}
                   />
                   <button
                     type="button"
@@ -772,7 +795,6 @@ export default function Auth() {
                     {showLoginPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                {errors.password && <p className="text-destructive text-xs font-medium">{errors.password}</p>}
               </div>
             )}
 
