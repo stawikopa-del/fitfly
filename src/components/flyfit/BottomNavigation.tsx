@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, Utensils, MoreHorizontal, TrendingUp, Trophy, Settings, User, X } from 'lucide-react';
+import { Home, Dumbbell, Utensils, Menu, TrendingUp, Trophy, Settings, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import fitekAvatar from '@/assets/fitek-avatar.png';
@@ -122,7 +122,7 @@ export function BottomNavigation() {
               >
                 {isMoreActive && (
                   <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-12 h-12 bg-primary rounded-2xl shadow-playful flex items-center justify-center">
-                    <MoreHorizontal className="w-6 h-6 text-primary-foreground" strokeWidth={2.5} />
+                    <Menu className="w-6 h-6 text-primary-foreground" strokeWidth={2.5} />
                   </div>
                 )}
                 {!isMoreActive && (
@@ -130,7 +130,7 @@ export function BottomNavigation() {
                     'w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300',
                     'hover:bg-muted'
                   )}>
-                    <MoreHorizontal className="w-5 h-5" strokeWidth={2} />
+                    <Menu className="w-5 h-5" strokeWidth={2} />
                   </div>
                 )}
                 <span className={cn(
