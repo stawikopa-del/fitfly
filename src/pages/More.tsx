@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { fetchSubscriptionProducts, createStorefrontCheckout, ShopifyProduct } from '@/lib/shopify';
 import { useSubscription, SubscriptionTier } from '@/hooks/useSubscription';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
 const menuItems = [
   { to: '/postepy', icon: TrendingUp, label: 'Postępy', emoji: '📊', description: 'Sprawdź swoje statystyki' },
@@ -59,7 +61,7 @@ const HANDLE_TO_TIER: Record<string, SubscriptionTier> = {
 
 export default function More() {
   const { isInstallable, isInstalled, promptInstall, showIOSInstructions } = usePWAInstall();
-  const { currentTier, isActive, loading: subscriptionLoading } = useSubscription();
+  const { currentTier, isActive, loading: subscriptionLoading, subscription } = useSubscription();
   const [showIOSDialog, setShowIOSDialog] = useState(false);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -162,7 +164,9 @@ export default function More() {
             <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-4 py-1.5 flex items-center justify-center gap-2">
               <CheckCircle2 className="w-4 h-4" /> 
               <span>TWÓJ AKTYWNY PAKIET</span>
-              <CheckCircle2 className="w-4 h-4" />
+              {subscription?.ends_at && (
+                <span className="opacity-80">• do {format(new Date(subscription.ends_at), 'd MMM yyyy', { locale: pl })}</span>
+              )}
             </div>
           )}
           {config.popular && !isCurrentTier && (
