@@ -25,12 +25,15 @@ export function BadgeCard({ badge, earned, showDetails = false }: BadgeCardProps
       <div className="flex items-center gap-3">
         <div 
           className={cn(
-            "w-14 h-14 rounded-xl flex items-center justify-center text-2xl transition-all",
+            "w-14 h-14 rounded-xl flex items-center justify-center text-2xl transition-all relative",
             isEarned ? badge.color : "bg-muted",
             !isEarned && "grayscale opacity-50"
           )}
         >
-          {isEarned ? badge.icon : <Lock className="w-6 h-6 text-muted-foreground" />}
+          {badge.icon}
+          {!isEarned && (
+            <span className="absolute -bottom-1 -right-1 text-base">🔒</span>
+          )}
         </div>
         
         <div className="flex-1 min-w-0">
