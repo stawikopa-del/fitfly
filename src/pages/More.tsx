@@ -324,10 +324,10 @@ export default function More() {
               soundFeedback.buttonClick();
               setShowCompareDialog(true);
             }}
-            className="text-xs font-bold text-primary flex items-center gap-1 hover:underline"
+            className="px-4 py-2 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-sm rounded-xl flex items-center gap-2 shadow-playful hover:shadow-playful-hover transition-all duration-300 hover:scale-105 animate-[pulse_3s_ease-in-out_infinite]"
           >
-            <Sparkles className="w-3 h-3" />
-            Porównaj
+            <Sparkles className="w-4 h-4 animate-[spin_4s_linear_infinite]" />
+            Porównaj pakiety
           </button>
         </div>
         <div className="grid gap-3">
