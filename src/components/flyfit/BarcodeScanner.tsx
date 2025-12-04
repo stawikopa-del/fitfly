@@ -417,21 +417,21 @@ export function BarcodeScanner({
                         <div className="text-center p-3 bg-background/80 rounded-2xl border border-primary/20">
                           <Beef className="w-5 h-5 mx-auto mb-1 text-red-500" />
                           <p className="text-xl font-extrabold font-display text-foreground">
-                            {Math.round(product.protein * multiplier * 10) / 10}g
+                            {Math.round(product.protein * multiplier)}g
                           </p>
                           <p className="text-[10px] text-muted-foreground font-medium">białko</p>
                         </div>
                         <div className="text-center p-3 bg-background/80 rounded-2xl border border-primary/20">
                           <Wheat className="w-5 h-5 mx-auto mb-1 text-amber-500" />
                           <p className="text-xl font-extrabold font-display text-foreground">
-                            {Math.round(product.carbs * multiplier * 10) / 10}g
+                            {Math.round(product.carbs * multiplier)}g
                           </p>
                           <p className="text-[10px] text-muted-foreground font-medium">węgle</p>
                         </div>
                         <div className="text-center p-3 bg-background/80 rounded-2xl border border-primary/20">
                           <span className="text-lg block mb-1">🧈</span>
                           <p className="text-xl font-extrabold font-display text-foreground">
-                            {Math.round(product.fat * multiplier * 10) / 10}g
+                            {Math.round(product.fat * multiplier)}g
                           </p>
                           <p className="text-[10px] text-muted-foreground font-medium">tłuszcz</p>
                         </div>
@@ -451,15 +451,15 @@ export function BarcodeScanner({
                         <p className="text-[9px] text-muted-foreground">kcal</p>
                       </div>
                       <div className="text-center p-2 bg-muted/30 rounded-xl">
-                        <p className="text-base font-bold text-foreground">{product.protein}g</p>
+                        <p className="text-base font-bold text-foreground">{Math.round(product.protein)}g</p>
                         <p className="text-[9px] text-muted-foreground">białko</p>
                       </div>
                       <div className="text-center p-2 bg-muted/30 rounded-xl">
-                        <p className="text-base font-bold text-foreground">{product.carbs}g</p>
+                        <p className="text-base font-bold text-foreground">{Math.round(product.carbs)}g</p>
                         <p className="text-[9px] text-muted-foreground">węgle</p>
                       </div>
                       <div className="text-center p-2 bg-muted/30 rounded-xl">
-                        <p className="text-base font-bold text-foreground">{product.fat}g</p>
+                        <p className="text-base font-bold text-foreground">{Math.round(product.fat)}g</p>
                         <p className="text-[9px] text-muted-foreground">tłuszcz</p>
                       </div>
                     </div>
