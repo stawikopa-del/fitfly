@@ -183,7 +183,7 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
       setIsScanning(true);
     } catch (err) {
       console.error('Scanner error:', err);
-      setError('Nie udało się uruchomić aparatu. Sprawdź uprawnienia.');
+      setError('Nie udało się uruchomić aparatu. Użyj ręcznego wpisywania kodu poniżej.');
       soundFeedback.error();
     }
   };
@@ -319,6 +319,19 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
                   <p className="text-sm text-muted-foreground font-medium">Szukam produktu...</p>
                 </div>
               </div>
+            )}
+          </div>
+          
+          {isScanning && (
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+              <Button 
+                variant="secondary" 
+                onClick={stopScanning}
+                className="rounded-2xl font-bold shadow-lg"
+              >
+                Zatrzymaj skanowanie
+              </Button>
+            </div>
           )}
         </div>
 
@@ -354,19 +367,6 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
             </p>
           </div>
         )}
-          
-          {isScanning && (
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-              <Button 
-                variant="secondary" 
-                onClick={stopScanning}
-                className="rounded-2xl font-bold shadow-lg"
-              >
-                Zatrzymaj skanowanie
-              </Button>
-            </div>
-          )}
-        </div>
 
         {/* Error message */}
         {error && (
