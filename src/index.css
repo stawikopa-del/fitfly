@@ -249,6 +249,10 @@
     animation: float 2s ease-in-out infinite;
   }
 
+  .floating-gentle {
+    animation: float-gentle 5s ease-in-out infinite;
+  }
+
   /* Bounce on tap */
   .bounce-tap {
     @apply transition-transform duration-150 active:scale-95;
@@ -282,7 +286,16 @@
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-8px);
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
   }
 }
 
