@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { Mail, Lock, User, Sparkles, ArrowLeft, ArrowRight, Check, Target, Activity, Scale, Ruler, Calendar } from 'lucide-react';
+import { Mail, Lock, User, Sparkles, ArrowLeft, ArrowRight, Check, Target, Activity, Scale, Ruler, Calendar, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -75,6 +75,8 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -337,12 +339,19 @@ export default function Auth() {
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
-                      type="password"
+                      type={showRegisterPassword ? "text" : "password"}
                       value={regData.password}
                       onChange={(e) => { setRegData({ ...regData, password: e.target.value }); setErrors({ ...errors, password: undefined }); }}
                       placeholder="••••••••"
-                      className="pl-12 h-12 rounded-2xl border-2"
+                      className="pl-12 pr-12 h-12 rounded-2xl border-2"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showRegisterPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
                   </div>
                   {errors.password && <p className="text-destructive text-xs font-medium">{errors.password}</p>}
                 </div>
@@ -675,12 +684,19 @@ export default function Auth() {
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
-                    type="password"
+                    type={showLoginPassword ? "text" : "password"}
                     value={loginPassword}
                     onChange={(e) => { setLoginPassword(e.target.value); setErrors({ ...errors, password: undefined }); }}
                     placeholder="••••••••"
-                    className="pl-12 h-12 rounded-2xl border-2"
+                    className="pl-12 pr-12 h-12 rounded-2xl border-2"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showLoginPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
                 {errors.password && <p className="text-destructive text-xs font-medium">{errors.password}</p>}
               </div>
