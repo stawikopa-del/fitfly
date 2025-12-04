@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Moon, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2, Calendar } from 'lucide-react';
+import { Bell, Moon, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +17,6 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useWebAuthn } from '@/hooks/useWebAuthn';
-import { useCalendarNotifications } from '@/hooks/useCalendarNotifications';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,29 +24,18 @@ import { supabase } from '@/integrations/supabase/client';
 export default function Settings() {
   const { user, signOut } = useAuth();
   const { isSupported: isBiometricSupported, hasRegisteredBiometric, registerBiometric, removeBiometric, isRegistering } = useWebAuthn();
-  const { permissionStatus, requestPermission, sendTestNotification, isSupported: isNotificationSupported } = useCalendarNotifications();
   const navigate = useNavigate();
 
   const [settings, setSettings] = useState({
-    notifications: permissionStatus === 'granted',
+    notifications: false,
     waterReminders: true,
     workoutReminders: true,
     challengeReminders: false,
-    calendarReminders: permissionStatus === 'granted',
     sounds: true,
     vibrations: true,
     darkMode: false,
     biometricLogin: false,
   });
-
-  // Update notification settings when permission changes
-  useEffect(() => {
-    setSettings(prev => ({
-      ...prev,
-      notifications: permissionStatus === 'granted',
-      calendarReminders: permissionStatus === 'granted',
-    }));
-  }, [permissionStatus]);
 
   // Check if biometric is already registered
   useEffect(() => {
@@ -85,21 +73,6 @@ export default function Settings() {
   };
 
   const toggleSetting = async (key: keyof typeof settings) => {
-    // Special handling for notifications - need to request permission
-    if (key === 'notifications' || key === 'calendarReminders') {
-      if (!settings[key]) {
-        const granted = await requestPermission();
-        if (granted) {
-          setSettings(prev => ({ 
-            ...prev, 
-            notifications: true,
-            calendarReminders: true 
-          }));
-        }
-        return;
-      }
-    }
-    
     setSettings(prev => ({ ...prev, [key]: !prev[key] }));
     toast.success('Ustawienia zapisane');
   };
@@ -139,11 +112,10 @@ export default function Settings() {
       icon: Bell,
       emoji: '🔔',
       items: [
-        { key: 'notifications', label: 'Włącz powiadomienia', emoji: '📲' },
-        { key: 'calendarReminders', label: 'Przypomnienia z kalendarza', emoji: '📅' },
-        { key: 'waterReminders', label: 'Przypomnienia o piciu wody', emoji: '💧' },
-        { key: 'workoutReminders', label: 'Przypomnienia o treningu', emoji: '🏃' },
-        { key: 'challengeReminders', label: 'Nowe wyzwania', emoji: '🏆' },
+        { key: 'notifications', label: 'Włącz powiadomienia', emoji: '📲', disabled: true, note: '(wkrótce)' },
+        { key: 'waterReminders', label: 'Przypomnienia o piciu wody', emoji: '💧', disabled: true, note: '(wkrótce)' },
+        { key: 'workoutReminders', label: 'Przypomnienia o treningu', emoji: '🏃', disabled: true, note: '(wkrótce)' },
+        { key: 'challengeReminders', label: 'Nowe wyzwania', emoji: '🏆', disabled: true, note: '(wkrótce)' },
       ],
     },
     {
@@ -217,21 +189,25 @@ export default function Settings() {
           </h2>
           
           <div className="space-y-3">
-            {section.items.map((item) => (
+            {section.items.map((item: any) => (
               <div 
                 key={item.key}
-                className="flex items-center justify-between bg-muted/50 rounded-2xl p-4"
+                className={cn(
+                  "flex items-center justify-between bg-muted/50 rounded-2xl p-4",
+                  item.disabled && "opacity-60"
+                )}
               >
                 <Label 
                   htmlFor={item.key} 
                   className="text-sm text-foreground font-medium flex items-center gap-2 cursor-pointer"
                 >
-                  {item.label} {item.emoji}
+                  {item.label} {item.emoji} {item.note && <span className="text-xs text-muted-foreground">{item.note}</span>}
                 </Label>
                 <Switch 
                   id={item.key}
                   checked={settings[item.key as keyof typeof settings] as boolean}
                   onCheckedChange={() => toggleSetting(item.key as keyof typeof settings)}
+                  disabled={item.disabled}
                 />
               </div>
             ))}

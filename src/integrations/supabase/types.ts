@@ -20,6 +20,7 @@ export type Database = {
           event_date: string
           event_time: string
           id: string
+          reminder_minutes: number | null
           title: string
           type: string
           user_id: string
@@ -29,6 +30,7 @@ export type Database = {
           event_date: string
           event_time: string
           id?: string
+          reminder_minutes?: number | null
           title: string
           type?: string
           user_id: string
@@ -38,6 +40,7 @@ export type Database = {
           event_date?: string
           event_time?: string
           id?: string
+          reminder_minutes?: number | null
           title?: string
           type?: string
           user_id?: string
