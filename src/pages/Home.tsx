@@ -4,7 +4,6 @@ import { ChatHeroBubble } from '@/components/flyfit/ChatHeroBubble';
 import { StatCard } from '@/components/flyfit/StatCard';
 import { WaterTracker } from '@/components/flyfit/WaterTracker';
 import { QuickAction } from '@/components/flyfit/QuickAction';
-import { CalendarDialog } from '@/components/flyfit/CalendarDialog';
 import { useUserProgress } from '@/hooks/useUserProgress';
 
 export default function Home() {
@@ -22,24 +21,23 @@ export default function Home() {
           <p className="text-xs text-muted-foreground font-medium">Cześć! Jak się dziś czujesz?</p>
         </div>
         
-        <CalendarDialog
-          trigger={
-            <button className="relative text-right bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group">
-              {/* Red "Kalendarz" badge */}
-              <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                <Calendar className="w-3 h-3" />
-                Kalendarz
-              </span>
-              
-              <p className="text-sm font-bold text-foreground capitalize group-hover:text-primary transition-colors">
-                {new Date().toLocaleDateString('pl-PL', { weekday: 'long' })}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })} • {new Date().toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')}
-              </p>
-            </button>
-          }
-        />
+        <button 
+          onClick={() => navigate('/kalendarz')}
+          className="relative text-right bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group"
+        >
+          {/* Red "Kalendarz" badge */}
+          <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+            <Calendar className="w-3 h-3" />
+            Kalendarz
+          </span>
+          
+          <p className="text-sm font-bold text-foreground capitalize group-hover:text-primary transition-colors">
+            {new Date().toLocaleDateString('pl-PL', { weekday: 'long' })}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })} • {new Date().toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')}
+          </p>
+        </button>
       </header>
 
       {/* Chat Hero - zachęta do rozmowy z FITEK */}

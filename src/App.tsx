@@ -23,6 +23,7 @@ import ProfileSetup from "./pages/ProfileSetup";
 import Help from "./pages/Help";
 import About from "./pages/About";
 import Info from "./pages/Info";
+import CalendarPage from "./pages/Calendar";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
@@ -216,6 +217,16 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <AppLayout>
             <Privacy />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/kalendarz"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <CalendarPage />
           </AppLayout>
         </ProtectedRoute>
       }
