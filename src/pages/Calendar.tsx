@@ -26,7 +26,7 @@ const eventTypeConfig = {
   meal: { icon: Utensils, color: 'bg-fitfly-green', textColor: 'text-fitfly-green', dotColor: 'bg-green-500', label: 'Posiłek', emoji: '🍽️' },
   challenge: { icon: Target, color: 'bg-fitfly-purple', textColor: 'text-fitfly-purple', dotColor: 'bg-purple-500', label: 'Wyzwanie', emoji: '🏆' },
   habit: { icon: Sparkles, color: 'bg-fitfly-pink', textColor: 'text-fitfly-pink', dotColor: 'bg-pink-500', label: 'Nawyk', emoji: '✨' },
-  other: { icon: Sparkles, color: 'bg-fitfly-orange', textColor: 'text-fitfly-orange', dotColor: 'bg-orange-500', label: 'Inne', emoji: '📌' },
+  other: { icon: Pencil, color: 'bg-fitfly-orange', textColor: 'text-fitfly-orange', dotColor: 'bg-orange-500', label: 'Własne', emoji: '✏️' },
 };
 
 type ViewMode = 'month' | 'week';
