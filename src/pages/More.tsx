@@ -17,11 +17,11 @@ const menuItems = [
   { to: '/cele', icon: Target, label: 'Cele', emoji: '🎯', description: 'Ustal i śledź swoje cele' },
   { to: '/wyzwania', icon: Trophy, label: 'Wyzwania', emoji: '🏆', description: 'Podejmij nowe wyzwania' },
   { to: '/osiagniecia', icon: Award, label: 'Osiągnięcia', emoji: '🎖️', description: 'Poziomy, odznaki i XP' },
-  { to: '/profil', icon: User, label: 'Profil', emoji: '👤', description: 'Twoje dane i cele' },
-  { to: '/ustawienia', icon: Settings, label: 'Ustawienia', emoji: '⚙️', description: 'Dostosuj aplikację' },
 ];
 
 const additionalItems = [
+  { to: '/profil', icon: User, label: 'Profil', emoji: '👤', description: 'Twoje dane i cele' },
+  { to: '/ustawienia', icon: Settings, label: 'Ustawienia', emoji: '⚙️', description: 'Dostosuj aplikację' },
   { to: '/o-nas', icon: Heart, label: 'O nas', emoji: '💚', description: 'Poznaj FITFLY' },
   { to: '/pomoc', icon: HelpCircle, label: 'Pomoc', emoji: '❓', description: 'FAQ i wsparcie' },
   { to: '/informacje', icon: Info, label: 'Informacje', emoji: 'ℹ️', description: 'Wersja i licencje' },
