@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Sparkles } from 'lucide-react';
+import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { fetchSubscriptionProducts, createStorefrontCheckout, ShopifyProduct } from '@/lib/shopify';
 
 const menuItems = [
   { to: '/postepy', icon: TrendingUp, label: 'Postępy', emoji: '📊', description: 'Sprawdź swoje statystyki' },
@@ -22,9 +23,79 @@ const additionalItems = [
   { to: '/informacje', icon: Info, label: 'Informacje', emoji: 'ℹ️', description: 'Wersja i licencje' },
 ];
 
+// Package display config
+const packageConfig: Record<string, { icon: typeof Zap; emoji: string; features: string[]; popular?: boolean; gradient?: string; borderColor?: string; priceColor?: string }> = {
+  'pakiet-start': {
+    icon: Zap,
+    emoji: '⚡',
+    features: ['Podstawowe treningi', 'Tracker wody', 'Dziennik posiłków'],
+  },
+  'pakiet-fit': {
+    icon: Star,
+    emoji: '🌟',
+    features: ['Wszystko z START', 'AI przepisy', 'Spersonalizowane plany', 'Brak reklam'],
+    popular: true,
+    gradient: 'from-primary/10 to-secondary/10',
+    borderColor: 'border-primary/50',
+    priceColor: 'text-primary',
+  },
+  'pakiet-premium': {
+    icon: Crown,
+    emoji: '👑',
+    features: ['Wszystko z FIT', '1-na-1 z trenerem AI', 'Priorytetowe wsparcie', 'Ekskluzywne wyzwania'],
+    gradient: 'from-amber-500/20 to-orange-500/20',
+    borderColor: 'border-amber-500/50',
+    priceColor: 'text-amber-600',
+  },
+};
+
 export default function More() {
   const { isInstallable, isInstalled, promptInstall, showIOSInstructions } = usePWAInstall();
   const [showIOSDialog, setShowIOSDialog] = useState(false);
+  const [products, setProducts] = useState<ShopifyProduct[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [purchasingId, setPurchasingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      setLoadingProducts(true);
+      const data = await fetchSubscriptionProducts();
+      setProducts(data);
+      setLoadingProducts(false);
+    };
+    loadProducts();
+  }, []);
+
+  const handlePurchase = async (product: ShopifyProduct) => {
+    soundFeedback.buttonClick();
+    
+    const variant = product.node.variants.edges[0]?.node;
+    if (!variant) {
+      toast.error('Nie można znaleźć wariantu produktu');
+      return;
+    }
+
+    // Free product
+    if (parseFloat(variant.price.amount) === 0) {
+      toast.success('Pakiet START jest darmowy! Korzystasz z niego już teraz 🎉');
+      return;
+    }
+
+    setPurchasingId(product.node.id);
+    
+    try {
+      const checkoutUrl = await createStorefrontCheckout(variant.id, 1);
+      if (checkoutUrl) {
+        window.open(checkoutUrl, '_blank');
+        toast.success('Przekierowano do płatności Shopify');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast.error('Nie udało się utworzyć płatności');
+    } finally {
+      setPurchasingId(null);
+    }
+  };
 
   const handleInstallClick = async () => {
     soundFeedback.buttonClick();
@@ -45,10 +116,101 @@ export default function More() {
         toast.success('Aplikacja zainstalowana! 🎉');
       }
     } else {
-      // Fallback for browsers that don't support PWA install
       toast.info('Użyj opcji "Dodaj do ekranu głównego" w menu przeglądarki 📱');
     }
   };
+
+  const renderPackageCard = (product: ShopifyProduct) => {
+    const config = packageConfig[product.node.handle] || packageConfig['pakiet-start'];
+    const Icon = config.icon;
+    const variant = product.node.variants.edges[0]?.node;
+    const price = variant ? parseFloat(variant.price.amount) : 0;
+    const isFree = price === 0;
+    const isLoading = purchasingId === product.node.id;
+
+    return (
+      <button
+        key={product.node.id}
+        onClick={() => handlePurchase(product)}
+        disabled={isLoading}
+        className={cn(
+          "relative p-4 rounded-2xl border-2 shadow-lg hover:-translate-y-0.5 transition-all text-left overflow-hidden group w-full",
+          config.gradient ? `bg-gradient-to-br ${config.gradient}` : 'bg-card',
+          config.borderColor || 'border-border/50',
+          isLoading && 'opacity-70'
+        )}
+      >
+        {config.popular && (
+          <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">
+            POPULARNE ⭐
+          </div>
+        )}
+        
+        {product.node.handle === 'pakiet-premium' && (
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-orange-500/5" />
+        )}
+        
+        <div className="relative flex items-center gap-4">
+          <div className={cn(
+            "w-14 h-14 rounded-2xl flex items-center justify-center",
+            product.node.handle === 'pakiet-start' && "bg-muted",
+            product.node.handle === 'pakiet-fit' && "bg-gradient-to-br from-primary to-secondary",
+            product.node.handle === 'pakiet-premium' && "bg-gradient-to-br from-amber-500 to-orange-500"
+          )}>
+            <Icon className={cn(
+              "w-7 h-7",
+              product.node.handle === 'pakiet-start' ? 'text-foreground' : 'text-white'
+            )} />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-foreground text-lg flex items-center gap-2">
+              {product.node.title.replace('Pakiet ', '')} <span>{config.emoji}</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {isFree ? 'Podstawowe funkcje za darmo' : product.node.handle === 'pakiet-fit' ? 'Wszystko czego potrzebujesz' : 'Pełna moc FITFLY'}
+            </p>
+          </div>
+          <div className="text-right">
+            {isLoading ? (
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            ) : (
+              <>
+                <p className={cn("font-extrabold text-xl", config.priceColor || 'text-foreground')}>
+                  {isFree ? '0 zł' : `${price.toFixed(2).replace('.', ',')} zł`}
+                </p>
+                <p className="text-xs text-muted-foreground">{isFree ? 'na zawsze' : '/miesiąc'}</p>
+              </>
+            )}
+          </div>
+        </div>
+        
+        <div className={cn(
+          "relative mt-3 pt-3 border-t flex flex-wrap gap-2",
+          config.borderColor ? 'border-primary/20' : 'border-border/50'
+        )}>
+          {config.features.map((feature, idx) => (
+            <span 
+              key={idx} 
+              className={cn(
+                "text-xs px-2 py-1 rounded-full",
+                config.popular ? 'bg-primary/20 text-primary' : 
+                product.node.handle === 'pakiet-premium' ? 'bg-amber-500/20 text-amber-700' : 
+                'bg-muted'
+              )}
+            >
+              {feature}
+            </span>
+          ))}
+        </div>
+      </button>
+    );
+  };
+
+  // Sort products: START, FIT, PREMIUM
+  const sortedProducts = [...products].sort((a, b) => {
+    const order = ['pakiet-start', 'pakiet-fit', 'pakiet-premium'];
+    return order.indexOf(a.node.handle) - order.indexOf(b.node.handle);
+  });
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -100,92 +262,17 @@ export default function More() {
           Pakiety FITFLY 💎
         </h2>
         <div className="grid gap-3">
-          {/* START */}
-          <button
-            onClick={() => { soundFeedback.buttonClick(); toast.info('Pakiet START - wkrótce dostępny!'); }}
-            className="relative p-4 rounded-2xl bg-card border-2 border-border/50 shadow-card-playful hover:-translate-y-0.5 transition-all text-left overflow-hidden group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
-                <Zap className="w-7 h-7 text-foreground" />
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-foreground text-lg flex items-center gap-2">
-                  START <span>⚡</span>
-                </p>
-                <p className="text-sm text-muted-foreground">Podstawowe funkcje za darmo</p>
-              </div>
-              <div className="text-right">
-                <p className="font-extrabold text-xl text-foreground">0 zł</p>
-                <p className="text-xs text-muted-foreground">na zawsze</p>
-              </div>
+          {loadingProducts ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-            <div className="mt-3 pt-3 border-t border-border/50 flex flex-wrap gap-2">
-              <span className="text-xs bg-muted px-2 py-1 rounded-full">Podstawowe treningi</span>
-              <span className="text-xs bg-muted px-2 py-1 rounded-full">Tracker wody</span>
-              <span className="text-xs bg-muted px-2 py-1 rounded-full">Dziennik posiłków</span>
+          ) : sortedProducts.length > 0 ? (
+            sortedProducts.map(renderPackageCard)
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>Brak dostępnych pakietów</p>
             </div>
-          </button>
-
-          {/* FIT - Popularny */}
-          <button
-            onClick={() => { soundFeedback.buttonClick(); toast.info('Pakiet FIT - wkrótce dostępny!'); }}
-            className="relative p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-primary/50 shadow-lg hover:-translate-y-0.5 transition-all text-left overflow-hidden group"
-          >
-            <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">
-              POPULARNE ⭐
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <Star className="w-7 h-7 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-foreground text-lg flex items-center gap-2">
-                  FIT <span>🌟</span>
-                </p>
-                <p className="text-sm text-muted-foreground">Wszystko czego potrzebujesz</p>
-              </div>
-              <div className="text-right">
-                <p className="font-extrabold text-xl text-primary">19,99 zł</p>
-                <p className="text-xs text-muted-foreground">/miesiąc</p>
-              </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-primary/20 flex flex-wrap gap-2">
-              <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Wszystko z START</span>
-              <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">AI przepisy</span>
-              <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Spersonalizowane plany</span>
-              <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Brak reklam</span>
-            </div>
-          </button>
-
-          {/* PREMIUM */}
-          <button
-            onClick={() => { soundFeedback.buttonClick(); toast.info('Pakiet PREMIUM - wkrótce dostępny!'); }}
-            className="relative p-4 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-2 border-amber-500/50 shadow-lg hover:-translate-y-0.5 transition-all text-left overflow-hidden group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-orange-500/5" />
-            <div className="relative flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                <Crown className="w-7 h-7 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-foreground text-lg flex items-center gap-2">
-                  PREMIUM <span>👑</span>
-                </p>
-                <p className="text-sm text-muted-foreground">Pełna moc FITFLY</p>
-              </div>
-              <div className="text-right">
-                <p className="font-extrabold text-xl text-amber-600">39,99 zł</p>
-                <p className="text-xs text-muted-foreground">/miesiąc</p>
-              </div>
-            </div>
-            <div className="relative mt-3 pt-3 border-t border-amber-500/20 flex flex-wrap gap-2">
-              <span className="text-xs bg-amber-500/20 text-amber-700 px-2 py-1 rounded-full">Wszystko z FIT</span>
-              <span className="text-xs bg-amber-500/20 text-amber-700 px-2 py-1 rounded-full">1-na-1 z trenerem AI</span>
-              <span className="text-xs bg-amber-500/20 text-amber-700 px-2 py-1 rounded-full">Priorytetowe wsparcie</span>
-              <span className="text-xs bg-amber-500/20 text-amber-700 px-2 py-1 rounded-full">Ekskluzywne wyzwania</span>
-            </div>
-          </button>
+          )}
         </div>
       </div>
 
