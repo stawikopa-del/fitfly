@@ -25,6 +25,7 @@ import About from "./pages/About";
 import Info from "./pages/Info";
 import CalendarPage from "./pages/Calendar";
 import Privacy from "./pages/Privacy";
+import Achievements from "./pages/Achievements";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -227,6 +228,16 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <AppLayout>
             <CalendarPage />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/osiagniecia"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Achievements />
           </AppLayout>
         </ProtectedRoute>
       }
