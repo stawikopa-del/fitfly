@@ -121,6 +121,34 @@ const fetchProductData = async (barcode: string): Promise<ProductData | null> =>
     }
     const p = data.product;
     const nutrients = p.nutriments || {};
+    
+    // Inteligentne wykrywanie wielkości porcji
+    let servingSize = p.serving_size;
+    
+    // Jeśli brak serving_size, spróbuj obliczyć z quantity (waga produktu)
+    if (!servingSize && p.quantity) {
+      const quantity = p.quantity.toString();
+      // Sprawdź czy to pojedynczy produkt (np. "45g", "50 g", "100ml")
+      const singleMatch = quantity.match(/^(\d+(?:[.,]\d+)?)\s*(g|gr|gram|ml)$/i);
+      if (singleMatch) {
+        // Pojedynczy produkt - cała waga = 1 porcja
+        servingSize = `${singleMatch[1]}${singleMatch[2]}`;
+      }
+      // Sprawdź format wielopak np. "4 x 50g" - jedna sztuka = porcja
+      const multiMatch = quantity.match(/(\d+)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(g|gr|gram|ml)/i);
+      if (multiMatch) {
+        servingSize = `${multiMatch[2]}${multiMatch[3]}`;
+      }
+    }
+    
+    // Fallback na product_quantity jeśli jest pojedyncza wartość
+    if (!servingSize && p.product_quantity) {
+      const pq = parseFloat(p.product_quantity);
+      if (pq > 0 && pq <= 200) { // Prawdopodobnie pojedynczy produkt (do 200g)
+        servingSize = `${pq}g`;
+      }
+    }
+    
     const productBase = {
       name: p.product_name_pl || p.product_name || 'Nieznany produkt',
       brand: p.brands,
@@ -131,7 +159,7 @@ const fetchProductData = async (barcode: string): Promise<ProductData | null> =>
       sugar: nutrients.sugars_100g || nutrients.sugars,
       fiber: nutrients.fiber_100g || nutrients.fiber,
       salt: nutrients.salt_100g || nutrients.salt,
-      serving_size: p.serving_size,
+      serving_size: servingSize,
       image_url: p.image_url || p.image_front_url
     };
     const evaluation = evaluateProduct(productBase);
