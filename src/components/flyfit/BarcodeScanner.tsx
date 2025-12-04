@@ -260,7 +260,8 @@ export function BarcodeScanner({
 
             {/* Score - FITEK style */}
             <div className={cn(
-              "rounded-3xl border-2 p-5 shadow-card-playful",
+              "rounded-3xl border-2 p-5 shadow-card-playful animate-scale-in",
+              "transition-all duration-500 ease-out",
               product.score >= 8 ? "bg-green-500/10 border-green-500/30" :
               product.score >= 6 ? "bg-yellow-500/10 border-yellow-500/30" :
               product.score >= 4 ? "bg-orange-500/10 border-orange-500/30" :
