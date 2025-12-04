@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Plus, X, Clock, Dumbbell, Utensils, Target, Sparkles, ArrowLeft, CalendarDays, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, X, Clock, Dumbbell, Utensils, Target, Sparkles, ArrowLeft, CalendarDays, LayoutGrid, ChevronLeft, ChevronRight, Pencil, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +40,12 @@ export default function CalendarPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    time: '',
+    type: 'workout' as CalendarEvent['type'],
+  });
   const [newEvent, setNewEvent] = useState({
     title: '',
     time: '12:00',
@@ -116,6 +122,51 @@ export default function CalendarPage() {
     toast.success('Plan dodany!');
   };
 
+  const handleEditEvent = (event: CalendarEvent) => {
+    setEditingEventId(event.id);
+    setEditForm({
+      title: event.title,
+      time: event.event_time,
+      type: event.type,
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingEventId || !editForm.title.trim()) return;
+
+    setIsLoading(true);
+
+    const { error } = await supabase
+      .from('calendar_events')
+      .update({
+        title: editForm.title,
+        event_time: editForm.time,
+        type: editForm.type,
+      })
+      .eq('id', editingEventId);
+
+    setIsLoading(false);
+
+    if (error) {
+      console.error('Error updating event:', error);
+      toast.error('Nie udało się zaktualizować planu');
+      return;
+    }
+
+    setEvents(events.map(e => 
+      e.id === editingEventId 
+        ? { ...e, title: editForm.title, event_time: editForm.time, type: editForm.type }
+        : e
+    ));
+    setEditingEventId(null);
+    toast.success('Plan zaktualizowany!');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEventId(null);
+    setEditForm({ title: '', time: '', type: 'workout' });
+  };
+
   const handleDeleteEvent = async (id: string) => {
     const { error } = await supabase
       .from('calendar_events')
@@ -138,7 +189,7 @@ export default function CalendarPage() {
     <div className="min-h-screen pb-24">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 px-4 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -185,9 +236,9 @@ export default function CalendarPage() {
         </div>
       </header>
 
-      <div className="px-4 py-6 space-y-6">
+      <div className="px-4 py-6 space-y-6 max-w-2xl mx-auto">
         {/* Category Legend */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 justify-center">
           {Object.entries(eventTypeConfig).map(([key, config]) => (
             <div 
               key={key} 
@@ -235,7 +286,7 @@ export default function CalendarPage() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              <h3 className="font-bold font-display text-foreground">
+              <h3 className="font-bold font-display text-foreground text-center">
                 {format(weekStart, 'd MMM', { locale: pl })} - {format(endOfWeek(weekStart, { weekStartsOn: 1 }), 'd MMM yyyy', { locale: pl })}
               </h3>
               <Button
@@ -406,7 +457,7 @@ export default function CalendarPage() {
 
         {/* Events list */}
         <div className="space-y-3">
-          <h3 className="font-bold font-display text-foreground">
+          <h3 className="font-bold font-display text-foreground text-center">
             Plany na ten dzień 📅
           </h3>
           
@@ -422,6 +473,69 @@ export default function CalendarPage() {
               .map((event) => {
                 const config = eventTypeConfig[event.type] || eventTypeConfig.other;
                 const Icon = config.icon;
+                const isEditing = editingEventId === event.id;
+
+                if (isEditing) {
+                  return (
+                    <div
+                      key={event.id}
+                      className="p-4 bg-card rounded-3xl border-2 border-primary/50 animate-fade-in shadow-card-playful space-y-3"
+                    >
+                      <div className="space-y-2">
+                        <Label className="font-bold text-sm">Nazwa</Label>
+                        <Input
+                          value={editForm.title}
+                          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                          className="rounded-2xl h-10"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="font-bold text-sm">Godzina</Label>
+                          <Input
+                            type="time"
+                            value={editForm.time}
+                            onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
+                            className="rounded-2xl h-10"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="font-bold text-sm">Typ</Label>
+                          <select
+                            value={editForm.type}
+                            onChange={(e) => setEditForm({ ...editForm, type: e.target.value as CalendarEvent['type'] })}
+                            className="w-full h-10 px-3 rounded-2xl border border-input bg-background text-sm font-medium"
+                          >
+                            {Object.entries(eventTypeConfig).map(([key, cfg]) => (
+                              <option key={key} value={key}>
+                                {cfg.emoji} {cfg.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleSaveEdit}
+                          disabled={!editForm.title.trim() || isLoading}
+                          className="flex-1 rounded-2xl h-10"
+                          size="sm"
+                        >
+                          <Check className="w-4 h-4 mr-1" />
+                          {isLoading ? 'Zapisywanie...' : 'Zapisz'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleCancelEdit}
+                          className="rounded-2xl h-10"
+                          size="sm"
+                        >
+                          Anuluj
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }
 
                 return (
                   <div
@@ -457,14 +571,24 @@ export default function CalendarPage() {
                       </div>
                     </div>
 
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteEvent(event.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <X className="w-5 h-5" />
-                    </Button>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditEvent(event)}
+                        className="rounded-xl text-primary hover:text-primary hover:bg-primary/10"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteEvent(event.id)}
+                        className="rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <X className="w-5 h-5" />
+                      </Button>
+                    </div>
                   </div>
                 );
               })
