@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2, CheckCircle2, RefreshCw } from 'lucide-react';
+import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2, CheckCircle2, RefreshCw, ArrowRight, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
@@ -27,16 +27,16 @@ const additionalItems = [
 ];
 
 // Package display config
-const packageConfig: Record<string, { icon: typeof Zap; emoji: string; features: string[]; popular?: boolean; gradient?: string; borderColor?: string; priceColor?: string }> = {
+const packageConfig: Record<string, { icon: typeof Zap; emoji: string; shortDesc: string; popular?: boolean; gradient?: string; borderColor?: string; priceColor?: string }> = {
   'pakiet-start': {
     icon: Zap,
     emoji: '⚡',
-    features: ['Podstawowe treningi', 'Tracker wody', 'Dziennik posiłków'],
+    shortDesc: 'Podstawowe funkcje za darmo',
   },
   'pakiet-fit': {
     icon: Star,
     emoji: '🌟',
-    features: ['Wszystko z START', 'AI przepisy', 'Spersonalizowane plany', 'Brak reklam'],
+    shortDesc: 'Wszystko czego potrzebujesz',
     popular: true,
     gradient: 'from-primary/10 to-secondary/10',
     borderColor: 'border-primary/50',
@@ -45,12 +45,26 @@ const packageConfig: Record<string, { icon: typeof Zap; emoji: string; features:
   'pakiet-premium': {
     icon: Crown,
     emoji: '👑',
-    features: ['Wszystko z FIT', '1-na-1 z trenerem AI', 'Priorytetowe wsparcie', 'Ekskluzywne wyzwania'],
+    shortDesc: 'Pełna moc FITFLY',
     gradient: 'from-amber-500/20 to-orange-500/20',
     borderColor: 'border-amber-500/50',
     priceColor: 'text-amber-600',
   },
 };
+
+// Features for comparison
+const TIER_COMPARISON = [
+  { feature: 'Śledzenie aktywności', start: true, fit: true, premium: true },
+  { feature: 'Tracker wody', start: true, fit: true, premium: true },
+  { feature: 'Dziennik posiłków', start: true, fit: true, premium: true },
+  { feature: 'Czat z FITEK', start: true, fit: true, premium: true },
+  { feature: 'AI przepisy', start: false, fit: true, premium: true },
+  { feature: 'Spersonalizowane plany', start: false, fit: true, premium: true },
+  { feature: 'Brak reklam', start: false, fit: true, premium: true },
+  { feature: 'Trener AI 1-na-1', start: false, fit: false, premium: true },
+  { feature: 'Ekskluzywne wyzwania', start: false, fit: false, premium: true },
+  { feature: 'Priorytetowe wsparcie', start: false, fit: false, premium: true },
+];
 
 // Map handles to tiers
 const HANDLE_TO_TIER: Record<string, SubscriptionTier> = {
@@ -63,6 +77,7 @@ export default function More() {
   const { isInstallable, isInstalled, promptInstall, showIOSInstructions } = usePWAInstall();
   const { currentTier, isActive, loading: subscriptionLoading, subscription } = useSubscription();
   const [showIOSDialog, setShowIOSDialog] = useState(false);
+  const [showCompareDialog, setShowCompareDialog] = useState(false);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
@@ -196,7 +211,7 @@ export default function More() {
                 {product.node.title.replace('Pakiet ', '')} <span>{config.emoji}</span>
               </p>
               <p className="text-sm text-muted-foreground">
-                {isCurrentTier ? 'Korzystasz z tego pakietu' : isFree ? 'Podstawowe funkcje za darmo' : product.node.handle === 'pakiet-fit' ? 'Wszystko czego potrzebujesz' : 'Pełna moc FITFLY'}
+                {isCurrentTier ? 'Korzystasz z tego pakietu' : config.shortDesc}
               </p>
             </div>
             <div className="text-right">
@@ -210,34 +225,17 @@ export default function More() {
                   <span className="text-xs text-green-600 font-bold mt-1">Aktywny</span>
                 </div>
               ) : (
-                <>
-                  <p className={cn("font-extrabold text-xl", config.priceColor || 'text-foreground')}>
-                    {isFree ? '0 zł' : `${price.toFixed(2).replace('.', ',')} zł`}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{isFree ? 'na zawsze' : '/miesiąc'}</p>
-                </>
+                <div className="flex items-center gap-2">
+                  <div>
+                    <p className={cn("font-extrabold text-xl", config.priceColor || 'text-foreground')}>
+                      {isFree ? '0 zł' : `${price.toFixed(2).replace('.', ',')} zł`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{isFree ? 'na zawsze' : '/miesiąc'}</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                </div>
               )}
             </div>
-          </div>
-          
-          <div className={cn(
-            "relative mt-3 pt-3 border-t flex flex-wrap gap-2",
-            config.borderColor ? 'border-primary/20' : 'border-border/50'
-          )}>
-            {config.features.map((feature, idx) => (
-              <span 
-                key={idx} 
-                className={cn(
-                  "text-xs px-2 py-1 rounded-full",
-                  isCurrentTier ? 'bg-green-500/20 text-green-700' :
-                  config.popular ? 'bg-primary/20 text-primary' : 
-                  product.node.handle === 'pakiet-premium' ? 'bg-amber-500/20 text-amber-700' : 
-                  'bg-muted'
-                )}
-              >
-                {feature}
-              </span>
-            ))}
           </div>
           
           {/* Przycisk przedłużenia dla aktywnego pakietu */}
@@ -317,9 +315,21 @@ export default function More() {
 
       {/* Pakiety Premium */}
       <div className="space-y-3">
-        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide px-1">
-          Pakiety FITFLY 💎
-        </h2>
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
+            Pakiety FITFLY 💎
+          </h2>
+          <button
+            onClick={() => {
+              soundFeedback.buttonClick();
+              setShowCompareDialog(true);
+            }}
+            className="text-xs font-bold text-primary flex items-center gap-1 hover:underline"
+          >
+            <Sparkles className="w-3 h-3" />
+            Porównaj
+          </button>
+        </div>
         <div className="grid gap-3">
           {loadingProducts ? (
             <div className="flex items-center justify-center py-8">
@@ -449,6 +459,73 @@ export default function More() {
               className="w-full rounded-2xl font-bold"
             >
               Rozumiem! 👍
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Compare Packages Dialog */}
+      <Dialog open={showCompareDialog} onOpenChange={setShowCompareDialog}>
+        <DialogContent className="sm:max-w-lg bg-card border-2 border-border/50 rounded-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-extrabold font-display text-center">
+              Porównaj pakiety ✨
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-2">
+            {/* Header */}
+            <div className="grid grid-cols-4 gap-2 mb-3 sticky top-0 bg-card pb-2 border-b border-border/50">
+              <div className="text-xs font-bold text-muted-foreground">Funkcja</div>
+              <div className="text-center">
+                <span className="text-xs font-bold">START</span>
+                <p className="text-[10px] text-muted-foreground">0 zł</p>
+              </div>
+              <div className="text-center">
+                <span className="text-xs font-bold text-primary">FIT</span>
+                <p className="text-[10px] text-muted-foreground">19,99 zł</p>
+              </div>
+              <div className="text-center">
+                <span className="text-xs font-bold text-amber-600">PREMIUM</span>
+                <p className="text-[10px] text-muted-foreground">39,99 zł</p>
+              </div>
+            </div>
+
+            {/* Features */}
+            <div className="space-y-2">
+              {TIER_COMPARISON.map((row, idx) => (
+                <div key={idx} className="grid grid-cols-4 gap-2 items-center py-1.5 border-b border-border/30 last:border-0">
+                  <span className="text-xs text-foreground">{row.feature}</span>
+                  <div className="flex justify-center">
+                    {row.start ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <span className="w-4 h-4 text-muted-foreground/30">—</span>
+                    )}
+                  </div>
+                  <div className="flex justify-center">
+                    {row.fit ? (
+                      <Check className="w-4 h-4 text-primary" />
+                    ) : (
+                      <span className="w-4 h-4 text-muted-foreground/30">—</span>
+                    )}
+                  </div>
+                  <div className="flex justify-center">
+                    {row.premium ? (
+                      <Check className="w-4 h-4 text-amber-500" />
+                    ) : (
+                      <span className="w-4 h-4 text-muted-foreground/30">—</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              onClick={() => setShowCompareDialog(false)}
+              className="w-full rounded-2xl font-bold mt-4"
+            >
+              Zamknij
             </Button>
           </div>
         </DialogContent>
