@@ -14,6 +14,23 @@ import fitekDetective from '@/assets/fitek-detective.png';
 const emailSchema = z.string().email('Nieprawidłowy adres email');
 const passwordSchema = z.string().min(6, 'Hasło musi mieć minimum 6 znaków');
 
+// Password strength calculation
+const getPasswordStrength = (password: string): { level: 0 | 1 | 2 | 3; label: string; color: string } => {
+  if (!password) return { level: 0, label: '', color: '' };
+  
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 10) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[a-z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  
+  if (score <= 2) return { level: 1, label: 'Słabe', color: 'bg-red-500' };
+  if (score <= 4) return { level: 2, label: 'Średnie', color: 'bg-yellow-500' };
+  return { level: 3, label: 'Silne', color: 'bg-green-500' };
+};
+
 type AuthMode = 'login' | 'register' | 'forgot';
 type Gender = 'male' | 'female' | null;
 type Goal = 'lose' | 'maintain' | 'gain' | null;
@@ -353,6 +370,32 @@ export default function Auth() {
                       {showRegisterPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
+                  {/* Password strength indicator */}
+                  {regData.password && (
+                    <div className="space-y-1.5">
+                      <div className="flex gap-1">
+                        {[1, 2, 3].map((level) => (
+                          <div
+                            key={level}
+                            className={cn(
+                              'h-1.5 flex-1 rounded-full transition-all',
+                              getPasswordStrength(regData.password).level >= level
+                                ? getPasswordStrength(regData.password).color
+                                : 'bg-muted'
+                            )}
+                          />
+                        ))}
+                      </div>
+                      <p className={cn(
+                        'text-xs font-medium',
+                        getPasswordStrength(regData.password).level === 1 && 'text-red-500',
+                        getPasswordStrength(regData.password).level === 2 && 'text-yellow-600',
+                        getPasswordStrength(regData.password).level === 3 && 'text-green-600'
+                      )}>
+                        {getPasswordStrength(regData.password).label}
+                      </p>
+                    </div>
+                  )}
                   {errors.password && <p className="text-destructive text-xs font-medium">{errors.password}</p>}
                 </div>
               </div>
