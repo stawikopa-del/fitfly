@@ -8,7 +8,7 @@ export function ChatHeroBubble() {
   return (
     <div className="flex gap-3 items-center">
       {/* Mascot */}
-      <div className="flex-shrink-0 w-48">
+      <div className="flex-shrink-0 w-44">
         <video 
           src={waveAnimation} 
           autoPlay 
@@ -20,7 +20,7 @@ export function ChatHeroBubble() {
       </div>
 
       {/* Chat bubble */}
-      <div className="w-44">
+      <div className="w-48">
         <div 
           onClick={() => navigate('/czat')}
           className="relative bg-gradient-to-br from-fitfly-green via-emerald-500 to-teal-600 rounded-3xl p-4 shadow-lg cursor-pointer hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group aspect-square flex flex-col justify-between"
