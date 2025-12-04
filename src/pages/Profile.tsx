@@ -71,6 +71,7 @@ export default function Profile() {
     const { error } = await supabase
       .from('profiles')
       .update({
+        display_name: editedProfile.display_name,
         goal_weight: editedProfile.goal_weight,
         daily_steps_goal: editedProfile.daily_steps_goal,
         daily_water: editedProfile.daily_water,
@@ -140,8 +141,18 @@ export default function Profile() {
             onAvatarChange={(url) => setProfile(prev => prev ? { ...prev, avatar_url: url } : prev)}
           />
         </div>
-        <h1 className="text-2xl font-extrabold font-display text-foreground">{displayName}</h1>
-        <p className="text-sm text-muted-foreground font-medium">{weight} kg • {height} cm</p>
+        {isEditing ? (
+          <Input 
+            type="text"
+            value={editedProfile.display_name ?? displayName}
+            onChange={(e) => setEditedProfile({...editedProfile, display_name: e.target.value})}
+            className="max-w-48 mx-auto text-center text-xl font-extrabold font-display rounded-xl h-10"
+            placeholder="Twoje imię"
+          />
+        ) : (
+          <h1 className="text-2xl font-extrabold font-display text-foreground">{displayName}</h1>
+        )}
+        <p className="text-sm text-muted-foreground font-medium mt-1">{weight} kg • {height} cm</p>
         
         {/* Badge z celem */}
         {goal && (
