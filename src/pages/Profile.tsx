@@ -151,12 +151,6 @@ export default function Profile() {
           </div>
         )}
         
-        {/* Badge punktów */}
-        <div className="inline-flex items-center gap-2 mt-3 bg-accent text-accent-foreground px-4 py-2 rounded-2xl shadow-playful-orange animate-float" style={{ animationDelay: '0.2s' }}>
-          <Trophy className="w-5 h-5" />
-          <span className="text-sm font-bold">{totalPoints} punktów</span>
-          <span>🏆</span>
-        </div>
       </header>
 
       {/* Dzienne cele */}
