@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award } from 'lucide-react';
+import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
@@ -91,6 +91,101 @@ export default function More() {
               </div>
             </NavLink>
           ))}
+        </div>
+      </div>
+
+      {/* Pakiety Premium */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide px-1">
+          Pakiety FITFLY 💎
+        </h2>
+        <div className="grid gap-3">
+          {/* START */}
+          <button
+            onClick={() => { soundFeedback.buttonClick(); toast.info('Pakiet START - wkrótce dostępny!'); }}
+            className="relative p-4 rounded-2xl bg-card border-2 border-border/50 shadow-card-playful hover:-translate-y-0.5 transition-all text-left overflow-hidden group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+                <Zap className="w-7 h-7 text-foreground" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-foreground text-lg flex items-center gap-2">
+                  START <span>⚡</span>
+                </p>
+                <p className="text-sm text-muted-foreground">Podstawowe funkcje za darmo</p>
+              </div>
+              <div className="text-right">
+                <p className="font-extrabold text-xl text-foreground">0 zł</p>
+                <p className="text-xs text-muted-foreground">na zawsze</p>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-border/50 flex flex-wrap gap-2">
+              <span className="text-xs bg-muted px-2 py-1 rounded-full">Podstawowe treningi</span>
+              <span className="text-xs bg-muted px-2 py-1 rounded-full">Tracker wody</span>
+              <span className="text-xs bg-muted px-2 py-1 rounded-full">Dziennik posiłków</span>
+            </div>
+          </button>
+
+          {/* FIT - Popularny */}
+          <button
+            onClick={() => { soundFeedback.buttonClick(); toast.info('Pakiet FIT - wkrótce dostępny!'); }}
+            className="relative p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-primary/50 shadow-lg hover:-translate-y-0.5 transition-all text-left overflow-hidden group"
+          >
+            <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">
+              POPULARNE ⭐
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                <Star className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-foreground text-lg flex items-center gap-2">
+                  FIT <span>🌟</span>
+                </p>
+                <p className="text-sm text-muted-foreground">Wszystko czego potrzebujesz</p>
+              </div>
+              <div className="text-right">
+                <p className="font-extrabold text-xl text-primary">19,99 zł</p>
+                <p className="text-xs text-muted-foreground">/miesiąc</p>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-primary/20 flex flex-wrap gap-2">
+              <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Wszystko z START</span>
+              <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">AI przepisy</span>
+              <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Spersonalizowane plany</span>
+              <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Brak reklam</span>
+            </div>
+          </button>
+
+          {/* PREMIUM */}
+          <button
+            onClick={() => { soundFeedback.buttonClick(); toast.info('Pakiet PREMIUM - wkrótce dostępny!'); }}
+            className="relative p-4 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-2 border-amber-500/50 shadow-lg hover:-translate-y-0.5 transition-all text-left overflow-hidden group"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-orange-500/5" />
+            <div className="relative flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                <Crown className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-foreground text-lg flex items-center gap-2">
+                  PREMIUM <span>👑</span>
+                </p>
+                <p className="text-sm text-muted-foreground">Pełna moc FITFLY</p>
+              </div>
+              <div className="text-right">
+                <p className="font-extrabold text-xl text-amber-600">39,99 zł</p>
+                <p className="text-xs text-muted-foreground">/miesiąc</p>
+              </div>
+            </div>
+            <div className="relative mt-3 pt-3 border-t border-amber-500/20 flex flex-wrap gap-2">
+              <span className="text-xs bg-amber-500/20 text-amber-700 px-2 py-1 rounded-full">Wszystko z FIT</span>
+              <span className="text-xs bg-amber-500/20 text-amber-700 px-2 py-1 rounded-full">1-na-1 z trenerem AI</span>
+              <span className="text-xs bg-amber-500/20 text-amber-700 px-2 py-1 rounded-full">Priorytetowe wsparcie</span>
+              <span className="text-xs bg-amber-500/20 text-amber-700 px-2 py-1 rounded-full">Ekskluzywne wyzwania</span>
+            </div>
+          </button>
         </div>
       </div>
 
