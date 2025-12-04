@@ -270,30 +270,30 @@ export default function More() {
   });
 
   return (
-    <div className="px-4 py-6 space-y-6">
+    <div className="px-5 py-8 space-y-8">
       {/* Header */}
       <header className="text-center">
         <h1 className="text-3xl font-extrabold font-display text-foreground">
           Więcej opcji ✨
         </h1>
-        <p className="text-muted-foreground font-medium mt-1">
+        <p className="text-muted-foreground font-medium mt-2">
           Odkryj wszystkie funkcje FITFLY
         </p>
       </header>
 
       {/* Główne opcje */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide px-1">
           Menu główne
         </h2>
-        <div className="grid gap-3">
+        <div className="grid gap-4">
           {menuItems.map(({ to, icon: Icon, label, emoji, description }) => (
             <NavLink
               key={to}
               to={to}
               onClick={() => soundFeedback.navTap()}
               className={({ isActive }) => cn(
-                'flex items-center gap-4 p-4 rounded-2xl transition-all duration-300',
+                'flex items-center gap-4 p-5 rounded-2xl transition-all duration-300',
                 'bg-card border-2 border-border/50 shadow-card-playful',
                 'hover:-translate-y-0.5 hover:shadow-card-playful-hover',
                 isActive && 'border-primary/50 bg-primary/5'
@@ -314,7 +314,7 @@ export default function More() {
       </div>
 
       {/* Pakiety Premium */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
             Pakiety FITFLY 💎
@@ -324,13 +324,13 @@ export default function More() {
               soundFeedback.buttonClick();
               setShowCompareDialog(true);
             }}
-            className="px-4 py-2 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-sm rounded-xl flex items-center gap-2 shadow-playful hover:shadow-playful-hover transition-all duration-300 hover:scale-105 animate-[pulse_3s_ease-in-out_infinite]"
+            className="px-4 py-2 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-sm rounded-xl flex items-center gap-2 shadow-playful hover:shadow-playful-hover transition-all duration-300 hover:scale-105 animate-float-gentle"
           >
-            <Sparkles className="w-4 h-4 animate-[spin_4s_linear_infinite]" />
+            <Sparkles className="w-4 h-4" />
             Porównaj pakiety
           </button>
         </div>
-        <div className="grid gap-3">
+        <div className="grid gap-4">
           {loadingProducts ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -346,16 +346,16 @@ export default function More() {
       </div>
 
       {/* Dodatkowe opcje */}
-      <div className="space-y-3 relative z-10">
+      <div className="space-y-4 relative z-10">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide px-1">
           Dodatkowe
         </h2>
-        <div className="grid gap-3">
+        <div className="grid gap-4">
           {/* Przycisk pobierania aplikacji */}
           <button
             onClick={handleInstallClick}
             className={cn(
-              'flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 w-full text-left',
+              'flex items-center gap-4 p-5 rounded-2xl transition-all duration-300 w-full text-left',
               'bg-gradient-to-r from-primary/20 to-secondary/20 border-2 border-primary/30',
               'hover:-translate-y-0.5 hover:shadow-playful',
               isInstalled && 'from-green-500/20 to-green-400/20 border-green-500/30'
@@ -387,7 +387,7 @@ export default function More() {
               to={to}
               onClick={() => soundFeedback.navTap()}
               className={cn(
-                'flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 w-full text-left',
+                'flex items-center gap-4 p-5 rounded-2xl transition-all duration-300 w-full text-left',
                 'bg-muted/50 border-2 border-border/30',
                 'hover:-translate-y-0.5 hover:bg-muted'
               )}
