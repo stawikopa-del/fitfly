@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { ArrowLeft, Camera, Loader2, AlertCircle, Star, Flame, Beef, Wheat, Plus } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, AlertCircle, Star, Flame, Beef, Wheat, Plus, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
@@ -133,6 +134,7 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [product, setProduct] = useState<ProductData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [manualBarcode, setManualBarcode] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const hasScannedRef = useRef(false);
 
@@ -222,7 +224,32 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
   const resetScan = () => {
     setProduct(null);
     setError(null);
+    setManualBarcode('');
     hasScannedRef.current = false;
+  };
+
+  const handleManualSearch = async () => {
+    if (!manualBarcode.trim()) {
+      toast.error('Wpisz kod kreskowy');
+      return;
+    }
+
+    await stopScanning();
+    setError(null);
+    setProduct(null);
+    setIsLoading(true);
+    soundFeedback.buttonClick();
+
+    const productData = await fetchProductData(manualBarcode.trim());
+    setIsLoading(false);
+
+    if (productData) {
+      setProduct(productData);
+      soundFeedback.success();
+    } else {
+      setError('Nie znaleziono produktu w bazie. Sprawdź kod i spróbuj ponownie.');
+      soundFeedback.error();
+    }
   };
 
   useEffect(() => {
@@ -292,8 +319,41 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
                   <p className="text-sm text-muted-foreground font-medium">Szukam produktu...</p>
                 </div>
               </div>
-            )}
+          )}
+        </div>
+
+        {/* Manual barcode input */}
+        {!product && (
+          <div className="bg-card rounded-3xl border-2 border-border/50 p-4 shadow-card-playful">
+            <p className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+              <Search className="w-4 h-4 text-primary" />
+              Wpisz kod ręcznie
+            </p>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="np. 5900000000001"
+                value={manualBarcode}
+                onChange={(e) => setManualBarcode(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleManualSearch()}
+                className="flex-1 rounded-xl"
+                disabled={isLoading}
+              />
+              <Button
+                onClick={handleManualSearch}
+                disabled={isLoading || !manualBarcode.trim()}
+                className="rounded-xl font-bold px-4"
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Znajdziesz go pod kodem kreskowym na opakowaniu
+            </p>
           </div>
+        )}
           
           {isScanning && (
             <div className="absolute bottom-4 left-0 right-0 flex justify-center">
