@@ -94,6 +94,7 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [shakeFields, setShakeFields] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   
@@ -133,6 +134,11 @@ export default function Auth() {
     }
   }, [user, loading, navigate]);
 
+  const triggerShake = () => {
+    setShakeFields(true);
+    setTimeout(() => setShakeFields(false), 500);
+  };
+
   const validateLoginForm = () => {
     const newErrors: { email?: string; password?: string } = {};
     
@@ -147,6 +153,9 @@ export default function Auth() {
     }
     
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      triggerShake();
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -180,6 +189,7 @@ export default function Auth() {
             email: 'Nieprawidłowe dane', 
             password: 'Nieprawidłowe dane' 
           });
+          triggerShake();
           toast.error('Nieprawidłowy email lub hasło');
         } else {
           toast.error('Błąd logowania');
@@ -750,7 +760,7 @@ export default function Auth() {
                   </span>
                 )}
               </div>
-              <div className="relative">
+              <div className={cn("relative", shakeFields && errors.email && "animate-shake")}>
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   type="email"
@@ -775,7 +785,7 @@ export default function Auth() {
                     </span>
                   )}
                 </div>
-                <div className="relative">
+                <div className={cn("relative", shakeFields && errors.password && "animate-shake")}>
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type={showLoginPassword ? "text" : "password"}
