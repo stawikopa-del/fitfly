@@ -2,6 +2,7 @@ import { AppLayout } from '@/components/flyfit/AppLayout';
 import { useGamification } from '@/hooks/useGamification';
 import { LevelProgress } from '@/components/flyfit/LevelProgress';
 import { BadgeCard } from '@/components/flyfit/BadgeCard';
+import { TrophyRoad } from '@/components/flyfit/TrophyRoad';
 import { BADGE_DEFINITIONS, XP_REWARDS } from '@/types/gamification';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Star, Flame, Target } from 'lucide-react';
@@ -80,41 +81,8 @@ export default function Achievements() {
             <TabsTrigger value="rewards">Nagrody XP</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="badges" className="mt-4 space-y-3">
-            {/* Earned Badges */}
-            {earnedCount > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-bold text-foreground flex items-center gap-2">
-                  <span className="text-lg">🏆</span> Zdobyte ({earnedCount})
-                </h3>
-                <div className="grid grid-cols-1 gap-3">
-                  {BADGE_DEFINITIONS.filter(b => earnedBadges.includes(b.type)).map(badge => (
-                    <BadgeCard 
-                      key={badge.type} 
-                      badge={badge} 
-                      earned={badges.find(ub => ub.badge_type === badge.type)}
-                      showDetails
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Locked Badges */}
-            <div className="space-y-3">
-              <h3 className="font-bold text-muted-foreground flex items-center gap-2">
-                <span className="text-lg">🔒</span> Do zdobycia ({totalBadges - earnedCount})
-              </h3>
-              <div className="grid grid-cols-1 gap-3">
-                {BADGE_DEFINITIONS.filter(b => !earnedBadges.includes(b.type)).map(badge => (
-                  <BadgeCard 
-                    key={badge.type} 
-                    badge={badge}
-                    showDetails
-                  />
-                ))}
-              </div>
-            </div>
+          <TabsContent value="badges" className="mt-4">
+            <TrophyRoad badges={BADGE_DEFINITIONS} earnedBadges={badges} />
           </TabsContent>
 
           <TabsContent value="rewards" className="mt-4">
