@@ -31,7 +31,7 @@ interface BarcodeScannerProps {
   }) => void;
 }
 
-// Funkcja do oceny produktu
+// Funkcja do oceny produktu w stylu FITKA
 const evaluateProduct = (product: Omit<ProductData, 'score' | 'description'>): {
   score: number;
   description: string;
@@ -39,52 +39,76 @@ const evaluateProduct = (product: Omit<ProductData, 'score' | 'description'>): {
   let score = 5;
   const issues: string[] = [];
   const positives: string[] = [];
+  
   if (product.protein >= 20) {
     score += 2;
-    positives.push('wysokie białko');
+    positives.push('mega porcja białka 💪');
   } else if (product.protein >= 10) {
     score += 1;
+    positives.push('solidne białko');
   }
   if (product.sugar && product.sugar > 15) {
     score -= 2;
-    issues.push('dużo cukru');
+    issues.push('sporo cukru 🍬');
   } else if (product.sugar && product.sugar < 5) {
     score += 1;
     positives.push('mało cukru');
   }
   if (product.fat > 20) {
     score -= 1;
-    issues.push('wysoki tłuszcz');
+    issues.push('tłuszczu nie brakuje');
   }
   if (product.fiber && product.fiber >= 5) {
     score += 1;
-    positives.push('dobre źródło błonnika');
+    positives.push('błonnik na plus 🌾');
   }
   if (product.salt && product.salt > 1.5) {
     score -= 1;
-    issues.push('wysoka zawartość soli');
+    issues.push('sól w nadmiarze');
   }
   if (product.calories < 150) {
     score += 1;
-    positives.push('niskokaloryczny');
+    positives.push('lekkie dla sylwetki');
   } else if (product.calories > 400) {
     score -= 1;
+    issues.push('kaloryczna bomba 💣');
   }
+  
   score = Math.max(1, Math.min(10, score));
+  
   let description = '';
+  
   if (score >= 8) {
-    description = `Świetny wybór! ${positives.length > 0 ? positives.slice(0, 2).join(', ') + '.' : ''} Ten produkt wspiera Twoje cele zdrowotne.`;
+    const greatPhrases = [
+      `Oho, ktoś tu wie co dobre! 🎉 ${positives.length > 0 ? positives.slice(0, 2).join(' i ') + '!' : ''} Jedz śmiało, Twoje ciało Ci podziękuje!`,
+      `Wow, świetny wybór! 🌟 ${positives.length > 0 ? 'Mamy tu ' + positives[0] + '!' : ''} Takie produkty lubię najbardziej - zdrowe i smaczne!`,
+      `Brawo! 👏 To jest TO! ${positives.length > 0 ? positives.slice(0, 2).join(', ') + '.' : ''} Możesz jeść bez wyrzutów sumienia!`
+    ];
+    description = greatPhrases[Math.floor(Math.random() * greatPhrases.length)];
   } else if (score >= 6) {
-    description = `Dobry produkt${positives.length > 0 ? ' - ' + positives[0] : ''}. ${issues.length > 0 ? 'Zwróć uwagę na ' + issues[0] + '.' : 'Można jeść regularnie.'}`;
+    const goodPhrases = [
+      `Całkiem nieźle! 👍 ${positives.length > 0 ? 'Plus za ' + positives[0] + '.' : ''} ${issues.length > 0 ? 'Tylko uważaj na ' + issues[0] + ', okej?' : 'Można jeść regularnie!'}`,
+      `Dobry wybór! 😊 ${positives.length > 0 ? positives[0] + ' to fajny bonus.' : ''} ${issues.length > 0 ? 'Miej tylko oko na ' + issues[0] + '.' : 'Smacznego!'}`,
+      `Spoko produkt! ✌️ ${issues.length > 0 ? 'Jest ' + issues[0] + ', ale' : 'Ogólnie'} ${positives.length > 0 ? ' ' + positives[0] + ' nadrabia!' : ' daje radę!'}`
+    ];
+    description = goodPhrases[Math.floor(Math.random() * goodPhrases.length)];
   } else if (score >= 4) {
-    description = `Przeciętny wybór. ${issues.length > 0 ? issues.slice(0, 2).join(', ') + '.' : ''} Lepiej jeść okazjonalnie.`;
+    const okPhrases = [
+      `Hmm, mogło być lepiej... 🤷 ${issues.length > 0 ? issues.slice(0, 2).join(' i ') + '.' : ''} Traktuj to jako okazjonalny przysmak, nie codzienność!`,
+      `No cóż... 😅 ${issues.length > 0 ? 'Mamy tu ' + issues[0] + '.' : ''} Raz na jakiś czas ujdzie, ale nie przesadzaj!`,
+      `Średniak! 🙃 ${issues.length > 0 ? issues.slice(0, 2).join(', ') + '.' : ''} Jeśli bardzo lubisz - jedz rzadko. Może znajdziesz coś lepszego?`
+    ];
+    description = okPhrases[Math.floor(Math.random() * okPhrases.length)];
   } else {
-    description = `Słaby wybór dla zdrowia. ${issues.length > 0 ? issues.join(', ') + '.' : ''} Szukaj zdrowszych alternatyw.`;
+    const badPhrases = [
+      `Oj, to nie jest mój faworyt... 😬 ${issues.length > 0 ? issues.join(', ') + '!' : ''} Może poszukamy czegoś zdrowszego? Pomogę Ci znaleźć alternatywę!`,
+      `Ups, czerwona lampka! 🚨 ${issues.length > 0 ? issues.join(' i ') + '.' : ''} Lepiej odpuść ten produkt - Twoje ciało zasługuje na coś lepszego!`,
+      `Nie chcę być złośliwy, ale... 😅 ${issues.length > 0 ? issues.join(', ') + '.' : ''} Ten produkt to nie jest droga do formy marzeń. Szukaj dalej!`
+    ];
+    description = badPhrases[Math.floor(Math.random() * badPhrases.length)];
   }
-  return {
-    score,
-    description
-  };
+  
+  return { score, description };
 };
 
 // Pobierz dane produktu z Open Food Facts
@@ -293,14 +317,18 @@ export function BarcodeScanner({
 
             {/* Macros per serving */}
             {(() => {
-              // Parse serving size to get grams
+              // Parse serving size to get grams - improved parsing
               const parseServingSize = (serving?: string): number | null => {
                 if (!serving) return null;
-                const match = serving.match(/(\d+(?:[.,]\d+)?)\s*g/i);
-                if (match) return parseFloat(match[1].replace(',', '.'));
+                // Try to find grams in various formats: "50g", "50 g", "(45g)", "1 sztuka (30g)"
+                const gMatch = serving.match(/(\d+(?:[.,]\d+)?)\s*g(?:r|ram)?/i);
+                if (gMatch) return parseFloat(gMatch[1].replace(',', '.'));
                 // Try ml (assume ~1g per ml for drinks)
                 const mlMatch = serving.match(/(\d+(?:[.,]\d+)?)\s*ml/i);
                 if (mlMatch) return parseFloat(mlMatch[1].replace(',', '.'));
+                // Try just a number at the start (common format)
+                const numMatch = serving.match(/^(\d+(?:[.,]\d+)?)/);
+                if (numMatch) return parseFloat(numMatch[1].replace(',', '.'));
                 return null;
               };
               
