@@ -12,15 +12,25 @@ const navItems = [
   { to: '/inne', icon: Menu, label: 'Inne' },
 ];
 
+// Sub-routes that belong to "Inne" section
+const inneSubRoutes = ['/inne', '/profil', '/postepy', '/wyzwania', '/ustawienia', '/o-nas', '/pomoc', '/informacje'];
+
 export function BottomNavigation() {
   const location = useLocation();
+
+  const isRouteActive = (to: string) => {
+    if (to === '/inne') {
+      return inneSubRoutes.includes(location.pathname);
+    }
+    return location.pathname === to;
+  };
 
   return (
     <nav className="fixed bottom-4 left-4 right-4 z-50 safe-area-pb">
       <div className="bg-card/95 backdrop-blur-xl rounded-3xl border-2 border-border/50 shadow-card-playful-hover max-w-md mx-auto">
         <div className="flex items-center justify-around h-20 px-2">
           {navItems.map(({ to, icon: Icon, label, isCenter }) => {
-            const isActive = location.pathname === to;
+            const isActive = isRouteActive(to);
             
             // Center FITEK button
             if (isCenter) {
