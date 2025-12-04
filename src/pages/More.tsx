@@ -140,87 +140,103 @@ export default function More() {
     const isCurrentTier = currentTier === productTier && isActive;
 
     return (
-      <button
+      <div
         key={product.node.id}
-        onClick={() => !isCurrentTier && handlePurchase(product)}
-        disabled={isLoading || isCurrentTier}
         className={cn(
-          "relative p-4 rounded-2xl border-2 shadow-lg transition-all text-left overflow-hidden group w-full",
-          config.gradient ? `bg-gradient-to-br ${config.gradient}` : 'bg-card',
-          config.borderColor || 'border-border/50',
-          isLoading && 'opacity-70',
-          isCurrentTier && 'ring-2 ring-green-500 border-green-500',
-          !isCurrentTier && 'hover:-translate-y-0.5'
+          "relative rounded-2xl transition-all overflow-hidden",
+          isCurrentTier && "p-1 bg-gradient-to-r from-green-400 via-emerald-500 to-green-600 shadow-[0_0_20px_rgba(34,197,94,0.4)]"
         )}
       >
-        {isCurrentTier && (
-          <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> TWÓJ PAKIET
-          </div>
-        )}
-        {config.popular && !isCurrentTier && (
-          <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">
-            POPULARNE ⭐
-          </div>
-        )}
-        
-        {product.node.handle === 'pakiet-premium' && (
-          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-orange-500/5" />
-        )}
-        
-        <div className="relative flex items-center gap-4">
-          <div className={cn(
-            "w-14 h-14 rounded-2xl flex items-center justify-center",
-            product.node.handle === 'pakiet-start' && "bg-muted",
-            product.node.handle === 'pakiet-fit' && "bg-gradient-to-br from-primary to-secondary",
-            product.node.handle === 'pakiet-premium' && "bg-gradient-to-br from-amber-500 to-orange-500"
-          )}>
-            <Icon className={cn(
-              "w-7 h-7",
-              product.node.handle === 'pakiet-start' ? 'text-foreground' : 'text-white'
-            )} />
-          </div>
-          <div className="flex-1">
-            <p className="font-bold text-foreground text-lg flex items-center gap-2">
-              {product.node.title.replace('Pakiet ', '')} <span>{config.emoji}</span>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {isFree ? 'Podstawowe funkcje za darmo' : product.node.handle === 'pakiet-fit' ? 'Wszystko czego potrzebujesz' : 'Pełna moc FITFLY'}
-            </p>
-          </div>
-          <div className="text-right">
-            {isLoading ? (
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            ) : (
-              <>
-                <p className={cn("font-extrabold text-xl", config.priceColor || 'text-foreground')}>
-                  {isFree ? '0 zł' : `${price.toFixed(2).replace('.', ',')} zł`}
-                </p>
-                <p className="text-xs text-muted-foreground">{isFree ? 'na zawsze' : '/miesiąc'}</p>
-              </>
-            )}
-          </div>
-        </div>
-        
-        <div className={cn(
-          "relative mt-3 pt-3 border-t flex flex-wrap gap-2",
-          config.borderColor ? 'border-primary/20' : 'border-border/50'
-        )}>
-          {config.features.map((feature, idx) => (
-            <span 
-              key={idx} 
-              className={cn(
-                "text-xs px-2 py-1 rounded-full",
-                config.popular ? 'bg-primary/20 text-primary' : 
-                product.node.handle === 'pakiet-premium' ? 'bg-amber-500/20 text-amber-700' : 
-                'bg-muted'
+        <button
+          onClick={() => !isCurrentTier && handlePurchase(product)}
+          disabled={isLoading || isCurrentTier}
+          className={cn(
+            "relative p-4 rounded-xl border-2 shadow-lg transition-all text-left overflow-hidden group w-full",
+            config.gradient ? `bg-gradient-to-br ${config.gradient}` : 'bg-card',
+            isCurrentTier ? 'border-transparent bg-card' : config.borderColor || 'border-border/50',
+            isLoading && 'opacity-70',
+            !isCurrentTier && 'hover:-translate-y-0.5'
+          )}
+        >
+          {isCurrentTier && (
+            <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-4 py-1.5 flex items-center justify-center gap-2">
+              <CheckCircle2 className="w-4 h-4" /> 
+              <span>TWÓJ AKTYWNY PAKIET</span>
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          )}
+          {config.popular && !isCurrentTier && (
+            <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">
+              POPULARNE ⭐
+            </div>
+          )}
+          
+          {product.node.handle === 'pakiet-premium' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-orange-500/5" />
+          )}
+          
+          <div className={cn("relative flex items-center gap-4", isCurrentTier && "mt-6")}>
+            <div className={cn(
+              "w-14 h-14 rounded-2xl flex items-center justify-center",
+              product.node.handle === 'pakiet-start' && "bg-muted",
+              product.node.handle === 'pakiet-fit' && "bg-gradient-to-br from-primary to-secondary",
+              product.node.handle === 'pakiet-premium' && "bg-gradient-to-br from-amber-500 to-orange-500"
+            )}>
+              <Icon className={cn(
+                "w-7 h-7",
+                product.node.handle === 'pakiet-start' ? 'text-foreground' : 'text-white'
+              )} />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-foreground text-lg flex items-center gap-2">
+                {product.node.title.replace('Pakiet ', '')} <span>{config.emoji}</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {isCurrentTier ? 'Korzystasz z tego pakietu' : isFree ? 'Podstawowe funkcje za darmo' : product.node.handle === 'pakiet-fit' ? 'Wszystko czego potrzebujesz' : 'Pełna moc FITFLY'}
+              </p>
+            </div>
+            <div className="text-right">
+              {isLoading ? (
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              ) : isCurrentTier ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                    <Check className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs text-green-600 font-bold mt-1">Aktywny</span>
+                </div>
+              ) : (
+                <>
+                  <p className={cn("font-extrabold text-xl", config.priceColor || 'text-foreground')}>
+                    {isFree ? '0 zł' : `${price.toFixed(2).replace('.', ',')} zł`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{isFree ? 'na zawsze' : '/miesiąc'}</p>
+                </>
               )}
-            >
-              {feature}
-            </span>
-          ))}
-        </div>
-      </button>
+            </div>
+          </div>
+          
+          <div className={cn(
+            "relative mt-3 pt-3 border-t flex flex-wrap gap-2",
+            config.borderColor ? 'border-primary/20' : 'border-border/50'
+          )}>
+            {config.features.map((feature, idx) => (
+              <span 
+                key={idx} 
+                className={cn(
+                  "text-xs px-2 py-1 rounded-full",
+                  isCurrentTier ? 'bg-green-500/20 text-green-700' :
+                  config.popular ? 'bg-primary/20 text-primary' : 
+                  product.node.handle === 'pakiet-premium' ? 'bg-amber-500/20 text-amber-700' : 
+                  'bg-muted'
+                )}
+              >
+                {feature}
+              </span>
+            ))}
+          </div>
+        </button>
+      </div>
     );
   };
 
