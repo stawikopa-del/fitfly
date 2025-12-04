@@ -176,7 +176,7 @@ export function BarcodeScanner({
     if (score >= 4) return 'text-orange-500 bg-orange-500/20';
     return 'text-red-500 bg-red-500/20';
   };
-  return <div className="fixed inset-0 z-[100] bg-background">
+  return <div className="fixed inset-0 z-[100] bg-background overflow-y-auto">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border/50 px-4 py-3 safe-area-pt">
         <div className="flex items-center gap-3">
