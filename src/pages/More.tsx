@@ -227,9 +227,10 @@ export default function More() {
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <div>
-                    <p className={cn("font-extrabold text-xl", config.priceColor || 'text-foreground')}>
-                      {isFree ? '0 zł' : `${price.toFixed(2).replace('.', ',')} zł`}
+                  <div className="text-right">
+                    <p className={cn("font-extrabold whitespace-nowrap", config.priceColor || 'text-foreground')}>
+                      <span className="text-xl">{isFree ? '0' : price.toFixed(2).replace('.', ',')}</span>
+                      <span className="text-sm ml-0.5">zł</span>
                     </p>
                     <p className="text-xs text-muted-foreground">{isFree ? 'na zawsze' : '/miesiąc'}</p>
                   </div>
