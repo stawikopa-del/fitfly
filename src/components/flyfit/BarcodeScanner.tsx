@@ -291,51 +291,119 @@ export function BarcodeScanner({
               </div>
             </div>
 
-            {/* Macros */}
-            <div className="bg-card rounded-3xl border-2 border-border/50 p-5 shadow-card-playful">
-              <h3 className="font-bold font-display text-foreground mb-4 flex items-center gap-2">
-                Wartości odżywcze <span className="text-xs text-muted-foreground font-normal">(na 100g)</span>
-              </h3>
+            {/* Macros per serving */}
+            {(() => {
+              // Parse serving size to get grams
+              const parseServingSize = (serving?: string): number | null => {
+                if (!serving) return null;
+                const match = serving.match(/(\d+(?:[.,]\d+)?)\s*g/i);
+                if (match) return parseFloat(match[1].replace(',', '.'));
+                // Try ml (assume ~1g per ml for drinks)
+                const mlMatch = serving.match(/(\d+(?:[.,]\d+)?)\s*ml/i);
+                if (mlMatch) return parseFloat(mlMatch[1].replace(',', '.'));
+                return null;
+              };
               
-              <div className="grid grid-cols-4 gap-3">
-                <div className="text-center p-3 bg-muted/50 rounded-2xl">
-                  <Flame className="w-5 h-5 mx-auto mb-1 text-orange-500" />
-                  <p className="text-lg font-extrabold font-display text-foreground">{product.calories}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium">kcal</p>
-                </div>
-                <div className="text-center p-3 bg-muted/50 rounded-2xl">
-                  <Beef className="w-5 h-5 mx-auto mb-1 text-red-500" />
-                  <p className="text-lg font-extrabold font-display text-foreground">{product.protein}g</p>
-                  <p className="text-[10px] text-muted-foreground font-medium">białko</p>
-                </div>
-                <div className="text-center p-3 bg-muted/50 rounded-2xl">
-                  <Wheat className="w-5 h-5 mx-auto mb-1 text-amber-500" />
-                  <p className="text-lg font-extrabold font-display text-foreground">{product.carbs}g</p>
-                  <p className="text-[10px] text-muted-foreground font-medium">węgle</p>
-                </div>
-                <div className="text-center p-3 bg-muted/50 rounded-2xl">
-                  <span className="text-lg block mb-1">🧈</span>
-                  <p className="text-lg font-extrabold font-display text-foreground">{product.fat}g</p>
-                  <p className="text-[10px] text-muted-foreground font-medium">tłuszcz</p>
-                </div>
-              </div>
+              const servingGrams = parseServingSize(product.serving_size);
+              const multiplier = servingGrams ? servingGrams / 100 : null;
+              
+              return (
+                <>
+                  {/* Per serving - primary style */}
+                  {multiplier && (
+                    <div className="bg-primary/10 rounded-3xl border-2 border-primary/30 p-5 shadow-card-playful">
+                      <h3 className="font-extrabold font-display text-foreground mb-4 flex items-center gap-2">
+                        🍽️ Na porcję 
+                        <span className="text-xs text-primary font-bold bg-primary/20 px-2 py-0.5 rounded-full">
+                          {product.serving_size}
+                        </span>
+                      </h3>
+                      
+                      <div className="grid grid-cols-4 gap-3">
+                        <div className="text-center p-3 bg-background/80 rounded-2xl border border-primary/20">
+                          <Flame className="w-5 h-5 mx-auto mb-1 text-orange-500" />
+                          <p className="text-xl font-extrabold font-display text-foreground">
+                            {Math.round(product.calories * multiplier)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground font-medium">kcal</p>
+                        </div>
+                        <div className="text-center p-3 bg-background/80 rounded-2xl border border-primary/20">
+                          <Beef className="w-5 h-5 mx-auto mb-1 text-red-500" />
+                          <p className="text-xl font-extrabold font-display text-foreground">
+                            {Math.round(product.protein * multiplier * 10) / 10}g
+                          </p>
+                          <p className="text-[10px] text-muted-foreground font-medium">białko</p>
+                        </div>
+                        <div className="text-center p-3 bg-background/80 rounded-2xl border border-primary/20">
+                          <Wheat className="w-5 h-5 mx-auto mb-1 text-amber-500" />
+                          <p className="text-xl font-extrabold font-display text-foreground">
+                            {Math.round(product.carbs * multiplier * 10) / 10}g
+                          </p>
+                          <p className="text-[10px] text-muted-foreground font-medium">węgle</p>
+                        </div>
+                        <div className="text-center p-3 bg-background/80 rounded-2xl border border-primary/20">
+                          <span className="text-lg block mb-1">🧈</span>
+                          <p className="text-xl font-extrabold font-display text-foreground">
+                            {Math.round(product.fat * multiplier * 10) / 10}g
+                          </p>
+                          <p className="text-[10px] text-muted-foreground font-medium">tłuszcz</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-              {/* Extra nutrients */}
-              {(product.sugar !== undefined || product.fiber !== undefined || product.salt !== undefined) && <div className="mt-4 pt-4 border-t border-border/50 grid grid-cols-3 gap-3">
-                  {product.sugar !== undefined && <div className="text-center">
-                      <p className="text-sm font-bold text-foreground">{Math.round(product.sugar * 10) / 10}g</p>
-                      <p className="text-[10px] text-muted-foreground">cukry</p>
-                    </div>}
-                  {product.fiber !== undefined && <div className="text-center">
-                      <p className="text-sm font-bold text-foreground">{Math.round(product.fiber * 10) / 10}g</p>
-                      <p className="text-[10px] text-muted-foreground">błonnik</p>
-                    </div>}
-                  {product.salt !== undefined && <div className="text-center">
-                      <p className="text-sm font-bold text-foreground">{Math.round(product.salt * 100) / 100}g</p>
-                      <p className="text-[10px] text-muted-foreground">sól</p>
-                    </div>}
-                </div>}
-            </div>
+                  {/* Per 100g - secondary style */}
+                  <div className="bg-card rounded-3xl border-2 border-border/50 p-5 shadow-card-playful">
+                    <h3 className="font-bold text-muted-foreground mb-4 flex items-center gap-2 text-sm">
+                      📊 Na 100g
+                    </h3>
+                    
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="text-center p-2 bg-muted/30 rounded-xl">
+                        <p className="text-base font-bold text-foreground">{product.calories}</p>
+                        <p className="text-[9px] text-muted-foreground">kcal</p>
+                      </div>
+                      <div className="text-center p-2 bg-muted/30 rounded-xl">
+                        <p className="text-base font-bold text-foreground">{product.protein}g</p>
+                        <p className="text-[9px] text-muted-foreground">białko</p>
+                      </div>
+                      <div className="text-center p-2 bg-muted/30 rounded-xl">
+                        <p className="text-base font-bold text-foreground">{product.carbs}g</p>
+                        <p className="text-[9px] text-muted-foreground">węgle</p>
+                      </div>
+                      <div className="text-center p-2 bg-muted/30 rounded-xl">
+                        <p className="text-base font-bold text-foreground">{product.fat}g</p>
+                        <p className="text-[9px] text-muted-foreground">tłuszcz</p>
+                      </div>
+                    </div>
+
+                    {/* Extra nutrients */}
+                    {(product.sugar !== undefined || product.fiber !== undefined || product.salt !== undefined) && (
+                      <div className="mt-3 pt-3 border-t border-border/30 grid grid-cols-3 gap-2">
+                        {product.sugar !== undefined && (
+                          <div className="text-center">
+                            <p className="text-xs font-bold text-foreground">{Math.round(product.sugar * 10) / 10}g</p>
+                            <p className="text-[9px] text-muted-foreground">cukry</p>
+                          </div>
+                        )}
+                        {product.fiber !== undefined && (
+                          <div className="text-center">
+                            <p className="text-xs font-bold text-foreground">{Math.round(product.fiber * 10) / 10}g</p>
+                            <p className="text-[9px] text-muted-foreground">błonnik</p>
+                          </div>
+                        )}
+                        {product.salt !== undefined && (
+                          <div className="text-center">
+                            <p className="text-xs font-bold text-foreground">{Math.round(product.salt * 100) / 100}g</p>
+                            <p className="text-[9px] text-muted-foreground">sól</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Action buttons */}
             <div className="flex gap-3">
