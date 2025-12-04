@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Plus, X, Clock, Dumbbell, Utensils, Target, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,14 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface CalendarEvent {
   id: string;
   title: string;
-  date: Date;
-  time: string;
+  event_date: string;
+  event_time: string;
   type: 'workout' | 'meal' | 'challenge' | 'other';
 }
 
@@ -30,55 +33,95 @@ interface CalendarDialogProps {
 }
 
 export function CalendarDialog({ trigger }: CalendarDialogProps) {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [events, setEvents] = useState<CalendarEvent[]>([
-    {
-      id: '1',
-      title: 'Poranny trening',
-      date: new Date(),
-      time: '07:00',
-      type: 'workout',
-    },
-    {
-      id: '2',
-      title: 'Zdrowe śniadanie',
-      date: new Date(),
-      time: '08:00',
-      type: 'meal',
-    },
-  ]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [newEvent, setNewEvent] = useState({
     title: '',
     time: '12:00',
     type: 'workout' as CalendarEvent['type'],
   });
 
+  // Fetch events from database
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchEvents = async () => {
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching events:', error);
+        return;
+      }
+
+      setEvents((data || []).map(e => ({
+        ...e,
+        type: e.type as CalendarEvent['type']
+      })));
+    };
+
+    fetchEvents();
+  }, [user]);
+
   const selectedDateEvents = events.filter((event) =>
-    isSameDay(event.date, selectedDate)
+    isSameDay(parseISO(event.event_date), selectedDate)
   );
 
-  const handleAddEvent = () => {
-    if (!newEvent.title.trim()) return;
+  const handleAddEvent = async () => {
+    if (!newEvent.title.trim() || !user) return;
 
-    const event: CalendarEvent = {
-      id: Date.now().toString(),
+    setIsLoading(true);
+
+    const eventData = {
+      user_id: user.id,
       title: newEvent.title,
-      date: selectedDate,
-      time: newEvent.time,
+      event_date: format(selectedDate, 'yyyy-MM-dd'),
+      event_time: newEvent.time,
       type: newEvent.type,
     };
 
-    setEvents([...events, event]);
+    const { data, error } = await supabase
+      .from('calendar_events')
+      .insert(eventData)
+      .select()
+      .single();
+
+    setIsLoading(false);
+
+    if (error) {
+      console.error('Error adding event:', error);
+      toast.error('Nie udało się dodać planu');
+      return;
+    }
+
+    setEvents([...events, { ...data, type: data.type as CalendarEvent['type'] }]);
     setNewEvent({ title: '', time: '12:00', type: 'workout' });
     setIsAddingEvent(false);
+    toast.success('Plan dodany!');
   };
 
-  const handleDeleteEvent = (id: string) => {
+  const handleDeleteEvent = async (id: string) => {
+    const { error } = await supabase
+      .from('calendar_events')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting event:', error);
+      toast.error('Nie udało się usunąć planu');
+      return;
+    }
+
     setEvents(events.filter((e) => e.id !== id));
+    toast.success('Plan usunięty');
   };
 
-  const datesWithEvents = events.map((e) => e.date);
+  const datesWithEvents = events.map((e) => parseISO(e.event_date));
 
   return (
     <Dialog>
@@ -123,6 +166,7 @@ export function CalendarDialog({ trigger }: CalendarDialogProps) {
               variant="outline"
               onClick={() => setIsAddingEvent(!isAddingEvent)}
               className="rounded-xl gap-1"
+              disabled={!user}
             >
               {isAddingEvent ? (
                 <>
@@ -136,8 +180,16 @@ export function CalendarDialog({ trigger }: CalendarDialogProps) {
             </Button>
           </div>
 
+          {!user && (
+            <div className="bg-primary/10 rounded-2xl p-3 text-center">
+              <p className="text-sm text-muted-foreground">
+                Zaloguj się, aby dodawać i zapisywać plany
+              </p>
+            </div>
+          )}
+
           {/* Add event form */}
-          {isAddingEvent && (
+          {isAddingEvent && user && (
             <div className="bg-muted/50 rounded-2xl p-4 space-y-3 animate-fade-in">
               <div className="space-y-2">
                 <Label className="font-bold text-sm">Nazwa planu</Label>
@@ -186,10 +238,11 @@ export function CalendarDialog({ trigger }: CalendarDialogProps) {
 
               <Button
                 onClick={handleAddEvent}
-                disabled={!newEvent.title.trim()}
+                disabled={!newEvent.title.trim() || isLoading}
                 className="w-full rounded-xl"
               >
-                <Plus className="w-4 h-4 mr-1" /> Dodaj do kalendarza
+                <Plus className="w-4 h-4 mr-1" /> 
+                {isLoading ? 'Dodawanie...' : 'Dodaj do kalendarza'}
               </Button>
             </div>
           )}
@@ -204,7 +257,7 @@ export function CalendarDialog({ trigger }: CalendarDialogProps) {
               </div>
             ) : (
               selectedDateEvents.map((event) => {
-                const config = eventTypeConfig[event.type];
+                const config = eventTypeConfig[event.type] || eventTypeConfig.other;
                 const Icon = config.icon;
 
                 return (
@@ -227,7 +280,7 @@ export function CalendarDialog({ trigger }: CalendarDialogProps) {
                       </p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Clock className="w-3 h-3" />
-                        <span>{event.time}</span>
+                        <span>{event.event_time}</span>
                         <Badge
                           variant="secondary"
                           className="text-[10px] px-1.5 py-0"
