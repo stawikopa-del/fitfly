@@ -20,21 +20,21 @@ export type Database = {
           created_at: string
           id: string
           role: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
           role: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
           role?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -107,7 +107,7 @@ export type Database = {
           protein: number
           time: string | null
           type: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           calories?: number
@@ -120,7 +120,7 @@ export type Database = {
           protein?: number
           time?: string | null
           type: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           calories?: number
@@ -133,7 +133,7 @@ export type Database = {
           protein?: number
           time?: string | null
           type?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
