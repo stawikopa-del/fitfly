@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X } from 'lucide-react';
+import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X, ScanBarcode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -7,11 +7,13 @@ import { Meal } from '@/types/flyfit';
 import { AddMealDialog } from '@/components/flyfit/AddMealDialog';
 import { RecipesSection, DetailedRecipe } from '@/components/flyfit/RecipesSection';
 import { CookingMode } from '@/components/flyfit/CookingMode';
+import { BarcodeScanner } from '@/components/flyfit/BarcodeScanner';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useGamification } from '@/hooks/useGamification';
+import { soundFeedback } from '@/utils/soundFeedback';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -26,6 +28,7 @@ export default function Nutrition() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
   const [cookingRecipe, setCookingRecipe] = useState<DetailedRecipe | null>(null);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
@@ -161,6 +164,52 @@ export default function Nutrition() {
     );
   }
 
+  // Pokaż skaner kodów kreskowych
+  if (showBarcodeScanner) {
+    return (
+      <BarcodeScanner 
+        onClose={() => setShowBarcodeScanner(false)}
+        onAddMeal={async (mealData) => {
+          if (!user) return;
+          
+          const today = new Date().toISOString().split('T')[0];
+          const { data, error } = await supabase
+            .from('meals')
+            .insert({
+              type: 'snack',
+              name: mealData.name,
+              calories: mealData.calories,
+              protein: mealData.protein,
+              carbs: mealData.carbs,
+              fat: mealData.fat,
+              meal_date: today,
+              user_id: user.id,
+            })
+            .select()
+            .single();
+          
+          if (error) {
+            console.error('Error adding meal:', error);
+            toast.error('Nie udało się dodać posiłku');
+          } else if (data) {
+            setMeals([...meals, {
+              id: data.id,
+              type: data.type as MealType,
+              name: data.name,
+              calories: data.calories,
+              protein: Number(data.protein),
+              carbs: Number(data.carbs),
+              fat: Number(data.fat),
+              time: data.time || undefined,
+            }]);
+            onMealLogged();
+          }
+          setShowBarcodeScanner(false);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="px-4 py-6 space-y-6">
       {/* Header */}
@@ -214,6 +263,28 @@ export default function Nutrition() {
           </div>
         ))}
       </div>
+
+      {/* Skaner kodów kreskowych */}
+      <button
+        onClick={() => {
+          soundFeedback.buttonClick();
+          setShowBarcodeScanner(true);
+        }}
+        className="w-full bg-gradient-to-r from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-3xl p-5 border-2 border-violet-500/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg">
+            <ScanBarcode className="w-7 h-7 text-white" />
+          </div>
+          <div className="text-left flex-1">
+            <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+              Skaner produktów
+              <span>📦</span>
+            </h3>
+            <p className="text-sm text-muted-foreground">Zeskanuj kod kreskowy i sprawdź wartości odżywcze</p>
+          </div>
+        </div>
+      </button>
 
       {/* Sekcja przepisów AI */}
       <RecipesSection onStartCooking={setCookingRecipe} />
