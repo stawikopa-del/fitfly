@@ -232,7 +232,7 @@ export default function More() {
                       <span className="text-xl">{isFree ? '0' : price.toFixed(2).replace('.', ',')}</span>
                       <span className="text-sm ml-0.5">zł</span>
                     </p>
-                    <p className="text-xs text-muted-foreground">{isFree ? 'na zawsze' : '/miesiąc'}</p>
+                    <p className="text-xs text-muted-foreground">{isFree ? 'na zawsze' : 'miesięcznie'}</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                 </div>
