@@ -142,43 +142,17 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
     setError(null);
     setProduct(null);
     hasScannedRef.current = false;
-    setIsLoading(true);
 
     try {
-      // Check if camera API is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera API not available');
-      }
-
-      // Request camera permission with timeout
-      const permissionPromise = navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
-      );
-
-      const stream = await Promise.race([permissionPromise, timeoutPromise]) as MediaStream;
-      // Stop the stream immediately, we just needed permission
-      stream.getTracks().forEach(track => track.stop());
-
-      setIsLoading(false);
-
       const html5Qrcode = new Html5Qrcode('barcode-reader');
       scannerRef.current = html5Qrcode;
-
-      // Get container dimensions for responsive qrbox
-      const container = document.getElementById('barcode-reader');
-      const containerWidth = container?.clientWidth || 300;
-      const qrboxWidth = Math.min(200, containerWidth - 50);
-      const qrboxHeight = Math.round(qrboxWidth * 0.6);
 
       await html5Qrcode.start(
         { facingMode: 'environment' },
         {
-          fps: 10,
-          qrbox: { width: qrboxWidth, height: qrboxHeight },
+          fps: 5,
+          qrbox: { width: 200, height: 120 },
+          disableFlip: false,
         },
         async (decodedText) => {
           if (hasScannedRef.current) return;
@@ -186,12 +160,10 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
           
           soundFeedback.success();
           
-          // Stop scanner
           await html5Qrcode.stop();
           setIsScanning(false);
           setIsLoading(true);
 
-          // Fetch product data
           const productData = await fetchProductData(decodedText);
           setIsLoading(false);
 
@@ -203,28 +175,13 @@ export function BarcodeScanner({ onClose, onAddMeal }: BarcodeScannerProps) {
             soundFeedback.error();
           }
         },
-        () => {} // Ignore errors during scanning
+        () => {}
       );
 
       setIsScanning(true);
     } catch (err: any) {
       console.error('Scanner error:', err);
-      setIsLoading(false);
-      
-      let errorMessage = 'Nie udało się uruchomić aparatu.';
-      if (err.message === 'Timeout') {
-        errorMessage = 'Upłynął czas oczekiwania na kamerę. Spróbuj ponownie.';
-      } else if (err.message === 'Camera API not available') {
-        errorMessage = 'Ta przeglądarka nie obsługuje kamery.';
-      } else if (err.name === 'NotAllowedError' || err.message?.includes('Permission')) {
-        errorMessage = 'Brak uprawnień do kamery. Zezwól na dostęp w ustawieniach przeglądarki.';
-      } else if (err.name === 'NotFoundError') {
-        errorMessage = 'Nie znaleziono kamery.';
-      } else if (err.name === 'NotReadableError') {
-        errorMessage = 'Kamera jest używana przez inną aplikację.';
-      }
-      
-      setError(`${errorMessage} Użyj ręcznego wpisywania kodu poniżej.`);
+      setError('Nie udało się uruchomić kamery. Użyj ręcznego wpisywania kodu poniżej.');
       soundFeedback.error();
     }
   };
