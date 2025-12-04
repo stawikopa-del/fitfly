@@ -77,7 +77,6 @@ export default function More() {
   const { isInstallable, isInstalled, promptInstall, showIOSInstructions } = usePWAInstall();
   const { currentTier, isActive, loading: subscriptionLoading, subscription } = useSubscription();
   const [showIOSDialog, setShowIOSDialog] = useState(false);
-  const [showCompareDialog, setShowCompareDialog] = useState(false);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
@@ -322,9 +321,9 @@ export default function More() {
           <button
             onClick={() => {
               soundFeedback.buttonClick();
-              setShowCompareDialog(true);
+              document.getElementById('comparison-section')?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="px-4 py-2 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-sm rounded-xl flex items-center gap-2 shadow-playful hover:shadow-playful-hover transition-all duration-300 hover:scale-105 animate-float-gentle"
+            className="animate-float px-4 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-sm rounded-xl flex items-center gap-2 shadow-playful hover:shadow-playful-hover transition-all duration-300 hover:scale-105"
           >
             <Sparkles className="w-4 h-4" />
             Porównaj pakiety
@@ -342,6 +341,122 @@ export default function More() {
               <p>Brak dostępnych pakietów</p>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Sekcja porównania - przekonująca */}
+      <div id="comparison-section" className="space-y-6 pt-4">
+        {/* Hero przekonujący */}
+        <div className="animate-float text-center bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 rounded-3xl p-6 border-2 border-primary/20">
+          <div className="text-4xl mb-3">🚀</div>
+          <h3 className="text-xl font-extrabold font-display text-foreground mb-2">
+            Odblokuj pełną moc FITFLY!
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+            Dołącz do tysięcy osób, które osiągają swoje cele zdrowotne szybciej z pakietami premium
+          </p>
+        </div>
+
+        {/* Korzyści w gridzie */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="animate-float bg-card rounded-2xl p-4 border border-border/50 shadow-card-playful" style={{ animationDelay: '0.1s' }}>
+            <div className="text-2xl mb-2">🤖</div>
+            <h4 className="font-bold text-foreground text-sm">AI Przepisy</h4>
+            <p className="text-xs text-muted-foreground mt-1">Spersonalizowane przepisy na podstawie Twoich preferencji</p>
+          </div>
+          <div className="animate-float bg-card rounded-2xl p-4 border border-border/50 shadow-card-playful" style={{ animationDelay: '0.2s' }}>
+            <div className="text-2xl mb-2">📊</div>
+            <h4 className="font-bold text-foreground text-sm">Plany treningowe</h4>
+            <p className="text-xs text-muted-foreground mt-1">Dostosowane do Twoich celów i możliwości</p>
+          </div>
+          <div className="animate-float bg-card rounded-2xl p-4 border border-border/50 shadow-card-playful" style={{ animationDelay: '0.3s' }}>
+            <div className="text-2xl mb-2">🏆</div>
+            <h4 className="font-bold text-foreground text-sm">Ekskluzywne wyzwania</h4>
+            <p className="text-xs text-muted-foreground mt-1">Dodatkowe nagrody i motywacja</p>
+          </div>
+          <div className="animate-float bg-card rounded-2xl p-4 border border-border/50 shadow-card-playful" style={{ animationDelay: '0.4s' }}>
+            <div className="text-2xl mb-2">💬</div>
+            <h4 className="font-bold text-foreground text-sm">Trener AI 1-na-1</h4>
+            <p className="text-xs text-muted-foreground mt-1">Osobisty asystent fitness na wyciągnięcie ręki</p>
+          </div>
+        </div>
+
+        {/* Tabela porównania */}
+        <div className="bg-card rounded-3xl border-2 border-border/50 overflow-hidden shadow-card-playful">
+          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 text-center border-b border-border/50">
+            <h4 className="font-extrabold font-display text-foreground">Porównanie pakietów</h4>
+          </div>
+          
+          {/* Header */}
+          <div className="grid grid-cols-4 gap-2 p-3 bg-muted/30 border-b border-border/50">
+            <div className="text-xs font-bold text-muted-foreground">Funkcja</div>
+            <div className="text-center">
+              <span className="text-xs font-bold">START</span>
+              <p className="text-[10px] text-muted-foreground">0 zł</p>
+            </div>
+            <div className="text-center">
+              <span className="text-xs font-bold text-primary">FIT ⭐</span>
+              <p className="text-[10px] text-muted-foreground">19,99 zł</p>
+            </div>
+            <div className="text-center">
+              <span className="text-xs font-bold text-amber-600">PREMIUM 👑</span>
+              <p className="text-[10px] text-muted-foreground">39,99 zł</p>
+            </div>
+          </div>
+
+          {/* Features */}
+          <div className="divide-y divide-border/30">
+            {TIER_COMPARISON.map((row, idx) => (
+              <div key={idx} className="grid grid-cols-4 gap-2 items-center p-3 hover:bg-muted/20 transition-colors">
+                <span className="text-xs text-foreground font-medium">{row.feature}</span>
+                <div className="flex justify-center">
+                  {row.start ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <span className="text-muted-foreground/40">—</span>
+                  )}
+                </div>
+                <div className="flex justify-center">
+                  {row.fit ? (
+                    <Check className="w-4 h-4 text-primary" />
+                  ) : (
+                    <span className="text-muted-foreground/40">—</span>
+                  )}
+                </div>
+                <div className="flex justify-center">
+                  {row.premium ? (
+                    <Check className="w-4 h-4 text-amber-500" />
+                  ) : (
+                    <span className="text-muted-foreground/40">—</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 border-t border-border/50">
+            <p className="text-center text-xs text-muted-foreground mb-3">
+              💡 Pakiet <strong className="text-primary">FIT</strong> wybiera 78% naszych użytkowników!
+            </p>
+            <Button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="w-full rounded-2xl font-bold bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+            >
+              Wybierz swój pakiet 🎯
+            </Button>
+          </div>
+        </div>
+
+        {/* Social proof */}
+        <div className="animate-float text-center bg-muted/30 rounded-2xl p-4 border border-border/30" style={{ animationDelay: '0.5s' }}>
+          <div className="flex justify-center gap-1 mb-2">
+            {[...Array(5)].map((_, i) => (
+              <span key={i} className="text-yellow-500">⭐</span>
+            ))}
+          </div>
+          <p className="text-sm font-medium text-foreground">"FITFLY zmienił moje podejście do zdrowia!"</p>
+          <p className="text-xs text-muted-foreground mt-1">— Anna, użytkowniczka pakietu FIT</p>
         </div>
       </div>
 
@@ -459,73 +574,6 @@ export default function More() {
               className="w-full rounded-2xl font-bold"
             >
               Rozumiem! 👍
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Compare Packages Dialog */}
-      <Dialog open={showCompareDialog} onOpenChange={setShowCompareDialog}>
-        <DialogContent className="sm:max-w-lg bg-card border-2 border-border/50 rounded-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-extrabold font-display text-center">
-              Porównaj pakiety ✨
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="py-2">
-            {/* Header */}
-            <div className="grid grid-cols-4 gap-2 mb-3 sticky top-0 bg-card pb-2 border-b border-border/50">
-              <div className="text-xs font-bold text-muted-foreground">Funkcja</div>
-              <div className="text-center">
-                <span className="text-xs font-bold">START</span>
-                <p className="text-[10px] text-muted-foreground">0 zł</p>
-              </div>
-              <div className="text-center">
-                <span className="text-xs font-bold text-primary">FIT</span>
-                <p className="text-[10px] text-muted-foreground">19,99 zł</p>
-              </div>
-              <div className="text-center">
-                <span className="text-xs font-bold text-amber-600">PREMIUM</span>
-                <p className="text-[10px] text-muted-foreground">39,99 zł</p>
-              </div>
-            </div>
-
-            {/* Features */}
-            <div className="space-y-2">
-              {TIER_COMPARISON.map((row, idx) => (
-                <div key={idx} className="grid grid-cols-4 gap-2 items-center py-1.5 border-b border-border/30 last:border-0">
-                  <span className="text-xs text-foreground">{row.feature}</span>
-                  <div className="flex justify-center">
-                    {row.start ? (
-                      <Check className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <span className="w-4 h-4 text-muted-foreground/30">—</span>
-                    )}
-                  </div>
-                  <div className="flex justify-center">
-                    {row.fit ? (
-                      <Check className="w-4 h-4 text-primary" />
-                    ) : (
-                      <span className="w-4 h-4 text-muted-foreground/30">—</span>
-                    )}
-                  </div>
-                  <div className="flex justify-center">
-                    {row.premium ? (
-                      <Check className="w-4 h-4 text-amber-500" />
-                    ) : (
-                      <span className="w-4 h-4 text-muted-foreground/30">—</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Button
-              onClick={() => setShowCompareDialog(false)}
-              className="w-full rounded-2xl font-bold mt-4"
-            >
-              Zamknij
             </Button>
           </div>
         </DialogContent>
