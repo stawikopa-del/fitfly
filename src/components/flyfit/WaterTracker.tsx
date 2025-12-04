@@ -79,7 +79,7 @@ export function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
         <div className="flex gap-3">
           <Button 
             onClick={() => onAdd(250)}
-            className="rounded-2xl h-12 px-5"
+            className="rounded-2xl h-12 px-5 hover:-translate-y-0.5 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4 mr-1" />
             250ml
@@ -87,7 +87,7 @@ export function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
           <Button 
             variant="secondary"
             onClick={() => onAdd(500)}
-            className="rounded-2xl h-12 px-5"
+            className="rounded-2xl h-12 px-5 hover:-translate-y-0.5 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4 mr-1" />
             500ml
