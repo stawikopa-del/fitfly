@@ -258,19 +258,32 @@ export function BarcodeScanner({
               </div>
             </div>
 
-            {/* Score */}
-            <div className="bg-card rounded-3xl border-2 border-border/50 p-5 shadow-card-playful">
-              <div className="flex items-center gap-4 mb-3">
-                <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center", getScoreColor(product.score))}>
+            {/* Score - FITEK style */}
+            <div className={cn(
+              "rounded-3xl border-2 p-5 shadow-card-playful",
+              product.score >= 8 ? "bg-green-500/10 border-green-500/30" :
+              product.score >= 6 ? "bg-yellow-500/10 border-yellow-500/30" :
+              product.score >= 4 ? "bg-orange-500/10 border-orange-500/30" :
+              "bg-red-500/10 border-red-500/30"
+            )}>
+              <div className="flex items-start gap-4">
+                <div className={cn(
+                  "w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0",
+                  getScoreColor(product.score)
+                )}>
                   <div className="text-center">
-                    <Star className="w-5 h-5 mx-auto mb-0.5" />
-                    <span className="text-2xl font-extrabold font-display">{product.score}</span>
-                    <span className="text-xs font-bold">/10</span>
+                    <span className="text-2xl font-extrabold font-display block leading-none">{product.score}</span>
+                    <span className="text-[10px] font-bold opacity-70">/10</span>
                   </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-foreground mb-1">Ocena FITKA</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-extrabold font-display text-foreground mb-1.5 flex items-center gap-2">
+                    FITEK mówi: 
+                    <span className="text-lg">
+                      {product.score >= 8 ? "🤩" : product.score >= 6 ? "😊" : product.score >= 4 ? "🤔" : "😬"}
+                    </span>
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed break-words hyphens-auto">
                     {product.description}
                   </p>
                 </div>
