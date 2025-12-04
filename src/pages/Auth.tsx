@@ -14,23 +14,46 @@ import fitekDetective from '@/assets/fitek-detective.png';
 import { supabase } from '@/integrations/supabase/client';
 
 const emailSchema = z.string().email('Nieprawidłowy adres email');
-const passwordSchema = z.string().min(6, 'Hasło musi mieć minimum 6 znaków');
+const passwordSchema = z.string()
+  .min(8, 'Hasło musi mieć minimum 8 znaków')
+  .regex(/[A-Z]/, 'Hasło musi zawierać wielką literę')
+  .regex(/[0-9]/, 'Hasło musi zawierać cyfrę')
+  .regex(/[^A-Za-z0-9]/, 'Hasło musi zawierać znak specjalny');
 
 // Password strength calculation
-const getPasswordStrength = (password: string): { level: 0 | 1 | 2 | 3; label: string; color: string } => {
-  if (!password) return { level: 0, label: '', color: '' };
+const getPasswordStrength = (password: string): { level: 0 | 1 | 2 | 3; label: string; color: string; requirements: string[] } => {
+  if (!password) return { level: 0, label: '', color: '', requirements: [] };
   
+  const requirements: string[] = [];
   let score = 0;
-  if (password.length >= 6) score++;
-  if (password.length >= 10) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[a-z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
   
-  if (score <= 2) return { level: 1, label: 'Słabe', color: 'bg-red-500' };
-  if (score <= 4) return { level: 2, label: 'Średnie', color: 'bg-yellow-500' };
-  return { level: 3, label: 'Silne', color: 'bg-green-500' };
+  if (password.length >= 8) {
+    score++;
+  } else {
+    requirements.push('Min. 8 znaków');
+  }
+  
+  if (/[A-Z]/.test(password)) {
+    score++;
+  } else {
+    requirements.push('Wielka litera');
+  }
+  
+  if (/[0-9]/.test(password)) {
+    score++;
+  } else {
+    requirements.push('Cyfra');
+  }
+  
+  if (/[^A-Za-z0-9]/.test(password)) {
+    score++;
+  } else {
+    requirements.push('Znak specjalny (!@#$%)');
+  }
+  
+  if (score <= 1) return { level: 1, label: 'Słabe', color: 'bg-red-500', requirements };
+  if (score <= 3) return { level: 2, label: 'Średnie', color: 'bg-yellow-500', requirements };
+  return { level: 3, label: 'Silne', color: 'bg-green-500', requirements };
 };
 
 type AuthMode = 'login' | 'register' | 'forgot';
@@ -431,14 +454,21 @@ export default function Auth() {
                           />
                         ))}
                       </div>
-                      <p className={cn(
-                        'text-xs font-medium',
-                        getPasswordStrength(regData.password).level === 1 && 'text-red-500',
-                        getPasswordStrength(regData.password).level === 2 && 'text-yellow-600',
-                        getPasswordStrength(regData.password).level === 3 && 'text-green-600'
-                      )}>
-                        {getPasswordStrength(regData.password).label}
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className={cn(
+                          'text-xs font-medium',
+                          getPasswordStrength(regData.password).level === 1 && 'text-red-500',
+                          getPasswordStrength(regData.password).level === 2 && 'text-yellow-600',
+                          getPasswordStrength(regData.password).level === 3 && 'text-green-600'
+                        )}>
+                          {getPasswordStrength(regData.password).label}
+                        </p>
+                        {getPasswordStrength(regData.password).requirements.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Brakuje: {getPasswordStrength(regData.password).requirements.join(', ')}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                   {errors.password && <p className="text-destructive text-xs font-medium">{errors.password}</p>}
