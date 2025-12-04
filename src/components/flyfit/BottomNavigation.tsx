@@ -69,29 +69,27 @@ export function BottomNavigation() {
                 key={to}
                 to={to}
                 onClick={() => soundFeedback.navTap()}
-                className={cn(
-                  'relative flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all duration-300',
-                  isActive 
-                    ? 'text-primary -translate-y-1' 
-                    : 'text-muted-foreground hover:text-foreground hover:-translate-y-0.5'
-                )}
+                className="relative flex flex-col items-center w-16"
               >
-                {isActive && Icon && (
-                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-12 h-12 bg-primary rounded-2xl shadow-playful flex items-center justify-center">
-                    <Icon className="w-6 h-6 text-primary-foreground" strokeWidth={2.5} />
-                  </div>
-                )}
-                {!isActive && Icon && (
-                  <div className={cn(
-                    'w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300',
-                    'hover:bg-muted'
-                  )}>
-                    <Icon className="w-5 h-5" strokeWidth={2} />
-                  </div>
-                )}
+                <div className={cn(
+                  'relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300',
+                  isActive 
+                    ? 'bg-primary shadow-playful -translate-y-1' 
+                    : 'hover:bg-muted'
+                )}>
+                  {Icon && (
+                    <Icon 
+                      className={cn(
+                        'w-5 h-5 transition-colors',
+                        isActive ? 'text-primary-foreground' : 'text-muted-foreground'
+                      )} 
+                      strokeWidth={isActive ? 2.5 : 2} 
+                    />
+                  )}
+                </div>
                 <span className={cn(
-                  'text-[10px] font-bold',
-                  isActive ? 'mt-10 text-primary' : 'mt-0'
+                  'text-[10px] font-bold mt-1 transition-colors',
+                  isActive ? 'text-primary' : 'text-muted-foreground'
                 )}>
                   {label}
                 </span>
