@@ -314,7 +314,7 @@ export default function Profile() {
       {/* Link do ustawień */}
       <Button 
         variant="outline" 
-        className="w-full justify-between rounded-3xl h-14 border-2 font-bold relative z-10 floating-gentle hover:-translate-y-1 transition-all"
+        className="w-full justify-between rounded-3xl h-14 border-2 font-bold relative z-10 hover:-translate-y-1 transition-all"
       >
         <span className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center">
@@ -329,7 +329,7 @@ export default function Profile() {
       <Button 
         variant="outline" 
         onClick={handleSignOut}
-        className="w-full justify-between rounded-3xl h-14 border-2 border-destructive/30 text-destructive font-bold relative z-10 floating-gentle hover:-translate-y-1 transition-all hover:bg-destructive/10"
+        className="w-full justify-between rounded-3xl h-14 border-2 border-destructive/30 text-destructive font-bold relative z-10 hover:-translate-y-1 transition-all hover:bg-destructive/10"
       >
         <span className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-destructive/10 flex items-center justify-center">
