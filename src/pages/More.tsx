@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2, CheckCircle2, RefreshCw, ArrowRight, Sparkles } from 'lucide-react';
+import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2, CheckCircle2, RefreshCw, ArrowRight, Sparkles, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
@@ -322,15 +322,15 @@ export default function More() {
         </div>
         
         {/* Przycisk porównaj - wyróżniony */}
-        <div className="animate-float flex justify-center" style={{ animationDelay: '0s' }}>
+        <div className="animate-float flex justify-center px-2" style={{ animationDelay: '0s' }}>
           <button
             onClick={() => {
               soundFeedback.buttonClick();
               document.getElementById('comparison-section')?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="px-8 py-4 bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 text-white font-extrabold text-base rounded-2xl flex items-center gap-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 border-white/20"
+            className="px-6 py-4 bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 text-white font-extrabold text-base rounded-2xl flex items-center gap-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 border-white/20"
           >
-            <Sparkles className="w-5 h-5" />
+            <ArrowDown className="w-5 h-5" />
             Porównaj wszystkie pakiety
           </button>
         </div>
