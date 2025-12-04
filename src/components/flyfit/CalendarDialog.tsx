@@ -18,13 +18,14 @@ interface CalendarEvent {
   title: string;
   event_date: string;
   event_time: string;
-  type: 'workout' | 'meal' | 'challenge' | 'other';
+  type: 'workout' | 'meal' | 'challenge' | 'habit' | 'other';
 }
 
 const eventTypeConfig = {
   workout: { icon: Dumbbell, color: 'bg-fitfly-blue', label: 'Trening' },
   meal: { icon: Utensils, color: 'bg-fitfly-green', label: 'Posiłek' },
   challenge: { icon: Target, color: 'bg-fitfly-purple', label: 'Wyzwanie' },
+  habit: { icon: Sparkles, color: 'bg-fitfly-pink', label: 'Nawyk' },
   other: { icon: Sparkles, color: 'bg-fitfly-orange', label: 'Inne' },
 };
 
@@ -231,6 +232,7 @@ export function CalendarDialog({ trigger }: CalendarDialogProps) {
                     <option value="workout">Trening</option>
                     <option value="meal">Posiłek</option>
                     <option value="challenge">Wyzwanie</option>
+                    <option value="habit">Nawyk</option>
                     <option value="other">Inne</option>
                   </select>
                 </div>

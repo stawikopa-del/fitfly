@@ -44,6 +44,69 @@ export type Database = {
         }
         Relationships: []
       }
+      challenges: {
+        Row: {
+          category: string
+          created_at: string
+          current: number | null
+          description: string | null
+          duration_days: number
+          end_date: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_completed: boolean | null
+          is_custom: boolean | null
+          points: number | null
+          start_date: string | null
+          target: number
+          title: string
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          current?: number | null
+          description?: string | null
+          duration_days: number
+          end_date?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_completed?: boolean | null
+          is_custom?: boolean | null
+          points?: number | null
+          start_date?: string | null
+          target: number
+          title: string
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          current?: number | null
+          description?: string | null
+          duration_days?: number
+          end_date?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_completed?: boolean | null
+          is_custom?: boolean | null
+          points?: number | null
+          start_date?: string | null
+          target?: number
+          title?: string
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -121,6 +184,119 @@ export type Database = {
           id?: string
           recipe_data?: Json
           recipe_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      habit_logs: {
+        Row: {
+          completed_value: number | null
+          created_at: string
+          habit_id: string
+          id: string
+          is_completed: boolean | null
+          log_date: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_value?: number | null
+          created_at?: string
+          habit_id: string
+          id?: string
+          is_completed?: boolean | null
+          log_date?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_value?: number | null
+          created_at?: string
+          habit_id?: string
+          id?: string
+          is_completed?: boolean | null
+          log_date?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_logs_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          category: string
+          color: string | null
+          created_at: string
+          cue: string | null
+          description: string | null
+          frequency: string
+          habit_stack_after: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          reminder_enabled: boolean | null
+          reminder_time: string | null
+          reward: string | null
+          streak_best: number | null
+          streak_current: number | null
+          target_value: number | null
+          title: string
+          total_completions: number | null
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          cue?: string | null
+          description?: string | null
+          frequency?: string
+          habit_stack_after?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          reminder_enabled?: boolean | null
+          reminder_time?: string | null
+          reward?: string | null
+          streak_best?: number | null
+          streak_current?: number | null
+          target_value?: number | null
+          title: string
+          total_completions?: number | null
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          cue?: string | null
+          description?: string | null
+          frequency?: string
+          habit_stack_after?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          reminder_enabled?: boolean | null
+          reminder_time?: string | null
+          reward?: string | null
+          streak_best?: number | null
+          streak_current?: number | null
+          target_value?: number | null
+          title?: string
+          total_completions?: number | null
+          unit?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
