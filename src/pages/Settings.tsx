@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Moon, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2 } from 'lucide-react';
+import { Bell, Moon, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2, Calendar } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useWebAuthn } from '@/hooks/useWebAuthn';
+import { useCalendarNotifications } from '@/hooks/useCalendarNotifications';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,18 +25,29 @@ import { supabase } from '@/integrations/supabase/client';
 export default function Settings() {
   const { user, signOut } = useAuth();
   const { isSupported: isBiometricSupported, hasRegisteredBiometric, registerBiometric, removeBiometric, isRegistering } = useWebAuthn();
+  const { permissionStatus, requestPermission, sendTestNotification, isSupported: isNotificationSupported } = useCalendarNotifications();
   const navigate = useNavigate();
 
   const [settings, setSettings] = useState({
-    notifications: true,
+    notifications: permissionStatus === 'granted',
     waterReminders: true,
     workoutReminders: true,
     challengeReminders: false,
+    calendarReminders: permissionStatus === 'granted',
     sounds: true,
     vibrations: true,
     darkMode: false,
     biometricLogin: false,
   });
+
+  // Update notification settings when permission changes
+  useEffect(() => {
+    setSettings(prev => ({
+      ...prev,
+      notifications: permissionStatus === 'granted',
+      calendarReminders: permissionStatus === 'granted',
+    }));
+  }, [permissionStatus]);
 
   // Check if biometric is already registered
   useEffect(() => {
@@ -72,7 +84,22 @@ export default function Settings() {
     }
   };
 
-  const toggleSetting = (key: keyof typeof settings) => {
+  const toggleSetting = async (key: keyof typeof settings) => {
+    // Special handling for notifications - need to request permission
+    if (key === 'notifications' || key === 'calendarReminders') {
+      if (!settings[key]) {
+        const granted = await requestPermission();
+        if (granted) {
+          setSettings(prev => ({ 
+            ...prev, 
+            notifications: true,
+            calendarReminders: true 
+          }));
+        }
+        return;
+      }
+    }
+    
     setSettings(prev => ({ ...prev, [key]: !prev[key] }));
     toast.success('Ustawienia zapisane');
   };
@@ -113,6 +140,7 @@ export default function Settings() {
       emoji: '🔔',
       items: [
         { key: 'notifications', label: 'Włącz powiadomienia', emoji: '📲' },
+        { key: 'calendarReminders', label: 'Przypomnienia z kalendarza', emoji: '📅' },
         { key: 'waterReminders', label: 'Przypomnienia o piciu wody', emoji: '💧' },
         { key: 'workoutReminders', label: 'Przypomnienia o treningu', emoji: '🏃' },
         { key: 'challengeReminders', label: 'Nowe wyzwania', emoji: '🏆' },

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Plus, X, Clock, Dumbbell, Utensils, Target, Sparkles, ArrowLeft } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, X, Clock, Dumbbell, Utensils, Target, Sparkles, ArrowLeft, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { format, isSameDay, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useCalendarNotifications } from '@/hooks/useCalendarNotifications';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -32,6 +33,7 @@ const eventTypeConfig = {
 export default function CalendarPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { permissionStatus, requestPermission, sendTestNotification, isSupported: isNotificationSupported } = useCalendarNotifications();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
@@ -145,6 +147,56 @@ export default function CalendarPage() {
       </header>
 
       <div className="px-4 py-6 space-y-6">
+        {/* Notification Banner */}
+        {isNotificationSupported && (
+          <div className={cn(
+            "rounded-3xl p-4 border-2 flex items-center justify-between gap-3",
+            permissionStatus === 'granted' 
+              ? "bg-secondary/10 border-secondary/30" 
+              : "bg-primary/10 border-primary/30"
+          )}>
+            <div className="flex items-center gap-3">
+              {permissionStatus === 'granted' ? (
+                <div className="w-10 h-10 rounded-2xl bg-secondary/20 flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-secondary" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center">
+                  <BellOff className="w-5 h-5 text-primary" />
+                </div>
+              )}
+              <div>
+                <p className="font-bold text-sm text-foreground">
+                  {permissionStatus === 'granted' ? 'Powiadomienia włączone 🔔' : 'Włącz powiadomienia'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {permissionStatus === 'granted' 
+                    ? 'Otrzymasz przypomnienie 15 min przed wydarzeniem' 
+                    : 'Otrzymuj przypomnienia o zaplanowanych wydarzeniach'}
+                </p>
+              </div>
+            </div>
+            {permissionStatus === 'granted' ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={sendTestNotification}
+                className="rounded-xl text-xs"
+              >
+                Test 🔔
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={requestPermission}
+                className="rounded-xl"
+              >
+                Włącz
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Calendar */}
         <div className="bg-card rounded-3xl p-4 border-2 border-border/50 shadow-card-playful">
           <CalendarComponent
