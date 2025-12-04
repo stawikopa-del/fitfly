@@ -5,10 +5,13 @@ import { StatCard } from '@/components/flyfit/StatCard';
 import { WaterTracker } from '@/components/flyfit/WaterTracker';
 import { QuickAction } from '@/components/flyfit/QuickAction';
 import { useUserProgress } from '@/hooks/useUserProgress';
+import { useGamification } from '@/hooks/useGamification';
+import { LevelProgress } from '@/components/flyfit/LevelProgress';
 
 export default function Home() {
   const navigate = useNavigate();
   const { progress, mascotState, addWater } = useUserProgress();
+  const { gamification } = useGamification();
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -39,6 +42,20 @@ export default function Home() {
           </p>
         </button>
       </header>
+
+      {/* Level Progress - compact */}
+      {gamification && (
+        <section 
+          className="relative z-10 cursor-pointer" 
+          onClick={() => navigate('/osiagniecia')}
+        >
+          <LevelProgress 
+            level={gamification.current_level} 
+            totalXP={gamification.total_xp} 
+            compact 
+          />
+        </section>
+      )}
 
       {/* Chat Hero - zachęta do rozmowy z FITEK */}
       <section className="py-2 relative z-10">

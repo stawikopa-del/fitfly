@@ -400,6 +400,87 @@ export type Database = {
         }
         Relationships: []
       }
+      user_badges: {
+        Row: {
+          badge_type: Database["public"]["Enums"]["badge_type"]
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_type: Database["public"]["Enums"]["badge_type"]
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_type?: Database["public"]["Enums"]["badge_type"]
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_gamification: {
+        Row: {
+          created_at: string
+          current_level: number
+          daily_login_streak: number
+          id: string
+          last_login_date: string | null
+          total_xp: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_level?: number
+          daily_login_streak?: number
+          id?: string
+          last_login_date?: string | null
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_level?: number
+          daily_login_streak?: number
+          id?: string
+          last_login_date?: string | null
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      xp_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          source: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -408,7 +489,21 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      badge_type:
+        | "pierwszy_krok"
+        | "wodny_wojownik"
+        | "maratonczyk"
+        | "konsekwentny"
+        | "mistrz_nawykow"
+        | "dietetyk"
+        | "niezniszczalny"
+        | "stuprocentowy"
+        | "wczesny_ptaszek"
+        | "nocny_marek"
+        | "zelazna_wola"
+        | "zdrowy_duch"
+        | "fit_guru"
+        | "legenda"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -535,6 +630,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      badge_type: [
+        "pierwszy_krok",
+        "wodny_wojownik",
+        "maratonczyk",
+        "konsekwentny",
+        "mistrz_nawykow",
+        "dietetyk",
+        "niezniszczalny",
+        "stuprocentowy",
+        "wczesny_ptaszek",
+        "nocny_marek",
+        "zelazna_wola",
+        "zdrowy_duch",
+        "fit_guru",
+        "legenda",
+      ],
+    },
   },
 } as const
