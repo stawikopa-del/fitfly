@@ -18,16 +18,33 @@ interface CalendarEvent {
   title: string;
   event_date: string;
   event_time: string;
-  type: 'workout' | 'meal' | 'challenge' | 'habit' | 'other';
+  type: string;
 }
 
-const eventTypeConfig = {
+type PredefinedType = 'workout' | 'meal' | 'challenge' | 'habit' | 'other';
+
+const eventTypeConfig: Record<string, { icon: any; color: string; textColor: string; dotColor: string; label: string; emoji: string }> = {
   workout: { icon: Dumbbell, color: 'bg-fitfly-blue', textColor: 'text-fitfly-blue', dotColor: 'bg-blue-500', label: 'Trening', emoji: '💪' },
   meal: { icon: Utensils, color: 'bg-fitfly-green', textColor: 'text-fitfly-green', dotColor: 'bg-green-500', label: 'Posiłek', emoji: '🍽️' },
   challenge: { icon: Target, color: 'bg-fitfly-purple', textColor: 'text-fitfly-purple', dotColor: 'bg-purple-500', label: 'Wyzwanie', emoji: '🏆' },
   habit: { icon: Sparkles, color: 'bg-fitfly-pink', textColor: 'text-fitfly-pink', dotColor: 'bg-pink-500', label: 'Nawyk', emoji: '✨' },
   other: { icon: Pencil, color: 'bg-fitfly-orange', textColor: 'text-fitfly-orange', dotColor: 'bg-orange-500', label: 'Własne', emoji: '✏️' },
 };
+
+const predefinedTypes: PredefinedType[] = ['workout', 'meal', 'challenge', 'habit', 'other'];
+
+const getEventConfig = (type: string) => {
+  if (eventTypeConfig[type]) {
+    return eventTypeConfig[type];
+  }
+  // Custom type - use "other" styling but show custom label
+  return {
+    ...eventTypeConfig.other,
+    label: type,
+  };
+};
+
+const isCustomType = (type: string) => !predefinedTypes.includes(type as PredefinedType);
 
 type ViewMode = 'month' | 'week';
 
@@ -44,12 +61,14 @@ export default function CalendarPage() {
   const [editForm, setEditForm] = useState({
     title: '',
     time: '',
-    type: 'workout' as CalendarEvent['type'],
+    type: 'workout',
+    customType: '',
   });
   const [newEvent, setNewEvent] = useState({
     title: '',
     time: '12:00',
-    type: 'workout' as CalendarEvent['type'],
+    type: 'workout',
+    customType: '',
   });
 
   // Fetch events from database
@@ -91,15 +110,23 @@ export default function CalendarPage() {
 
   const handleAddEvent = async () => {
     if (!newEvent.title.trim() || !user) return;
+    if (newEvent.type === 'other' && !newEvent.customType.trim()) {
+      toast.error('Wpisz własny typ wydarzenia');
+      return;
+    }
 
     setIsLoading(true);
+
+    const finalType = newEvent.type === 'other' && newEvent.customType.trim() 
+      ? newEvent.customType.trim() 
+      : newEvent.type;
 
     const eventData = {
       user_id: user.id,
       title: newEvent.title,
       event_date: format(selectedDate, 'yyyy-MM-dd'),
       event_time: newEvent.time,
-      type: newEvent.type,
+      type: finalType,
     };
 
     const { data, error } = await supabase
@@ -116,32 +143,42 @@ export default function CalendarPage() {
       return;
     }
 
-    setEvents([...events, { ...data, type: data.type as CalendarEvent['type'] }]);
-    setNewEvent({ title: '', time: '12:00', type: 'workout' });
+    setEvents([...events, { ...data, type: data.type }]);
+    setNewEvent({ title: '', time: '12:00', type: 'workout', customType: '' });
     setIsAddingEvent(false);
     toast.success('Plan dodany!');
   };
 
   const handleEditEvent = (event: CalendarEvent) => {
     setEditingEventId(event.id);
+    const isPredefined = predefinedTypes.includes(event.type as PredefinedType);
     setEditForm({
       title: event.title,
       time: event.event_time,
-      type: event.type,
+      type: isPredefined ? event.type : 'other',
+      customType: isPredefined ? '' : event.type,
     });
   };
 
   const handleSaveEdit = async () => {
     if (!editingEventId || !editForm.title.trim()) return;
+    if (editForm.type === 'other' && !editForm.customType.trim()) {
+      toast.error('Wpisz własny typ wydarzenia');
+      return;
+    }
 
     setIsLoading(true);
+
+    const finalType = editForm.type === 'other' && editForm.customType.trim()
+      ? editForm.customType.trim()
+      : editForm.type;
 
     const { error } = await supabase
       .from('calendar_events')
       .update({
         title: editForm.title,
         event_time: editForm.time,
-        type: editForm.type,
+        type: finalType,
       })
       .eq('id', editingEventId);
 
@@ -155,7 +192,7 @@ export default function CalendarPage() {
 
     setEvents(events.map(e => 
       e.id === editingEventId 
-        ? { ...e, title: editForm.title, event_time: editForm.time, type: editForm.type }
+        ? { ...e, title: editForm.title, event_time: editForm.time, type: finalType }
         : e
     ));
     setEditingEventId(null);
@@ -164,7 +201,7 @@ export default function CalendarPage() {
 
   const handleCancelEdit = () => {
     setEditingEventId(null);
-    setEditForm({ title: '', time: '', type: 'workout' });
+    setEditForm({ title: '', time: '', type: 'workout', customType: '' });
   };
 
   const handleDeleteEvent = async (id: string) => {
@@ -239,13 +276,13 @@ export default function CalendarPage() {
       <div className="px-4 py-6 space-y-6 max-w-2xl mx-auto">
         {/* Category Legend */}
         <div className="flex flex-wrap gap-2 justify-center">
-          {Object.entries(eventTypeConfig).map(([key, config]) => (
+          {predefinedTypes.map((key) => (
             <div 
               key={key} 
               className="flex items-center gap-1.5 bg-card rounded-full px-3 py-1.5 border border-border/50"
             >
-              <div className={cn("w-2.5 h-2.5 rounded-full", config.dotColor)} />
-              <span className="text-xs font-medium text-muted-foreground">{config.label}</span>
+              <div className={cn("w-2.5 h-2.5 rounded-full", eventTypeConfig[key].dotColor)} />
+              <span className="text-xs font-medium text-muted-foreground">{eventTypeConfig[key].label}</span>
             </div>
           ))}
         </div>
@@ -336,7 +373,7 @@ export default function CalendarPage() {
                     {/* Event Dots */}
                     <div className="flex flex-wrap gap-0.5 justify-center mt-1">
                       {dayEvents.slice(0, 4).map((event, idx) => {
-                        const config = eventTypeConfig[event.type] || eventTypeConfig.other;
+                        const config = getEventConfig(event.type);
                         return (
                           <div
                             key={idx}
@@ -430,19 +467,35 @@ export default function CalendarPage() {
                   onChange={(e) =>
                     setNewEvent({
                       ...newEvent,
-                      type: e.target.value as CalendarEvent['type'],
+                      type: e.target.value,
+                      customType: e.target.value === 'other' ? newEvent.customType : '',
                     })
                   }
                   className="w-full h-12 px-4 rounded-2xl border border-input bg-background text-sm font-medium"
                 >
-                  {Object.entries(eventTypeConfig).map(([key, config]) => (
+                  {predefinedTypes.map((key) => (
                     <option key={key} value={key}>
-                      {config.emoji} {config.label}
+                      {eventTypeConfig[key].emoji} {eventTypeConfig[key].label}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
+
+            {newEvent.type === 'other' && (
+              <div className="space-y-2 animate-fade-in">
+                <Label className="font-bold text-sm">Nazwa własnego typu</Label>
+                <Input
+                  placeholder="np. Medytacja, Spacer, Spotkanie..."
+                  value={newEvent.customType}
+                  onChange={(e) =>
+                    setNewEvent({ ...newEvent, customType: e.target.value })
+                  }
+                  className="rounded-2xl h-12"
+                  maxLength={30}
+                />
+              </div>
+            )}
 
             <Button
               onClick={handleAddEvent}
@@ -471,7 +524,7 @@ export default function CalendarPage() {
             selectedDateEvents
               .sort((a, b) => a.event_time.localeCompare(b.event_time))
               .map((event) => {
-                const config = eventTypeConfig[event.type] || eventTypeConfig.other;
+                const config = getEventConfig(event.type);
                 const Icon = config.icon;
                 const isEditing = editingEventId === event.id;
 
@@ -503,17 +556,33 @@ export default function CalendarPage() {
                           <Label className="font-bold text-sm">Typ</Label>
                           <select
                             value={editForm.type}
-                            onChange={(e) => setEditForm({ ...editForm, type: e.target.value as CalendarEvent['type'] })}
+                            onChange={(e) => setEditForm({ 
+                              ...editForm, 
+                              type: e.target.value,
+                              customType: e.target.value === 'other' ? editForm.customType : ''
+                            })}
                             className="w-full h-10 px-3 rounded-2xl border border-input bg-background text-sm font-medium"
                           >
-                            {Object.entries(eventTypeConfig).map(([key, cfg]) => (
+                            {predefinedTypes.map((key) => (
                               <option key={key} value={key}>
-                                {cfg.emoji} {cfg.label}
+                                {eventTypeConfig[key].emoji} {eventTypeConfig[key].label}
                               </option>
                             ))}
                           </select>
                         </div>
                       </div>
+                      {editForm.type === 'other' && (
+                        <div className="space-y-2 animate-fade-in">
+                          <Label className="font-bold text-sm">Nazwa własnego typu</Label>
+                          <Input
+                            placeholder="np. Medytacja, Spacer, Spotkanie..."
+                            value={editForm.customType}
+                            onChange={(e) => setEditForm({ ...editForm, customType: e.target.value })}
+                            className="rounded-2xl h-10"
+                            maxLength={30}
+                          />
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <Button
                           onClick={handleSaveEdit}
