@@ -13,6 +13,7 @@ import Nutrition from "./pages/Nutrition";
 import Challenges from "./pages/Challenges";
 import Progress from "./pages/Progress";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -139,6 +140,16 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <AppLayout>
             <Profile />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/ustawienia"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Settings />
           </AppLayout>
         </ProtectedRoute>
       }
