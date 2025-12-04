@@ -18,7 +18,7 @@ export default function Info() {
         <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 shadow-playful">
           <span className="text-3xl font-extrabold text-white">FF</span>
         </div>
-        <h2 className="font-bold font-display text-foreground text-2xl">FLYFIT</h2>
+        <h2 className="font-bold font-display text-foreground text-2xl">FITFLY</h2>
         <p className="text-primary font-bold mt-1">Wersja 1.0.0</p>
         <p className="text-xs text-muted-foreground mt-2">Build 2024.12.04</p>
       </div>
@@ -81,7 +81,7 @@ export default function Info() {
       {/* Footer */}
       <div className="text-center relative z-10 pt-4">
         <p className="text-xs text-muted-foreground">
-          © 2024 FLYFIT. Wszystkie prawa zastrzeżone.
+          © 2024 FITFLY. Wszystkie prawa zastrzeżone.
         </p>
       </div>
     </div>

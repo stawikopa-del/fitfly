@@ -1,4 +1,4 @@
-// Typy dla aplikacji FLYFIT
+// Typy dla aplikacji FITFLY
 
 export type MascotEmotion = 'greeting' | 'happy' | 'proud' | 'motivated' | 'tired' | 'neutral' | 'celebrating' | 'cheering' | 'sleeping' | 'excited';
 

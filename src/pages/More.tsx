@@ -16,7 +16,7 @@ const menuItems = [
 ];
 
 const additionalItems = [
-  { to: '/o-nas', icon: Heart, label: 'O nas', emoji: '💚', description: 'Poznaj FLYFIT' },
+  { to: '/o-nas', icon: Heart, label: 'O nas', emoji: '💚', description: 'Poznaj FITFLY' },
   { to: '/pomoc', icon: HelpCircle, label: 'Pomoc', emoji: '❓', description: 'FAQ i wsparcie' },
   { to: '/informacje', icon: Info, label: 'Informacje', emoji: 'ℹ️', description: 'Wersja i licencje' },
 ];
@@ -57,7 +57,7 @@ export default function More() {
           Więcej opcji ✨
         </h1>
         <p className="text-muted-foreground font-medium mt-1">
-          Odkryj wszystkie funkcje FLYFIT
+          Odkryj wszystkie funkcje FITFLY
         </p>
       </header>
 
@@ -124,7 +124,7 @@ export default function More() {
                 {isInstalled ? 'Zainstalowano' : 'Pobierz aplikację'} <span>📲</span>
               </p>
               <p className="text-xs text-muted-foreground">
-                {isInstalled ? 'FLYFIT jest na Twoim telefonie!' : 'Dodaj FLYFIT do ekranu głównego'}
+                {isInstalled ? 'FITFLY jest na Twoim telefonie!' : 'Dodaj FITFLY do ekranu głównego'}
               </p>
             </div>
           </button>
@@ -156,7 +156,7 @@ export default function More() {
 
       {/* Wersja */}
       <p className="text-center text-xs text-muted-foreground relative z-10 pt-4">
-        FLYFIT v1.0.0 • Made with 💚
+        FITFLY v1.0.0 • Made with 💚
       </p>
 
       {/* iOS Installation Dialog */}
@@ -170,7 +170,7 @@ export default function More() {
           
           <div className="space-y-4 py-4">
             <p className="text-center text-muted-foreground">
-              Aby zainstalować FLYFIT na iPhone:
+              Aby zainstalować FITFLY na iPhone:
             </p>
             
             <div className="space-y-3">

@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt"],
       manifest: {
-        name: "FLYFIT - Twoja aplikacja fitness",
-        short_name: "FLYFIT",
+        name: "FITFLY - Twoja aplikacja fitness",
+        short_name: "FITFLY",
         description: "Lekka, zabawna i motywująca aplikacja zdrowotna dla młodych ludzi",
         theme_color: "#4ade80",
         background_color: "#fdfeea",

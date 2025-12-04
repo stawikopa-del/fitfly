@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 const faqItems = [
   {
     question: 'Jak śledzić kroki?',
-    answer: 'FLYFIT automatycznie liczy Twoje kroki, gdy aplikacja jest zainstalowana jako aplikacja natywna. Na razie używamy szacunkowych danych, ale wkrótce zintegrujemy Apple Health i Google Fit.',
+    answer: 'FITFLY automatycznie liczy Twoje kroki, gdy aplikacja jest zainstalowana jako aplikacja natywna. Na razie używamy szacunkowych danych, ale wkrótce zintegrujemy Apple Health i Google Fit.',
   },
   {
     question: 'Jak dodać posiłek?',
@@ -89,19 +89,19 @@ export default function Help() {
           <Button 
             variant="outline" 
             className="w-full justify-start rounded-2xl h-14 border-2 font-medium"
-            onClick={() => window.location.href = 'mailto:pomoc@flyfit.app'}
+            onClick={() => window.location.href = 'mailto:pomoc@fitfly.app'}
           >
             <Mail className="w-5 h-5 mr-3 text-primary" />
-            Napisz do nas: pomoc@flyfit.app
+            Napisz do nas: pomoc@fitfly.app
           </Button>
           
           <Button 
             variant="outline" 
             className="w-full justify-start rounded-2xl h-14 border-2 font-medium"
-            onClick={() => window.open('https://instagram.com/flyfit_app', '_blank')}
+            onClick={() => window.open('https://instagram.com/fitfly_app', '_blank')}
           >
             <MessageCircle className="w-5 h-5 mr-3 text-primary" />
-            Napisz na Instagram @flyfit_app
+            Napisz na Instagram @fitfly_app
           </Button>
         </div>
       </div>
