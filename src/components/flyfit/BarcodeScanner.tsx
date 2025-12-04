@@ -152,6 +152,7 @@ export function BarcodeScanner({
   const [product, setProduct] = useState<ProductData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [manualBarcode, setManualBarcode] = useState('');
+  const [customServingSize, setCustomServingSize] = useState<string>('');
   const handleClose = () => {
     soundFeedback.navTap();
     onClose();
@@ -174,6 +175,7 @@ export function BarcodeScanner({
     setProduct(null);
     setError(null);
     setManualBarcode('');
+    setCustomServingSize('');
   };
   const handleManualSearch = async () => {
     if (!manualBarcode.trim()) {
@@ -332,18 +334,51 @@ export function BarcodeScanner({
                 return null;
               };
               
-              const servingGrams = parseServingSize(product.serving_size);
+              const servingGrams = parseServingSize(product.serving_size) || (customServingSize ? parseFloat(customServingSize) : null);
               const multiplier = servingGrams ? servingGrams / 100 : null;
+              const servingLabel = product.serving_size || (customServingSize ? `${customServingSize}g` : null);
               
               return (
                 <>
+                  {/* Custom serving input when no serving_size from API */}
+                  {!product.serving_size && (
+                    <div className="bg-muted/30 rounded-2xl border border-border/50 p-4">
+                      <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                        ⚖️ Wpisz wielkość porcji (g)
+                      </p>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          inputMode="numeric"
+                          placeholder="np. 50"
+                          value={customServingSize}
+                          onChange={(e) => setCustomServingSize(e.target.value)}
+                          className="flex-1 rounded-xl text-base"
+                        />
+                        <div className="flex gap-1">
+                          {[50, 100, 150].map((size) => (
+                            <Button
+                              key={size}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCustomServingSize(size.toString())}
+                              className="rounded-xl text-xs px-2"
+                            >
+                              {size}g
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Per serving - primary style */}
-                  {multiplier && (
+                  {multiplier && servingLabel && (
                     <div className="bg-primary/10 rounded-3xl border-2 border-primary/30 p-5 shadow-card-playful">
                       <h3 className="font-extrabold font-display text-foreground mb-4 flex items-center gap-2">
                         🍽️ Na porcję 
                         <span className="text-xs text-primary font-bold bg-primary/20 px-2 py-0.5 rounded-full">
-                          {product.serving_size}
+                          {servingLabel}
                         </span>
                       </h3>
                       
