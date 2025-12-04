@@ -313,25 +313,29 @@ export default function More() {
       </div>
 
       {/* Pakiety Premium */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
+      <div className="space-y-5">
+        <div className="text-center">
+          <h2 className="text-lg font-extrabold font-display text-foreground">
             Pakiety FITFLY 💎
           </h2>
-          <div className="animate-float" style={{ animationDelay: '0s' }}>
-            <button
-              onClick={() => {
-                soundFeedback.buttonClick();
-                document.getElementById('comparison-section')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="px-4 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-sm rounded-xl flex items-center gap-2 shadow-playful hover:shadow-playful-hover transition-all duration-300 hover:scale-105"
-            >
-              <Sparkles className="w-4 h-4" />
-              Porównaj pakiety
-            </button>
-          </div>
+          <p className="text-sm text-muted-foreground mt-1">Wybierz idealny plan dla siebie</p>
         </div>
-        <div className="grid gap-4">
+        
+        {/* Przycisk porównaj - wyróżniony */}
+        <div className="animate-float flex justify-center" style={{ animationDelay: '0s' }}>
+          <button
+            onClick={() => {
+              soundFeedback.buttonClick();
+              document.getElementById('comparison-section')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="px-8 py-4 bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 text-white font-extrabold text-base rounded-2xl flex items-center gap-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 border-white/20"
+          >
+            <Sparkles className="w-5 h-5" />
+            Porównaj wszystkie pakiety
+          </button>
+        </div>
+
+        <div className="grid gap-4 pt-2">
           {loadingProducts ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
