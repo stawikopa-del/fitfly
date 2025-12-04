@@ -17,7 +17,7 @@ const buttonVariants = cva(
         outline: 
           "border-2 border-primary bg-background text-primary rounded-2xl hover:bg-primary/10 hover:-translate-y-0.5",
         secondary: 
-          "bg-secondary text-secondary-foreground rounded-2xl shadow-playful-green hover:-translate-y-1 hover:shadow-glow-green active:translate-y-0",
+          "bg-secondary text-secondary-foreground rounded-2xl shadow-playful-green hover:-translate-y-1 hover:shadow-playful-green-lg active:translate-y-0 active:shadow-playful-green",
         ghost: 
           "text-foreground rounded-2xl hover:bg-muted hover:-translate-y-0.5",
         link: 
