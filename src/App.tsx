@@ -14,6 +14,7 @@ import Challenges from "./pages/Challenges";
 import Progress from "./pages/Progress";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import More from "./pages/More";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -160,6 +161,16 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <AppLayout>
             <Chat />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/inne"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <More />
           </AppLayout>
         </ProtectedRoute>
       }
