@@ -10,6 +10,7 @@ import {
   getLevelFromXP,
   BADGE_DEFINITIONS
 } from '@/types/gamification';
+import { triggerLevelUpConfetti, triggerBadgeConfetti } from '@/utils/confetti';
 
 export function useGamification() {
   const { user } = useAuth();
@@ -144,6 +145,7 @@ export function useGamification() {
       });
 
       if (leveledUp) {
+        triggerLevelUpConfetti();
         toast.success(`🎉 Nowy poziom: ${newLevel}!`, {
           description: 'Gratulacje!',
           duration: 4000
@@ -187,6 +189,7 @@ export function useGamification() {
 
       const badge = BADGE_DEFINITIONS.find(b => b.type === badgeType);
       if (badge) {
+        triggerBadgeConfetti();
         toast.success(`🏆 Nowa odznaka: ${badge.name}!`, {
           description: badge.description,
           duration: 5000
