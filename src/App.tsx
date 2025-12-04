@@ -27,6 +27,7 @@ import Info from "./pages/Info";
 import CalendarPage from "./pages/Calendar";
 import Privacy from "./pages/Privacy";
 import Achievements from "./pages/Achievements";
+import Goals from "./pages/Goals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -239,6 +240,16 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <AppLayout>
             <Achievements />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/cele"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Goals />
           </AppLayout>
         </ProtectedRoute>
       }
