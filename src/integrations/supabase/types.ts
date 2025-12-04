@@ -170,6 +170,7 @@ export type Database = {
       profiles: {
         Row: {
           age: number | null
+          avatar_url: string | null
           created_at: string
           daily_calories: number | null
           daily_steps_goal: number | null
@@ -186,6 +187,7 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          avatar_url?: string | null
           created_at?: string
           daily_calories?: number | null
           daily_steps_goal?: number | null
@@ -202,6 +204,7 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          avatar_url?: string | null
           created_at?: string
           daily_calories?: number | null
           daily_steps_goal?: number | null
