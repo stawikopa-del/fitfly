@@ -108,6 +108,20 @@ export const soundFeedback = {
     setTimeout(() => playTone(1047, 0.2, 'triangle', 0.35), 300);
     vibrate([100, 50, 100, 50, 200]);
   },
+  
+  // Message sent - swoosh sound
+  messageSent: () => {
+    playTone(600, 0.08, 'sine', 0.2);
+    setTimeout(() => playTone(800, 0.06, 'sine', 0.15), 50);
+    vibrate(25);
+  },
+  
+  // Message received - gentle pop
+  messageReceived: () => {
+    playTone(500, 0.1, 'sine', 0.2);
+    setTimeout(() => playTone(700, 0.08, 'sine', 0.18), 80);
+    vibrate([30, 20, 30]);
+  },
 };
 
 // Resume audio context after user interaction (needed for some browsers)
