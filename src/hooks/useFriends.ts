@@ -49,21 +49,24 @@ export function useFriends() {
 
       if (error) throw error;
 
-      const friendIds = friendships?.map(f => 
-        f.sender_id === user.id ? f.receiver_id : f.sender_id
-      ) || [];
-
-      if (friendIds.length === 0) {
+      if (!friendships || friendships.length === 0) {
         setFriends([]);
         return;
       }
 
+      const friendIds = friendships.map(f => 
+        f.sender_id === user.id ? f.receiver_id : f.sender_id
+      );
+
+      // Fetch profiles - now allowed by RLS policy for friends
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, username, display_name, avatar_url')
         .in('user_id', friendIds);
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching friend profiles:', profilesError);
+      }
 
       const today = new Date().toISOString().split('T')[0];
       const { data: progressData } = await supabase
@@ -72,19 +75,20 @@ export function useFriends() {
         .in('user_id', friendIds)
         .eq('progress_date', today);
 
-      const friendsList: Friend[] = (profiles || []).map(profile => {
-        const friendship = friendships?.find(f => 
-          f.sender_id === profile.user_id || f.receiver_id === profile.user_id
+      const friendsList: Friend[] = friendIds.map(friendId => {
+        const friendship = friendships.find(f => 
+          f.sender_id === friendId || f.receiver_id === friendId
         );
-        const progress = progressData?.find(p => p.user_id === profile.user_id);
+        const profile = profiles?.find(p => p.user_id === friendId);
+        const progress = progressData?.find(p => p.user_id === friendId);
         
         return {
-          id: profile.user_id,
+          id: friendId,
           friendshipId: friendship?.id || '',
-          userId: profile.user_id,
-          username: profile.username,
-          displayName: profile.display_name,
-          avatarUrl: profile.avatar_url,
+          userId: friendId,
+          username: profile?.username || null,
+          displayName: profile?.display_name || null,
+          avatarUrl: profile?.avatar_url || null,
           progress: progress ? {
             steps: progress.steps,
             water: progress.water,
