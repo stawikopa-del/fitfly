@@ -1030,17 +1030,55 @@ export default function DirectChat() {
                 }
                 setPendingAttachment(null);
               }}
+              onFlip={() => {
+                setPendingAttachment({
+                  ...pendingAttachment,
+                  isFlipped: !pendingAttachment.isFlipped,
+                });
+              }}
               onSend={async () => {
                 setIsUploadingAttachment(true);
                 try {
                   if (pendingAttachment.type === 'image' && pendingAttachment.file) {
-                    const fileExt = pendingAttachment.file.name.split('.').pop();
+                    let fileToUpload: Blob = pendingAttachment.file;
+                    
+                    // If image is flipped, create a flipped version
+                    if (pendingAttachment.isFlipped) {
+                      try {
+                        const img = document.createElement('img');
+                        img.src = pendingAttachment.previewUrl!;
+                        await new Promise((resolve) => { img.onload = resolve; });
+                        
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        const ctx = canvas.getContext('2d');
+                        
+                        if (ctx) {
+                          ctx.translate(canvas.width, 0);
+                          ctx.scale(-1, 1);
+                          ctx.drawImage(img, 0, 0);
+                          
+                          fileToUpload = await new Promise<Blob>((resolve, reject) => {
+                            canvas.toBlob((blob) => {
+                              if (blob) resolve(blob);
+                              else reject(new Error('Failed to create blob'));
+                            }, 'image/jpeg', 0.9);
+                          });
+                        }
+                      } catch (flipError) {
+                        console.error('Error flipping image:', flipError);
+                        // Continue with original file if flipping fails
+                      }
+                    }
+                    
+                    const fileExt = pendingAttachment.isFlipped ? 'jpg' : pendingAttachment.file.name.split('.').pop();
                     const fileName = `${Date.now()}.${fileExt}`;
                     const filePath = `${user?.id}/${fileName}`;
                     
                     const { error: uploadError } = await supabase.storage
                       .from('chat-media')
-                      .upload(filePath, pendingAttachment.file);
+                      .upload(filePath, fileToUpload);
                     
                     if (uploadError) throw uploadError;
                     

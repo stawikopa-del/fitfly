@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Image, Mic, ShoppingCart, X, Send, Square, Play, Pause, Trash2 } from 'lucide-react';
+import { Plus, Image, Mic, ShoppingCart, X, Send, Square, Play, Pause, Trash2, FlipHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,6 +26,7 @@ interface PendingAttachment {
   blob?: Blob;
   previewUrl?: string;
   duration?: number;
+  isFlipped?: boolean;
 }
 
 interface ChatAttachmentMenuProps {
@@ -469,11 +470,13 @@ export function PendingAttachmentPreview({
   onClear,
   onSend,
   isUploading,
+  onFlip,
 }: {
   pendingAttachment: PendingAttachment;
   onClear: () => void;
   onSend: () => void;
   isUploading: boolean;
+  onFlip?: () => void;
 }) {
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -532,13 +535,31 @@ export function PendingAttachmentPreview({
               <img 
                 src={pendingAttachment.previewUrl} 
                 alt="Podgląd" 
-                className="w-full h-full object-cover"
+                className={cn(
+                  "w-full h-full object-cover transition-transform",
+                  pendingAttachment.isFlipped && "scale-x-[-1]"
+                )}
               />
             ) : (
               <Image className="h-5 w-5 text-primary" />
             )}
           </div>
           <span className="text-sm font-medium flex-1">Zdjęcie 🖼️</span>
+          {onFlip && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                try { soundFeedback.buttonClick(); } catch {}
+                onFlip();
+              }}
+              disabled={isUploading}
+              className="h-8 w-8 shrink-0"
+              title="Odwróć zdjęcie"
+            >
+              <FlipHorizontal className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          )}
         </>
       )}
 
