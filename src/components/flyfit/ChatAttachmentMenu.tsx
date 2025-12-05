@@ -99,11 +99,13 @@ export function ChatAttachmentMenu({
     }
 
     // Create preview URL and set pending attachment
+    // Auto-flip images (useful for selfies from front camera)
     const previewUrl = URL.createObjectURL(file);
     setPendingAttachment({
       type: 'image',
       file,
       previewUrl,
+      isFlipped: true, // Default to flipped for selfies
     });
 
     if (fileInputRef.current) {
