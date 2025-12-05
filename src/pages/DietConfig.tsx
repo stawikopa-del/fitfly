@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Flame, Dumbbell, Scale, Target, ChevronRight, Loader2, Check, Salad, Beef, Leaf, Fish, Apple, Croissant } from 'lucide-react';
+import { ArrowLeft, Sparkles, Flame, Dumbbell, Scale, Target, ChevronRight, Loader2, Check, Salad, Beef, Leaf, Fish, Apple, Croissant, Heart, Trash2, Clock, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -120,6 +120,20 @@ export default function DietConfig() {
   
   // Loading profile data
   const [loadingProfile, setLoadingProfile] = useState(true);
+  
+  // Saved plans state
+  const [savedPlans, setSavedPlans] = useState<Array<{
+    id: string;
+    name: string;
+    diet_type: string;
+    daily_calories: number;
+    plan_data: GeneratedDietPlan;
+    created_at: string;
+  }>>([]);
+  const [loadingSavedPlans, setLoadingSavedPlans] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [viewingSavedPlan, setViewingSavedPlan] = useState<string | null>(null);
+  const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
 
   // Fetch user profile on mount
   useEffect(() => {
@@ -158,6 +172,130 @@ export default function DietConfig() {
     
     fetchProfile();
   }, [user]);
+
+  // Fetch saved diet plans
+  useEffect(() => {
+    const fetchSavedPlans = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('saved_diet_plans')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        setSavedPlans((data || []).map(d => ({
+          id: d.id,
+          name: d.name,
+          diet_type: d.diet_type,
+          daily_calories: d.daily_calories,
+          plan_data: d.plan_data as unknown as GeneratedDietPlan,
+          created_at: d.created_at,
+        })));
+      } catch (error) {
+        console.error('Error fetching saved plans:', error);
+      } finally {
+        setLoadingSavedPlans(false);
+      }
+    };
+    
+    fetchSavedPlans();
+  }, [user]);
+
+  // Save plan to favorites
+  const handleSavePlan = async () => {
+    if (!user || !generatedPlan) return;
+    
+    soundFeedback.buttonClick();
+    setIsSaving(true);
+    
+    try {
+      const selectedDietType = dietTypes.find(d => d.id === selectedDiet);
+      const planName = `${selectedDietType?.name || 'Dieta'} - ${dailyCalories} kcal`;
+      
+      const { data, error } = await supabase
+        .from('saved_diet_plans')
+        .insert([{
+          user_id: user.id,
+          name: planName,
+          diet_type: selectedDiet,
+          daily_calories: dailyCalories,
+          plan_data: JSON.parse(JSON.stringify(generatedPlan)),
+          preferences: JSON.parse(JSON.stringify({
+            weight,
+            height,
+            age,
+            gender,
+            goal,
+            activityLevel,
+            mealsPerDay,
+            workoutsPerWeek,
+          })),
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setSavedPlans([{
+        id: data.id,
+        name: data.name,
+        diet_type: data.diet_type,
+        daily_calories: data.daily_calories,
+        plan_data: data.plan_data as unknown as GeneratedDietPlan,
+        created_at: data.created_at,
+      }, ...savedPlans]);
+      setCurrentPlanId(data.id);
+      soundFeedback.success();
+      toast.success('Plan zapisany w ulubionych! ❤️');
+    } catch (error) {
+      console.error('Error saving plan:', error);
+      toast.error('Nie udało się zapisać planu');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Delete saved plan
+  const handleDeletePlan = async (planId: string) => {
+    if (!user) return;
+    
+    soundFeedback.buttonClick();
+    
+    try {
+      const { error } = await supabase
+        .from('saved_diet_plans')
+        .delete()
+        .eq('id', planId);
+      
+      if (error) throw error;
+      
+      setSavedPlans(savedPlans.filter(p => p.id !== planId));
+      toast.success('Plan usunięty');
+      
+      if (viewingSavedPlan === planId) {
+        setViewingSavedPlan(null);
+        setGeneratedPlan(null);
+        setStep('config');
+      }
+    } catch (error) {
+      console.error('Error deleting plan:', error);
+      toast.error('Nie udało się usunąć planu');
+    }
+  };
+
+  // View saved plan
+  const handleViewSavedPlan = (plan: typeof savedPlans[0]) => {
+    soundFeedback.buttonClick();
+    setGeneratedPlan(plan.plan_data);
+    setViewingSavedPlan(plan.id);
+    setCurrentPlanId(plan.id);
+    setSelectedDiet(plan.diet_type);
+    setDailyCalories(plan.daily_calories);
+    setStep('result');
+  };
 
   // Calculate suggested calories based on BMR and activity
   const calculateSuggestedCalories = () => {
@@ -355,17 +493,48 @@ export default function DietConfig() {
             </div>
           </section>
 
-          {/* Back to config button */}
-          <Button
-            onClick={() => {
-              soundFeedback.buttonClick();
-              setStep('config');
-            }}
-            variant="outline"
-            className="w-full rounded-2xl h-12"
-          >
-            Zmień preferencje
-          </Button>
+          {/* Action buttons */}
+          <div className="space-y-3">
+            {/* Save to favorites button */}
+            {!currentPlanId || !savedPlans.find(p => p.id === currentPlanId) ? (
+              <Button
+                onClick={handleSavePlan}
+                disabled={isSaving}
+                className="w-full rounded-2xl h-12 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Zapisuję...
+                  </>
+                ) : (
+                  <>
+                    <Heart className="w-4 h-4 mr-2" />
+                    Zapisz w ulubionych
+                  </>
+                )}
+              </Button>
+            ) : (
+              <div className="flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
+                <Check className="w-4 h-4 text-secondary" />
+                Plan zapisany w ulubionych
+              </div>
+            )}
+            
+            {/* Back to config button */}
+            <Button
+              onClick={() => {
+                soundFeedback.buttonClick();
+                setStep('config');
+                setViewingSavedPlan(null);
+                setCurrentPlanId(null);
+              }}
+              variant="outline"
+              className="w-full rounded-2xl h-12"
+            >
+              {viewingSavedPlan ? 'Wróć do listy' : 'Zmień preferencje'}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -394,6 +563,68 @@ export default function DietConfig() {
       </header>
 
       <div className="px-4 py-6 space-y-6 pb-32">
+        {/* Saved Plans Section */}
+        {savedPlans.length > 0 && (
+          <section className="space-y-4">
+            <h2 className="font-bold font-display text-foreground flex items-center gap-2">
+              Zapisane plany <span>❤️</span>
+            </h2>
+            
+            <div className="space-y-3">
+              {savedPlans.map((plan) => {
+                const dietType = dietTypes.find(d => d.id === plan.diet_type);
+                const createdDate = new Date(plan.created_at);
+                const formattedDate = createdDate.toLocaleDateString('pl-PL', {
+                  day: 'numeric',
+                  month: 'short',
+                });
+                
+                return (
+                  <div
+                    key={plan.id}
+                    className="bg-card rounded-2xl p-4 border border-border/50 hover:border-primary/50 transition-all group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={() => handleViewSavedPlan(plan)}
+                        className="flex items-center gap-3 flex-1 text-left"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-secondary/20 to-fitfly-green/20 flex items-center justify-center">
+                          <span className="text-xl">{dietType?.emoji || '🥗'}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-sm truncate">{plan.name}</h3>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Flame className="w-3 h-3" />
+                              {plan.daily_calories} kcal
+                            </span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {formattedDate}
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePlan(plan.id);
+                        }}
+                        className="ml-2 w-8 h-8 rounded-full bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* Personal Data Section */}
         <section className="space-y-4">
           <h2 className="font-bold font-display text-foreground flex items-center gap-2">
