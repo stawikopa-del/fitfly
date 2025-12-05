@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Zap, ChefHat } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { RecipesSection, DetailedRecipe } from '@/components/flyfit/RecipesSection';
 import { CookingMode } from '@/components/flyfit/CookingMode';
 import { MealCalendar } from '@/components/flyfit/MealCalendar';
@@ -50,26 +50,6 @@ export default function Recipes() {
 
       {/* Główna zawartość */}
       <main className="px-4 py-6 space-y-6">
-        {/* Zjedz coś na szybko - główny przycisk */}
-        <button
-          onClick={() => {
-            soundFeedback.buttonClick();
-            navigate('/szybki-posilek');
-          }}
-          className="w-full bg-gradient-to-br from-accent/30 via-primary/20 to-secondary/30 rounded-3xl p-6 border-2 border-accent/40 hover:border-accent/60 transition-all duration-300 hover:-translate-y-1 text-left shadow-card-playful"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-yellow-400 flex items-center justify-center shadow-lg shrink-0">
-              <Zap className="w-8 h-8 text-white" />
-            </div>
-            <div className="flex-1">
-              <h2 className="font-bold font-display text-foreground text-xl mb-1">Zjedz coś na szybko</h2>
-              <p className="text-sm text-muted-foreground">Skanuj lodówkę lub wpisz składniki i znajdź idealny przepis ⚡</p>
-            </div>
-            <ChefHat className="w-6 h-6 text-accent" />
-          </div>
-        </button>
-
         {/* Kalendarz posiłków */}
         <MealCalendar onStartCooking={setCookingRecipe} />
         

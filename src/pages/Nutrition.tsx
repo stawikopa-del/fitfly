@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X, ScanBarcode, ChevronRight, Salad, ChefHat } from 'lucide-react';
+import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X, ScanBarcode, ChevronRight, Salad, ChefHat, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -266,6 +266,29 @@ export default function Nutrition() {
               <span>🍳</span>
             </h3>
             <p className="text-sm text-muted-foreground">Odkryj pyszne przepisy z AI i gotuj krok po kroku</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+        </div>
+      </button>
+
+      {/* Zjedz coś na szybko */}
+      <button
+        onClick={() => {
+          soundFeedback.buttonClick();
+          navigate('/szybki-posilek');
+        }}
+        className="w-full bg-gradient-to-br from-accent/30 via-primary/20 to-secondary/30 rounded-3xl p-5 border-2 border-accent/40 hover:border-accent/60 transition-all duration-300 hover:-translate-y-1 shadow-card-playful relative z-10 group"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-yellow-400 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+            <Zap className="w-7 h-7 text-white" />
+          </div>
+          <div className="text-left flex-1">
+            <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+              Zjedz coś na szybko
+              <span>⚡</span>
+            </h3>
+            <p className="text-sm text-muted-foreground">Skanuj lodówkę lub wpisz składniki i znajdź idealny przepis</p>
           </div>
           <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
         </div>
