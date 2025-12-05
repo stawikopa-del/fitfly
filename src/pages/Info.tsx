@@ -71,11 +71,27 @@ export default function Info() {
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-fitfly-purple/10 flex items-center justify-center">
-                <Cookie className="w-5 h-5 text-fitfly-purple" />
+                <Shield className="w-5 h-5 text-fitfly-purple" />
               </div>
               <div>
                 <p className="font-medium text-foreground text-sm">Ustawienia prywatności</p>
                 <p className="text-xs text-muted-foreground">Zarządzaj swoimi danymi</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
+
+          <button 
+            onClick={() => handleNavigate('/cookies')}
+            className="w-full flex items-center justify-between gap-3 bg-muted/50 rounded-2xl p-4 hover:bg-muted/70 transition-colors text-left"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <Cookie className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground text-sm">Polityka Cookies</p>
+                <p className="text-xs text-muted-foreground">Informacje o plikach cookie</p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />

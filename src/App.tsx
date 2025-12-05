@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/flyfit/AppLayout";
+import { CookieConsent } from "@/components/flyfit/CookieConsent";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,7 @@ const CalendarPage = lazy(() => import("./pages/Calendar"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const CookiesPolicy = lazy(() => import("./pages/CookiesPolicy"));
 const Achievements = lazy(() => import("./pages/Achievements"));
 const Goals = lazy(() => import("./pages/Goals"));
 const Friends = lazy(() => import("./pages/Friends"));
@@ -390,6 +392,16 @@ const AppRoutes = () => (
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/cookies"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <CookiesPolicy />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </Suspense>
@@ -433,6 +445,7 @@ const App = () => {
           <BrowserRouter>
             <AuthProvider>
               <AppRoutes />
+              <CookieConsent />
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>
