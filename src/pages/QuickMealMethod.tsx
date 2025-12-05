@@ -29,6 +29,9 @@ export default function QuickMealMethod() {
   const isIngredientsMethod = method === 'ingredients';
   const isScanMethod = method === 'scan';
 
+  // Debug logging
+  console.log('QuickMealMethod - method:', method, 'isIngredients:', isIngredientsMethod, 'isScan:', isScanMethod);
+
   // Get preferences from URL
   const preferences = {
     taste: searchParams.get('taste') || '',
@@ -48,6 +51,63 @@ export default function QuickMealMethod() {
   const [cookingRecipe, setCookingRecipe] = useState<DetailedRecipe | null>(null);
   const [swappingIndex, setSwappingIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Generate suggested ingredients based on description
+  const getSuggestedIngredients = () => {
+    const desc = preferences.description.toLowerCase();
+    const suggestions: string[] = [];
+    
+    // Common ingredient mappings
+    const ingredientMappings: Record<string, string[]> = {
+      'ser': ['ser żółty', 'ser mozzarella', 'ser feta', 'ser parmezan'],
+      'cheese': ['ser żółty', 'ser mozzarella'],
+      'mięso': ['kurczak', 'wołowina', 'wieprzowina', 'indyk'],
+      'kurczak': ['pierś z kurczaka', 'udka kurczaka'],
+      'warzywa': ['pomidor', 'ogórek', 'papryka', 'cebula', 'czosnek'],
+      'sałatka': ['sałata', 'pomidor', 'ogórek', 'oliwki'],
+      'makaron': ['makaron spaghetti', 'makaron penne', 'sos pomidorowy'],
+      'pizza': ['ciasto na pizzę', 'ser mozzarella', 'sos pomidorowy'],
+      'jajka': ['jajka', 'masło', 'sól'],
+      'śniadanie': ['jajka', 'chleb', 'masło', 'pomidor'],
+      'kanapka': ['chleb', 'masło', 'ser', 'szynka'],
+      'zupa': ['marchewka', 'pietruszka', 'seler', 'cebula'],
+      'ryż': ['ryż', 'kurczak', 'warzywa mrożone'],
+      'słodkie': ['mąka', 'cukier', 'jajka', 'masło'],
+      'ciasto': ['mąka', 'cukier', 'jajka', 'masło', 'proszek do pieczenia'],
+      'zdrowe': ['warzywa', 'oliwa z oliwek', 'orzech'],
+      'fit': ['pierś z kurczaka', 'ryż brązowy', 'brokuły'],
+    };
+    
+    // Check description for keywords
+    Object.entries(ingredientMappings).forEach(([keyword, items]) => {
+      if (desc.includes(keyword)) {
+        items.forEach(item => {
+          if (!suggestions.includes(item) && !ingredients.includes(item)) {
+            suggestions.push(item);
+          }
+        });
+      }
+    });
+    
+    // Default suggestions if no keywords matched
+    if (suggestions.length === 0) {
+      const defaultSuggestions = ['jajka', 'chleb', 'ser', 'masło', 'pomidor', 'cebula'];
+      defaultSuggestions.forEach(item => {
+        if (!ingredients.includes(item)) {
+          suggestions.push(item);
+        }
+      });
+    }
+    
+    return suggestions.slice(0, 8);
+  };
+
+  const addSuggestedIngredient = (ingredient: string) => {
+    if (!ingredients.includes(ingredient)) {
+      setIngredients([...ingredients, ingredient]);
+      soundFeedback.buttonClick();
+    }
+  };
 
   // Fetch favorites
   useEffect(() => {
@@ -303,6 +363,14 @@ export default function QuickMealMethod() {
       </header>
 
       <main className="px-4 py-6 space-y-4">
+        {/* Debug info - remove after fixing */}
+        {!isScanMethod && !isIngredientsMethod && (
+          <div className="bg-destructive/20 rounded-xl p-4 border border-destructive/50">
+            <p className="text-sm text-destructive font-bold">Błąd: Nierozpoznana metoda "{method}"</p>
+            <p className="text-xs text-muted-foreground">Spodziewano: "scan" lub "ingredients"</p>
+          </div>
+        )}
+
         {/* Preferences Summary */}
         <div className="bg-muted/30 rounded-2xl p-4 border border-border/30">
           <p className="text-xs font-bold text-muted-foreground mb-2">Twoje preferencje:</p>
@@ -360,7 +428,7 @@ export default function QuickMealMethod() {
         )}
 
         {/* Ingredients Method */}
-        {isIngredientsMethod && recipes.length === 0 && (
+        {isIngredientsMethod && !loading && recipes.length === 0 && (
           <div className="bg-card rounded-3xl p-5 border-2 border-primary/30 shadow-card-playful space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-fitfly-purple flex items-center justify-center shadow-lg">
@@ -386,19 +454,47 @@ export default function QuickMealMethod() {
               </Button>
             </div>
 
-            {ingredients.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {ingredients.map((ing) => (
-                  <span
-                    key={ing}
-                    className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2"
-                  >
-                    {ing}
-                    <button onClick={() => handleRemoveIngredient(ing)} className="hover:text-destructive">
-                      <X className="w-3 h-3" />
+            {/* Suggested ingredients */}
+            {getSuggestedIngredients().length > 0 && (
+              <div className="bg-muted/30 rounded-xl p-3">
+                <p className="text-xs font-bold text-muted-foreground mb-2">💡 Sugerowane składniki:</p>
+                <div className="flex flex-wrap gap-2">
+                  {getSuggestedIngredients().map((ing) => (
+                    <button
+                      key={ing}
+                      onClick={() => addSuggestedIngredient(ing)}
+                      disabled={ingredients.includes(ing)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                        ingredients.includes(ing)
+                          ? "bg-primary/20 text-primary/50 cursor-not-allowed"
+                          : "bg-accent/20 text-accent hover:bg-accent/30 hover:scale-105"
+                      )}
+                    >
+                      + {ing}
                     </button>
-                  </span>
-                ))}
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Added ingredients */}
+            {ingredients.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-foreground mb-2">Twoje składniki ({ingredients.length}):</p>
+                <div className="flex flex-wrap gap-2">
+                  {ingredients.map((ing) => (
+                    <span
+                      key={ing}
+                      className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2"
+                    >
+                      {ing}
+                      <button onClick={() => handleRemoveIngredient(ing)} className="hover:text-destructive">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
