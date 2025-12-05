@@ -95,7 +95,7 @@ export function AddMealDialog({ open, onOpenChange, mealType, onAddMeal }: AddMe
       // Get the most recent saved diet plan
       const { data: plans, error } = await supabase
         .from('saved_diet_plans')
-        .select('plan_data')
+        .select('plan_data, daily_calories')
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
         .limit(1);
@@ -104,32 +104,64 @@ export function AddMealDialog({ open, onOpenChange, mealType, onAddMeal }: AddMe
       
       if (plans && plans.length > 0) {
         const planData = plans[0].plan_data as any;
-        // Get today's day of week
-        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const today = days[new Date().getDay()];
+        const dailyCalories = plans[0].daily_calories;
         
-        // Find today's meal
-        const todayPlan = planData?.days?.find((d: any) => d.day?.toLowerCase() === today);
-        const slot = mealTypeToSlot[mealType];
-        
-        if (todayPlan?.meals) {
-          const meal = todayPlan.meals.find((m: any) => 
-            m.slot?.toLowerCase() === slot || 
-            m.type?.toLowerCase() === slot
-          );
+        // Check if we have dailyMeals structure (new format)
+        if (planData?.dailyMeals) {
+          const slot = mealTypeToSlot[mealType];
+          const slotKey = slot === 'snack' ? 'snacks' : slot;
+          const meals = planData.dailyMeals[slotKey as keyof typeof planData.dailyMeals];
           
-          if (meal) {
+          if (meals && meals.length > 0) {
+            // Pick the first meal from the slot
+            const meal = meals[0];
+            // Estimate macros based on calories (approximate)
+            const calories = meal.calories || 0;
+            const protein = Math.round(calories * 0.25 / 4); // 25% from protein
+            const carbs = Math.round(calories * 0.50 / 4); // 50% from carbs
+            const fat = Math.round(calories * 0.25 / 9); // 25% from fat
+            
             setDietMeal({
-              name: meal.name || meal.title || 'Posiłek z diety',
-              calories: meal.calories || 0,
-              protein: meal.protein || 0,
-              carbs: meal.carbs || 0,
-              fat: meal.fat || 0,
+              name: meal.name || 'Posiłek z diety',
+              calories: calories,
+              protein: protein,
+              carbs: carbs,
+              fat: fat,
             });
           } else {
             setDietMeal(null);
           }
+        } 
+        // Fallback to old format with days
+        else if (planData?.days) {
+          const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+          const today = days[new Date().getDay()];
+          const todayPlan = planData.days.find((d: any) => d.day?.toLowerCase() === today);
+          const slot = mealTypeToSlot[mealType];
+          
+          if (todayPlan?.meals) {
+            const meal = todayPlan.meals.find((m: any) => 
+              m.slot?.toLowerCase() === slot || 
+              m.type?.toLowerCase() === slot
+            );
+            
+            if (meal) {
+              setDietMeal({
+                name: meal.name || meal.title || 'Posiłek z diety',
+                calories: meal.calories || 0,
+                protein: meal.protein || 0,
+                carbs: meal.carbs || 0,
+                fat: meal.fat || 0,
+              });
+            } else {
+              setDietMeal(null);
+            }
+          }
+        } else {
+          setDietMeal(null);
         }
+      } else {
+        setDietMeal(null);
       }
     } catch (error) {
       console.error('Error loading diet meal:', error);

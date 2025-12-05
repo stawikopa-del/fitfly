@@ -249,7 +249,7 @@ export default function DietConfig() {
       }, ...savedPlans]);
       setCurrentPlanId(data.id);
       soundFeedback.success();
-      toast.success('Plan zapisany w ulubionych! ❤️');
+      toast.success('Plan diety zapisany! ✅');
     } catch (error) {
       console.error('Error saving plan:', error);
       toast.error('Nie udało się zapisać planu');
