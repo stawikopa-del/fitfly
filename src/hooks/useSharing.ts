@@ -8,11 +8,16 @@ export function useSharing() {
   const [isSharing, setIsSharing] = useState(false);
   const operationInProgress = useRef(false);
 
-  const generateShareToken = () => {
-    const array = new Uint8Array(16);
-    crypto.getRandomValues(array);
-    return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
-  };
+  const generateShareToken = useCallback(() => {
+    try {
+      const array = new Uint8Array(16);
+      crypto.getRandomValues(array);
+      return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+    } catch {
+      // Fallback for environments without crypto
+      return Math.random().toString(36).substring(2) + Date.now().toString(36);
+    }
+  }, []);
 
   const shareRecipeWithFriend = useCallback(async (recipeId: string, friendId: string) => {
     if (!user || operationInProgress.current) return false;
@@ -62,11 +67,19 @@ export function useSharing() {
 
       if (error) throw error;
 
-      const shareUrl = `${window.location.origin}/shared/recipe/${token}`;
+      const shareUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/shared/recipe/${token}`
+        : `/shared/recipe/${token}`;
       
-      // Copy to clipboard
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success('Link skopiowany do schowka!');
+      // Copy to clipboard safely
+      try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          await navigator.clipboard.writeText(shareUrl);
+          toast.success('Link skopiowany do schowka!');
+        }
+      } catch {
+        toast.success('Link utworzony!');
+      }
       
       return shareUrl;
     } catch (error) {
@@ -77,9 +90,11 @@ export function useSharing() {
       operationInProgress.current = false;
       setIsSharing(false);
     }
-  }, [user]);
+  }, [user, generateShareToken]);
 
   const getSharedRecipe = useCallback(async (token: string) => {
+    if (!token) return null;
+    
     try {
       const { data, error } = await supabase
         .from('shared_recipes')

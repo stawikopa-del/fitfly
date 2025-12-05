@@ -1,17 +1,28 @@
-// Audio context for generating sounds
+// Audio context for generating sounds - lazy initialized
 let audioContext: AudioContext | null = null;
 
-const getAudioContext = () => {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+const getAudioContext = (): AudioContext | null => {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    if (!audioContext) {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        audioContext = new AudioContextClass();
+      }
+    }
+    return audioContext;
+  } catch {
+    return null;
   }
-  return audioContext;
 };
 
 // Generate a beep sound
 const playTone = (frequency: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.3) => {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
+    
     const oscillator = ctx.createOscillator();
     const gainNode = ctx.createGain();
     
@@ -26,81 +37,71 @@ const playTone = (frequency: number, duration: number, type: OscillatorType = 's
     
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration);
-  } catch (e) {
-    console.log('Audio not available:', e);
+  } catch {
+    // Audio not available - fail silently
   }
 };
 
 // Vibration patterns (in milliseconds)
 const vibrate = (pattern: number | number[]) => {
   try {
-    if ('vibrate' in navigator) {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate(pattern);
     }
-  } catch (e) {
-    console.log('Vibration not available:', e);
+  } catch {
+    // Vibration not available - fail silently
   }
 };
 
 // App-wide sound & vibration effects
 export const soundFeedback = {
-  // Generic button click - soft, pleasant pop
   buttonClick: () => {
     playTone(600, 0.06, 'sine', 0.15);
     vibrate(20);
   },
   
-  // Primary action button - slightly more pronounced
   primaryClick: () => {
     playTone(700, 0.08, 'sine', 0.2);
     vibrate(30);
   },
   
-  // Secondary/outline button - softer
   secondaryClick: () => {
     playTone(500, 0.05, 'sine', 0.12);
     vibrate(15);
   },
   
-  // Navigation tap
   navTap: () => {
     playTone(550, 0.05, 'sine', 0.1);
     vibrate(15);
   },
   
-  // Success action (e.g., adding water, completing task)
   success: () => {
-    playTone(523, 0.1, 'sine', 0.25); // C5
-    setTimeout(() => playTone(659, 0.12, 'sine', 0.25), 80); // E5
+    playTone(523, 0.1, 'sine', 0.25);
+    setTimeout(() => playTone(659, 0.12, 'sine', 0.25), 80);
     vibrate([50, 30, 50]);
   },
   
-  // Toggle/switch sound
   toggle: () => {
     playTone(650, 0.05, 'sine', 0.15);
     vibrate(25);
   },
   
-  // Card tap/expand
   cardTap: () => {
     playTone(480, 0.04, 'sine', 0.1);
     vibrate(10);
   },
   
-  // Error/warning
   error: () => {
     playTone(300, 0.15, 'triangle', 0.2);
     vibrate([100, 50, 100]);
   },
   
-  // Notification/alert
   notification: () => {
     playTone(800, 0.1, 'sine', 0.2);
     setTimeout(() => playTone(1000, 0.1, 'sine', 0.2), 100);
     vibrate([50, 50, 50]);
   },
   
-  // Achievement/reward
   achievement: () => {
     playTone(523, 0.12, 'triangle', 0.3);
     setTimeout(() => playTone(659, 0.12, 'triangle', 0.3), 100);
@@ -109,14 +110,12 @@ export const soundFeedback = {
     vibrate([100, 50, 100, 50, 200]);
   },
   
-  // Message sent - swoosh sound
   messageSent: () => {
     playTone(600, 0.08, 'sine', 0.2);
     setTimeout(() => playTone(800, 0.06, 'sine', 0.15), 50);
     vibrate(25);
   },
   
-  // Message received - gentle pop
   messageReceived: () => {
     playTone(500, 0.1, 'sine', 0.2);
     setTimeout(() => playTone(700, 0.08, 'sine', 0.18), 80);
@@ -124,15 +123,19 @@ export const soundFeedback = {
   },
 };
 
-// Resume audio context after user interaction (needed for some browsers)
+// Resume audio context after user interaction
 export const resumeAudioContext = () => {
-  const ctx = getAudioContext();
-  if (ctx.state === 'suspended') {
-    ctx.resume();
+  try {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume();
+    }
+  } catch {
+    // Fail silently
   }
 };
 
-// Re-export workout-specific sounds for backward compatibility
+// Workout-specific sounds
 export const workoutFeedback = {
   tick: () => {
     playTone(800, 0.1, 'sine', 0.2);

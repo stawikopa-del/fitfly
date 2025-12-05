@@ -10,8 +10,17 @@ import { LevelProgress } from '@/components/flyfit/LevelProgress';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { progress, mascotState, addWater } = useUserProgress();
-  const { gamification } = useGamification();
+  const { progress, addWater, loading: progressLoading } = useUserProgress();
+  const { gamification, loading: gamificationLoading } = useGamification();
+
+  // Loading state
+  if (progressLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -28,7 +37,6 @@ export default function Home() {
           onClick={() => navigate('/kalendarz')}
           className="relative text-center bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group"
         >
-          {/* Red "Kalendarz" badge */}
           <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
             <Calendar className="w-3 h-3" />
             Kalendarz
@@ -44,7 +52,7 @@ export default function Home() {
       </header>
 
       {/* Level Progress - compact */}
-      {gamification && (
+      {!gamificationLoading && gamification && (
         <section 
           className="relative z-10 cursor-pointer" 
           onClick={() => navigate('/osiagniecia')}
@@ -68,8 +76,8 @@ export default function Home() {
           <StatCard
             icon={<Footprints className="w-5 h-5" />}
             label="Kroki"
-            value={progress.steps.toLocaleString()}
-            subValue={`/ ${progress.stepsGoal.toLocaleString()}`}
+            value={(progress?.steps || 0).toLocaleString()}
+            subValue={`/ ${(progress?.stepsGoal || 10000).toLocaleString()}`}
             color="green"
           />
         </div>
@@ -77,8 +85,8 @@ export default function Home() {
           <StatCard
             icon={<Flame className="w-5 h-5" />}
             label="Aktywność"
-            value={`${progress.activeMinutes} min`}
-            subValue={`/ ${progress.activeMinutesGoal} min`}
+            value={`${progress?.activeMinutes || 0} min`}
+            subValue={`/ ${progress?.activeMinutesGoal || 30} min`}
             color="orange"
           />
         </div>
@@ -87,8 +95,8 @@ export default function Home() {
       {/* Tracker wody */}
       <section className="relative z-10 animate-float" style={{ animationDelay: '1s' }}>
         <WaterTracker 
-          current={progress.water} 
-          goal={progress.waterGoal} 
+          current={progress?.water || 0} 
+          goal={progress?.waterGoal || 2000} 
           onAdd={addWater}
         />
       </section>

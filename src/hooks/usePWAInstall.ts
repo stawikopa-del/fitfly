@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -10,11 +10,26 @@ export function usePWAInstall() {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
+  // Safe check for iOS Safari - moved inside useEffect
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-      return;
+    // Guard against SSR
+    if (typeof window === 'undefined') return;
+
+    try {
+      // Check if already installed
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        setIsInstalled(true);
+        return;
+      }
+
+      // Check for iOS Safari
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      setShowIOSInstructions(isIOS && isSafari && !isInstalled);
+    } catch {
+      // Ignore errors
     }
 
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -36,9 +51,9 @@ export function usePWAInstall() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
+  }, [isInstalled]);
 
-  const promptInstall = async () => {
+  const promptInstall = useCallback(async () => {
     if (!deferredPrompt) return false;
 
     try {
@@ -56,12 +71,7 @@ export function usePWAInstall() {
       console.error('Error prompting install:', error);
       return false;
     }
-  };
-
-  // For iOS - show instructions since they don't support beforeinstallprompt
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  const showIOSInstructions = isIOS && isSafari && !isInstalled;
+  }, [deferredPrompt]);
 
   return {
     isInstallable,

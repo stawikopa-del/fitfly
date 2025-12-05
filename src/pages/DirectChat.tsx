@@ -30,35 +30,65 @@ export default function DirectChat() {
   const { odgerId } = useParams<{ odgerId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { messages, isLoading, isSending, sendMessage, refreshMessages } = useDirectMessages(odgerId);
+  const { messages, isLoading, isSending, sendMessage } = useDirectMessages(odgerId);
   
   const [input, setInput] = useState('');
   const [friendProfile, setFriendProfile] = useState<FriendProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [optimisticMessages, setOptimisticMessages] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(messages.length);
 
   // Fetch friend profile
   useEffect(() => {
-    if (!odgerId) return;
+    if (!odgerId) {
+      setProfileLoading(false);
+      return;
+    }
+
+    let mounted = true;
 
     const fetchProfile = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('display_name, username, avatar_url')
-        .eq('user_id', odgerId)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('display_name, username, avatar_url')
+          .eq('user_id', odgerId)
+          .maybeSingle();
 
-      if (!error && data) {
-        setFriendProfile({
-          displayName: data.display_name || 'Użytkownik',
-          username: data.username,
-          avatarUrl: data.avatar_url,
-        });
+        if (!mounted) return;
+
+        if (!error && data) {
+          setFriendProfile({
+            displayName: data.display_name || 'Użytkownik',
+            username: data.username,
+            avatarUrl: data.avatar_url,
+          });
+        } else {
+          setFriendProfile({
+            displayName: 'Użytkownik',
+            username: null,
+            avatarUrl: null,
+          });
+        }
+      } catch {
+        if (mounted) {
+          setFriendProfile({
+            displayName: 'Użytkownik',
+            username: null,
+            avatarUrl: null,
+          });
+        }
+      } finally {
+        if (mounted) {
+          setProfileLoading(false);
+        }
       }
     };
 
     fetchProfile();
+
+    return () => { mounted = false; };
   }, [odgerId]);
 
   const scrollToBottom = () => {
@@ -87,10 +117,8 @@ export default function DirectChat() {
     const messageContent = input.trim();
     setInput('');
     
-    // Play send sound
     soundFeedback.messageSent();
     
-    // Add optimistic message
     const optimisticMessage = {
       id: `optimistic-${Date.now()}`,
       senderId: user?.id,
@@ -119,16 +147,20 @@ export default function DirectChat() {
   };
 
   const formatMessageTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const minutesAgo = differenceInMinutes(now, date);
-    
-    if (minutesAgo < 1) {
-      return 'teraz';
-    } else if (minutesAgo < 30) {
-      return `${minutesAgo} min temu`;
-    } else {
-      return format(date, 'HH:mm', { locale: pl });
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const minutesAgo = differenceInMinutes(now, date);
+      
+      if (minutesAgo < 1) {
+        return 'teraz';
+      } else if (minutesAgo < 30) {
+        return `${minutesAgo} min temu`;
+      } else {
+        return format(date, 'HH:mm', { locale: pl });
+      }
+    } catch {
+      return '';
     }
   };
 
@@ -137,26 +169,41 @@ export default function DirectChat() {
     navigate(`/znajomi/${odgerId}`);
   };
 
-  const RecipeMessage = ({ recipeData }: { recipeData: any }) => (
-    <Card className="bg-card/50 border-border/50 mt-2">
-      <CardContent className="p-3">
-        <div className="flex items-center gap-2 mb-2">
-          <BookOpen className="h-4 w-4 text-primary" />
-          <span className="font-semibold text-sm">{recipeData.name || 'Przepis'}</span>
-        </div>
-        {recipeData.calories && (
-          <p className="text-xs text-muted-foreground">
-            {recipeData.calories} kcal • B: {recipeData.protein}g • W: {recipeData.carbs}g • T: {recipeData.fat}g
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
+  const RecipeMessage = ({ recipeData }: { recipeData: any }) => {
+    if (!recipeData) return null;
+    
+    return (
+      <Card className="bg-card/50 border-border/50 mt-2">
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <BookOpen className="h-4 w-4 text-primary" />
+            <span className="font-semibold text-sm">{recipeData.name || 'Przepis'}</span>
+          </div>
+          {recipeData.calories && (
+            <p className="text-xs text-muted-foreground">
+              {recipeData.calories} kcal • B: {recipeData.protein || 0}g • W: {recipeData.carbs || 0}g • T: {recipeData.fat || 0}g
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
+  // Loading state
+  if (profileLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  // No profile found - show fallback
   if (!friendProfile) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="flex flex-col items-center justify-center h-screen bg-background p-4">
+        <p className="text-muted-foreground mb-4">Nie znaleziono użytkownika</p>
+        <Button onClick={() => navigate('/czat')}>Wróć do czatów</Button>
       </div>
     );
   }
@@ -189,7 +236,7 @@ export default function DirectChat() {
             <Avatar className="h-10 w-10 border-2 border-border">
               <AvatarImage src={friendProfile.avatarUrl || undefined} />
               <AvatarFallback className="bg-primary/20 text-primary font-bold">
-                {friendProfile.displayName[0].toUpperCase()}
+                {(friendProfile.displayName?.[0] || 'U').toUpperCase()}
               </AvatarFallback>
             </Avatar>
 
@@ -220,13 +267,13 @@ export default function DirectChat() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {allMessages.length === 0 && !isLoading && (
+        {allMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
             <button onClick={goToProfile}>
               <Avatar className="h-20 w-20 border-4 border-border mb-4 hover:opacity-80 transition-opacity">
                 <AvatarImage src={friendProfile.avatarUrl || undefined} />
                 <AvatarFallback className="bg-primary/20 text-primary font-bold text-2xl">
-                  {friendProfile.displayName[0].toUpperCase()}
+                  {(friendProfile.displayName?.[0] || 'U').toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </button>
@@ -256,7 +303,7 @@ export default function DirectChat() {
                   <Avatar className="h-8 w-8 shrink-0 hover:opacity-80 transition-opacity">
                     <AvatarImage src={friendProfile.avatarUrl || undefined} />
                     <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
-                      {friendProfile.displayName[0].toUpperCase()}
+                      {(friendProfile.displayName?.[0] || 'U').toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </button>
@@ -287,7 +334,6 @@ export default function DirectChat() {
                     {formatMessageTime(message.createdAt)}
                   </p>
                   
-                  {/* Read status for own messages */}
                   {isOwn && !isOptimistic && (
                     <span className="text-muted-foreground">
                       {message.readAt ? (
