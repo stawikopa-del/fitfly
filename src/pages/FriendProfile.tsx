@@ -23,6 +23,41 @@ import { useAuth } from '@/hooks/useAuth';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { cn } from '@/lib/utils';
 
+const bioPlaceholdersFemale = [
+  'Zgrywa niedostępną 🙄',
+  'Za zajęta na opis 💅',
+  'Opis? Nie znam tej pani 🤷‍♀️',
+  'Tajemnicza jak pogoda w Polsce 🌦️',
+  'Zbyt fit na pisanie 🏃‍♀️',
+  'Tu miał być opis, ale poszła na trening 💪',
+];
+
+const bioPlaceholdersMale = [
+  'Zgrywa niedostępnego 🙄',
+  'Za zajęty na opis 😎',
+  'Opis? Nie znam tego pana 🤷‍♂️',
+  'Tajemniczy jak WiFi w pociągu 📶',
+  'Zbyt fit na pisanie 🏋️',
+  'Tu miał być opis, ale poszedł na siłkę 💪',
+];
+
+const bioPlaceholdersNeutral = [
+  'Jeszcze nic tu nie ma... 🤷',
+  'Opis w budowie 🚧',
+  'Coming soon... ⏳',
+  'Bio loading... 🔄',
+  'Ktoś tu zapomniał o opisie 🙈',
+];
+
+const getRandomBioPlaceholder = (gender: string | null) => {
+  const placeholders = gender === 'female' 
+    ? bioPlaceholdersFemale 
+    : gender === 'male' 
+      ? bioPlaceholdersMale 
+      : bioPlaceholdersNeutral;
+  return placeholders[Math.floor(Math.random() * placeholders.length)];
+};
+
 interface FriendData {
   userId: string;
   username: string | null;
@@ -203,11 +238,7 @@ export default function FriendProfile() {
                 <p className="text-sm text-foreground">
                   {friend.bio || (
                     <span className="text-muted-foreground italic">
-                      {friend.gender === 'female' 
-                        ? 'Zgrywa niedostępną 🙄' 
-                        : friend.gender === 'male'
-                          ? 'Zgrywa niedostępnego 🙄'
-                          : 'Jeszcze nic tu nie ma... 🤷'}
+                      {getRandomBioPlaceholder(friend.gender)}
                     </span>
                   )}
                 </p>
