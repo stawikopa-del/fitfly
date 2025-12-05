@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X, ScanBarcode, ChevronRight, Salad } from 'lucide-react';
+import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X, ScanBarcode, ChevronRight, Salad, ChefHat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Meal } from '@/types/flyfit';
 import { AddMealDialog } from '@/components/flyfit/AddMealDialog';
-import { RecipesSection, DetailedRecipe } from '@/components/flyfit/RecipesSection';
-import { CookingMode } from '@/components/flyfit/CookingMode';
 import { BarcodeScanner } from '@/components/flyfit/BarcodeScanner';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -29,7 +27,6 @@ export default function Nutrition() {
   const navigate = useNavigate();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cookingRecipe, setCookingRecipe] = useState<DetailedRecipe | null>(null);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -151,21 +148,6 @@ export default function Nutrition() {
     }
   };
 
-  // Pokaż tryb gotowania jeśli aktywny
-  if (cookingRecipe && cookingRecipe.steps) {
-    return (
-      <CookingMode 
-        recipe={{
-          ...cookingRecipe,
-          total_time_minutes: cookingRecipe.total_time_minutes || 30,
-          tools_needed: cookingRecipe.tools_needed || [],
-          steps: cookingRecipe.steps
-        }} 
-        onClose={() => setCookingRecipe(null)} 
-      />
-    );
-  }
-
   // Pokaż skaner kodów kreskowych
   if (showBarcodeScanner) {
     return (
@@ -266,7 +248,53 @@ export default function Nutrition() {
         ))}
       </div>
 
-      {/* Konfigurator diety - nowa zakładka */}
+      {/* Przepisy i posiłki - nowa zakładka */}
+      <button
+        onClick={() => {
+          soundFeedback.buttonClick();
+          navigate('/przepisy');
+        }}
+        className="w-full bg-gradient-to-r from-accent/20 via-yellow-400/20 to-orange-400/20 rounded-3xl p-5 border-2 border-accent/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-orange-400 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+            <ChefHat className="w-7 h-7 text-white" />
+          </div>
+          <div className="text-left flex-1">
+            <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+              Przepisy i posiłki
+              <span>🍳</span>
+            </h3>
+            <p className="text-sm text-muted-foreground">Odkryj pyszne przepisy z AI i gotuj krok po kroku</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+        </div>
+      </button>
+
+      {/* Skaner kodów kreskowych */}
+      <button
+        onClick={() => {
+          soundFeedback.buttonClick();
+          setShowBarcodeScanner(true);
+        }}
+        className="w-full bg-gradient-to-r from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-3xl p-5 border-2 border-violet-500/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+            <ScanBarcode className="w-7 h-7 text-white" />
+          </div>
+          <div className="text-left flex-1">
+            <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+              Skaner produktów
+              <span>📦</span>
+            </h3>
+            <p className="text-sm text-muted-foreground">Zeskanuj kod kreskowy i sprawdź wartości odżywcze</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+        </div>
+      </button>
+
+      {/* Konfigurator diety */}
       <button
         onClick={() => {
           soundFeedback.buttonClick();
@@ -288,31 +316,6 @@ export default function Nutrition() {
           <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
         </div>
       </button>
-
-      {/* Skaner kodów kreskowych */}
-      <button
-        onClick={() => {
-          soundFeedback.buttonClick();
-          setShowBarcodeScanner(true);
-        }}
-        className="w-full bg-gradient-to-r from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-3xl p-5 border-2 border-violet-500/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10"
-      >
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg">
-            <ScanBarcode className="w-7 h-7 text-white" />
-          </div>
-          <div className="text-left flex-1">
-            <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
-              Skaner produktów
-              <span>📦</span>
-            </h3>
-            <p className="text-sm text-muted-foreground">Zeskanuj kod kreskowy i sprawdź wartości odżywcze</p>
-          </div>
-        </div>
-      </button>
-
-      {/* Sekcja przepisów AI */}
-      <RecipesSection onStartCooking={setCookingRecipe} />
 
       {/* Lista posiłków */}
       <section className="space-y-4 relative z-10">

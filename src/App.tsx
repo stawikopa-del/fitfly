@@ -35,6 +35,7 @@ import FriendProfile from "./pages/FriendProfile";
 import SharedRecipe from "./pages/SharedRecipe";
 import Invite from "./pages/Invite";
 import DietConfig from "./pages/DietConfig";
+import Recipes from "./pages/Recipes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -304,6 +305,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <DietConfig />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/przepisy"
+      element={
+        <ProtectedRoute>
+          <Recipes />
         </ProtectedRoute>
       }
     />
