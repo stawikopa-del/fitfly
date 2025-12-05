@@ -582,12 +582,11 @@ export default function SharedShoppingList() {
       if (wasAdding) {
         const genderVerb = currentUserGender === 'female' ? 'zareagowała' : 
                           currentUserGender === 'male' ? 'zareagował' : 'zareagował/a';
-        const emojiLabel = REACTION_EMOJIS.find(e => e.emoji === emoji)?.label || emoji;
         
         await supabase.from('direct_messages').insert({
           sender_id: user.id,
           receiver_id: partnerId,
-          content: `${emoji} ${genderVerb} na listę zakupów: "${emojiLabel}"`,
+          content: `${currentUserName} ${genderVerb} na notatkę emotką ${emoji}`,
           message_type: 'shopping_list_activity',
           recipe_data: { 
             shoppingListId: sharedList.id, 
