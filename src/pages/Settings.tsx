@@ -84,23 +84,14 @@ export default function Settings() {
     if (!user) return;
 
     if (settings.biometricLogin) {
-      // Disable biometric
+      // Disable biometric - only remove WebAuthn credential
       removeBiometric();
-      localStorage.removeItem('fitfly_biometric_auth');
       setSettings(prev => ({ ...prev, biometricLogin: false }));
       toast.success('Face ID wyłączone');
     } else {
-      // Enable biometric - register credential
+      // Enable biometric - register WebAuthn credential (no token storage for security)
       const result = await registerBiometric(user.id, user.email || '');
       if (result.success) {
-        // Store refresh token for biometric login
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData.session) {
-          localStorage.setItem('fitfly_biometric_auth', JSON.stringify({
-            email: user.email,
-            token: sessionData.session.refresh_token,
-          }));
-        }
         setSettings(prev => ({ ...prev, biometricLogin: true }));
         toast.success('Face ID włączone! 🎉');
       } else {
