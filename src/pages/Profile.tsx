@@ -108,49 +108,68 @@ export default function Profile() {
 
   // Fetch profile from database
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
+    let mounted = true;
     
     const fetchProfile = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching profile:', error);
-      } else if (data) {
-        setProfile(data);
-        setEditedProfile(data);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (!mounted) return;
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+        } else if (data) {
+          setProfile(data);
+          setEditedProfile(data);
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      } finally {
+        if (mounted) setLoading(false);
       }
-      setLoading(false);
     };
     
     fetchProfile();
+    
+    return () => { mounted = false; };
   }, [user]);
 
   const handleSaveProfile = async () => {
     if (!user || !editedProfile) return;
     
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        display_name: editedProfile.display_name,
-        username: editedProfile.username,
-        bio: editedProfile.bio,
-        goal_weight: editedProfile.goal_weight,
-        daily_steps_goal: editedProfile.daily_steps_goal,
-        daily_water: editedProfile.daily_water,
-      })
-      .eq('user_id', user.id);
-    
-    if (error) {
-      console.error('Error updating profile:', error);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          display_name: editedProfile.display_name,
+          username: editedProfile.username,
+          bio: editedProfile.bio,
+          goal_weight: editedProfile.goal_weight,
+          daily_steps_goal: editedProfile.daily_steps_goal,
+          daily_water: editedProfile.daily_water,
+        })
+        .eq('user_id', user.id);
+      
+      if (error) {
+        console.error('Error updating profile:', error);
+        toast.error('Nie udało się zapisać zmian');
+      } else {
+        setProfile({ ...profile, ...editedProfile } as ProfileData);
+        setIsEditing(false);
+        toast.success('Zmiany zapisane! 🎉');
+      }
+    } catch (err) {
+      console.error('Error updating profile:', err);
       toast.error('Nie udało się zapisać zmian');
-    } else {
-      setProfile({ ...profile, ...editedProfile } as ProfileData);
-      setIsEditing(false);
-      toast.success('Zmiany zapisane! 🎉');
     }
   };
 

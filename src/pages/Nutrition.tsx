@@ -37,36 +37,49 @@ export default function Nutrition() {
 
   // Pobierz posiłki z bazy danych
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
+    let mounted = true;
     
     const fetchMeals = async () => {
-      const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
-        .from('meals')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('meal_date', today)
-        .order('created_at', { ascending: true });
-      
-      if (error) {
-        console.error('Error fetching meals:', error);
-        toast.error('Nie udało się pobrać posiłków');
-      } else {
-        setMeals(data?.map(m => ({
-          id: m.id,
-          type: m.type as MealType,
-          name: m.name,
-          calories: m.calories,
-          protein: Number(m.protein),
-          carbs: Number(m.carbs),
-          fat: Number(m.fat),
-          time: m.time || undefined,
-        })) || []);
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const { data, error } = await supabase
+          .from('meals')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('meal_date', today)
+          .order('created_at', { ascending: true });
+        
+        if (!mounted) return;
+        
+        if (error) {
+          console.error('Error fetching meals:', error);
+        } else {
+          setMeals(data?.map(m => ({
+            id: m.id,
+            type: m.type as MealType,
+            name: m.name,
+            calories: m.calories || 0,
+            protein: Number(m.protein) || 0,
+            carbs: Number(m.carbs) || 0,
+            fat: Number(m.fat) || 0,
+            time: m.time || undefined,
+          })) || []);
+        }
+      } catch (err) {
+        console.error('Error fetching meals:', err);
+      } finally {
+        if (mounted) setLoading(false);
       }
-      setLoading(false);
     };
     
     fetchMeals();
+    
+    return () => { mounted = false; };
   }, [user]);
 
   // Oblicz makra proporcjonalnie do kalorii z profilu

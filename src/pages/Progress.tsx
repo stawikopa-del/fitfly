@@ -23,44 +23,58 @@ export default function Progress() {
   const [selectedMetric, setSelectedMetric] = useState<'water' | 'steps' | 'activeMinutes'>('water');
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    let mounted = true;
 
     const fetchWeeklyData = async () => {
-      const today = new Date();
-      const weekAgo = new Date(today);
-      weekAgo.setDate(weekAgo.getDate() - 6);
+      try {
+        const today = new Date();
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 6);
 
-      const { data, error } = await supabase
-        .from('daily_progress')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('progress_date', weekAgo.toISOString().split('T')[0])
-        .lte('progress_date', today.toISOString().split('T')[0])
-        .order('progress_date', { ascending: true });
+        const { data, error } = await supabase
+          .from('daily_progress')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('progress_date', weekAgo.toISOString().split('T')[0])
+          .lte('progress_date', today.toISOString().split('T')[0])
+          .order('progress_date', { ascending: true });
 
-      if (!error) {
-        // Uzupełnij brakujące dni
-        const filledData: DailyData[] = [];
-        for (let i = 6; i >= 0; i--) {
-          const date = new Date(today);
-          date.setDate(date.getDate() - i);
-          const dateStr = date.toISOString().split('T')[0];
-          const dayData = data?.find(d => d.progress_date === dateStr);
-          
-          filledData.push({
-            date: dateStr,
-            dayName: dayNames[date.getDay()],
-            water: dayData?.water || 0,
-            steps: dayData?.steps || 0,
-            activeMinutes: dayData?.active_minutes || 0,
-          });
+        if (!mounted) return;
+
+        if (!error && data) {
+          // Uzupełnij brakujące dni
+          const filledData: DailyData[] = [];
+          for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            const dayData = data.find(d => d.progress_date === dateStr);
+            
+            filledData.push({
+              date: dateStr,
+              dayName: dayNames[date.getDay()] || '',
+              water: dayData?.water || 0,
+              steps: dayData?.steps || 0,
+              activeMinutes: dayData?.active_minutes || 0,
+            });
+          }
+          setWeeklyData(filledData);
         }
-        setWeeklyData(filledData);
+      } catch (err) {
+        console.error('Error fetching progress data:', err);
+      } finally {
+        if (mounted) setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchWeeklyData();
+    
+    return () => { mounted = false; };
   }, [user]);
 
   const totals = weeklyData.reduce((acc, day) => ({
