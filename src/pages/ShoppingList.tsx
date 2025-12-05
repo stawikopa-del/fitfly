@@ -1235,10 +1235,7 @@ export default function ShoppingList() {
               <Button onClick={() => navigate('/konfiguracja-diety')}>
                 Skonfiguruj dietę
               </Button>
-              <Button onClick={() => {
-                console.log('Button clicked (no diet plan), opening dialog');
-                setShowAddDialog(true);
-              }} variant="outline">
+              <Button onClick={() => setShowAddDialog(true)} variant="outline">
                 <Plus className="w-4 h-4 mr-2" />
                 Dodaj produkt ręcznie
               </Button>
@@ -1250,10 +1247,7 @@ export default function ShoppingList() {
             <p className="text-sm text-muted-foreground mb-4">
               Wybierz okres na kalendarzu powyżej, aby zobaczyć listę zakupów
             </p>
-            <Button onClick={() => {
-              console.log('Button clicked (no dates), opening dialog');
-              setShowAddDialog(true);
-            }} variant="outline">
+            <Button onClick={() => setShowAddDialog(true)} variant="outline">
               <Plus className="w-4 h-4 mr-2" />
               Dodaj produkt ręcznie
             </Button>
@@ -1264,10 +1258,7 @@ export default function ShoppingList() {
             <p className="text-sm text-muted-foreground mb-4">
               Brak składników w wybranym okresie
             </p>
-            <Button onClick={() => {
-              console.log('Button clicked (no ingredients), opening dialog');
-              setShowAddDialog(true);
-            }} variant="outline">
+            <Button onClick={() => setShowAddDialog(true)} variant="outline">
               <Plus className="w-4 h-4 mr-2" />
               Dodaj produkt ręcznie
             </Button>
@@ -1308,10 +1299,7 @@ export default function ShoppingList() {
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => {
-                  console.log('Button clicked, opening dialog');
-                  setShowAddDialog(true);
-                }}
+                onClick={() => setShowAddDialog(true)}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Dodaj produkt
