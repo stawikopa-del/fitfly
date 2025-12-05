@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Target, Bell, Settings, ChevronRight, Footprints, Droplets, Flame, Trophy, Edit3, LogOut, User } from 'lucide-react';
+import { Target, Bell, Settings, ChevronRight, Footprints, Droplets, Flame, Trophy, Edit3, LogOut, User, Check, X } from 'lucide-react';
 import { PageHeader } from '@/components/flyfit/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -144,7 +144,7 @@ export default function Profile() {
           />
         </div>
         {isEditing ? (
-          <div className="space-y-2 max-w-48 mx-auto">
+          <div className="space-y-3 max-w-56 mx-auto">
             <Input 
               type="text"
               value={editedProfile.display_name ?? displayName}
@@ -159,6 +159,28 @@ export default function Profile() {
               className="text-center text-sm rounded-xl h-9"
               placeholder="@nick (do wyszukiwania)"
             />
+            <div className="flex gap-2 justify-center">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditedProfile(profile || {});
+                }}
+                className="rounded-xl"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Anuluj
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveProfile}
+                className="rounded-xl"
+              >
+                <Check className="w-4 h-4 mr-1" />
+                Zapisz
+              </Button>
+            </div>
           </div>
         ) : (
           <button 
