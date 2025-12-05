@@ -997,62 +997,15 @@ const getPackageInfo = (name: string, totalAmount: number, unit: string): {
   };
 };
 
-// Parse ingredients from meal data
+// Use the advanced shopping list processor
+import { processShoppingList, ProcessedIngredient } from '@/utils/shoppingListProcessor';
+
+// Wrapper for backward compatibility
 const parseIngredientsFromMeals = (meals: Array<{
   name: string;
   description: string;
-}>, dayMultiplier: number): Map<string, {
-  amount: number;
-  unit: string;
-  count: number;
-}> => {
-  const ingredients = new Map<string, {
-    amount: number;
-    unit: string;
-    count: number;
-  }>();
-  meals.forEach(meal => {
-    const text = `${meal.name} ${meal.description || ''}`;
-
-    // Split by common separators
-    const parts = text.split(/[,;:\(\)\[\]]+/);
-    parts.forEach(part => {
-      const trimmed = part.trim();
-      if (!trimmed) return;
-
-      // Extract amount if present
-      const amountInfo = extractAmountAndUnit(trimmed);
-
-      // Remove amount patterns from text to get ingredient name
-      const nameOnly = trimmed.replace(/\d+[,.]?\d*\s*(kg|g|ml|l|szt|sztuk|łyżk|szklan|kostek|kostki)?/gi, '').replace(/\d+\/\d+/g, '').trim();
-
-      // Split by spaces and process words
-      const words = nameOnly.split(/\s+/);
-      words.forEach(word => {
-        const cleanWord = word.replace(/[^\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ-]/g, '');
-        if (!isIngredient(cleanWord)) return;
-        const normalizedName = normalizeIngredientName(cleanWord);
-        if (!normalizedName || normalizedName.length < 3) return;
-        const existing = ingredients.get(normalizedName);
-        const amount = (amountInfo?.amount || 100) * dayMultiplier;
-        const unit = amountInfo?.unit || 'g';
-        if (existing) {
-          ingredients.set(normalizedName, {
-            amount: existing.amount + amount,
-            unit: existing.unit || unit,
-            count: existing.count + dayMultiplier
-          });
-        } else {
-          ingredients.set(normalizedName, {
-            amount,
-            unit,
-            count: dayMultiplier
-          });
-        }
-      });
-    });
-  });
-  return ingredients;
+}>, dayMultiplier: number): ProcessedIngredient[] => {
+  return processShoppingList(meals, dayMultiplier);
 };
 export default function ShoppingList() {
   const navigate = useNavigate();
@@ -1218,45 +1171,26 @@ export default function ShoppingList() {
         });
       }
 
-      // Parse and aggregate ingredients
+      // Parse and aggregate ingredients using new processor
       const parsedIngredients = parseIngredientsFromMeals(allMeals, daysDiff);
 
-      // Convert to final format with packaging
-      parsedIngredients.forEach((data, name) => {
+      // Convert to final format
+      parsedIngredients.forEach((ing) => {
         // Skip if already added as custom item
-        if (customItems.some(ci => ci.name.toLowerCase() === name.toLowerCase())) {
+        if (customItems.some(ci => ci.name.toLowerCase() === ing.name.toLowerCase())) {
           return;
         }
-        const {
-          count,
-          size,
-          packageUnit,
-          packageName
-        } = getPackageInfo(name, data.amount, data.unit);
-        const category = categorizeIngredient(name);
-
-        // Format display amount
-        let displayAmount = '';
-        if (count > 1 || packageName !== 'sztuka') {
-          const plural = count > 1 ? getPluralForm(packageName, count) : packageName;
-          if (size > 0 && data.amount > 0) {
-            displayAmount = `${count} ${plural} (${Math.round(data.amount)}${data.unit})`;
-          } else {
-            displayAmount = `${count} ${plural}`;
-          }
-        } else {
-          displayAmount = `${Math.round(data.count)} szt`;
-        }
+        
         result.push({
-          name: name.charAt(0).toUpperCase() + name.slice(1),
-          amount: data.amount,
-          unit: data.unit,
-          category,
-          checked: checkedItems.has(name.toLowerCase()),
-          packageCount: count,
-          packageSize: size,
-          packageUnit,
-          displayAmount
+          name: ing.name,
+          amount: ing.totalAmount,
+          unit: ing.unit,
+          category: ing.category,
+          checked: checkedItems.has(ing.name.toLowerCase()),
+          packageCount: ing.packageCount,
+          packageSize: ing.packageSize,
+          packageUnit: ing.unit,
+          displayAmount: ing.displayText
         });
       });
     }
