@@ -31,6 +31,8 @@ const About = lazy(() => import("./pages/About"));
 const Info = lazy(() => import("./pages/Info"));
 const CalendarPage = lazy(() => import("./pages/Calendar"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Achievements = lazy(() => import("./pages/Achievements"));
 const Goals = lazy(() => import("./pages/Goals"));
 const Friends = lazy(() => import("./pages/Friends"));
@@ -364,6 +366,26 @@ const AppRoutes = () => (
           <ProtectedRoute>
             <AppLayout>
               <ShoppingList />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/regulamin"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <TermsOfService />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/polityka-prywatnosci"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <PrivacyPolicy />
             </AppLayout>
           </ProtectedRoute>
         }
