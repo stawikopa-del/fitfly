@@ -32,6 +32,8 @@ interface Ingredient {
   packageSize: number;
   packageUnit: string;
   displayAmount: string;
+  isCustom?: boolean;
+  customId?: string;
 }
 
 interface MealIngredient {
@@ -1015,6 +1017,8 @@ export default function ShoppingList() {
         packageSize: size,
         packageUnit,
         displayAmount,
+        isCustom: true,
+        customId: product.id,
       });
     });
     
@@ -1327,37 +1331,55 @@ export default function ShoppingList() {
                       {items.map((item, idx) => {
                         const isChecked = checkedItems.has(item.name.toLowerCase());
                         return (
-                          <button
+                          <div
                             key={`${item.name}-${idx}`}
-                            onClick={() => toggleItem(item.name)}
                             className={cn(
-                              "w-full px-4 py-3 flex items-center gap-3 transition-all text-left",
+                              "w-full px-4 py-3 flex items-center gap-3 transition-all",
                               isChecked && "bg-primary/5"
                             )}
                           >
-                            <div className={cn(
-                              "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0",
-                              isChecked 
-                                ? "bg-primary border-primary" 
-                                : "border-border"
-                            )}>
-                              {isChecked && <Check className="w-4 h-4 text-primary-foreground" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={cn(
-                                "font-medium transition-all",
-                                isChecked ? "text-muted-foreground line-through" : "text-foreground"
+                            <button
+                              onClick={() => toggleItem(item.name)}
+                              className="flex items-center gap-3 flex-1 text-left"
+                            >
+                              <div className={cn(
+                                "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0",
+                                isChecked 
+                                  ? "bg-primary border-primary" 
+                                  : "border-border"
                               )}>
-                                {item.name}
-                              </p>
-                              <p className={cn(
-                                "text-xs",
-                                isChecked ? "text-muted-foreground/50" : "text-muted-foreground"
-                              )}>
-                                {item.displayAmount}
-                              </p>
-                            </div>
-                          </button>
+                                {isChecked && <Check className="w-4 h-4 text-primary-foreground" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={cn(
+                                  "font-medium transition-all",
+                                  isChecked ? "text-muted-foreground line-through" : "text-foreground"
+                                )}>
+                                  {item.name}
+                                  {item.isCustom && (
+                                    <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">własny</span>
+                                  )}
+                                </p>
+                                <p className={cn(
+                                  "text-xs",
+                                  isChecked ? "text-muted-foreground/50" : "text-muted-foreground"
+                                )}>
+                                  {item.displayAmount}
+                                </p>
+                              </div>
+                            </button>
+                            {item.isCustom && item.customId && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeCustomProduct(item.customId!);
+                                }}
+                                className="p-2 hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
