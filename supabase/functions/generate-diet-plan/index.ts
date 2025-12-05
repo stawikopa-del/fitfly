@@ -59,16 +59,16 @@ serve(async (req) => {
       5: 'bardzo wysoka aktywność (codzienne intensywne treningi)',
     };
 
-    const systemPrompt = `Jesteś ekspertem dietetyki i fitness. Twoim zadaniem jest stworzenie spersonalizowanego, EKONOMICZNEGO planu żywieniowego w języku polskim.
+    const systemPrompt = `Jesteś ekspertem dietetyki i fitness. Twoim zadaniem jest stworzenie spersonalizowanego planu żywieniowego w języku polskim.
 
 ZAWSZE odpowiadaj w formacie JSON zgodnym ze strukturą:
 {
   "summary": "krótkie podsumowanie planu (2-3 zdania)",
   "dailyMeals": {
-    "breakfast": [{"name": "pełna nazwa posiłku", "calories": liczba, "description": "lista składników z gramaturą, np: 200g piersi z kurczaka, 150g ryżu, 100g brokułów", "ingredients": [{"name": "pierś z kurczaka", "amount": 200, "unit": "g"}, {"name": "ryż", "amount": 150, "unit": "g"}]}],
-    "lunch": [{"name": "pełna nazwa", "calories": liczba, "description": "składniki z gramaturą", "ingredients": [...]}],
-    "dinner": [{"name": "pełna nazwa", "calories": liczba, "description": "składniki z gramaturą", "ingredients": [...]}],
-    "snacks": [{"name": "pełna nazwa", "calories": liczba, "description": "składniki", "ingredients": [...]}]
+    "breakfast": [{"name": "nazwa", "calories": liczba, "description": "opis"}],
+    "lunch": [{"name": "nazwa", "calories": liczba, "description": "opis"}],
+    "dinner": [{"name": "nazwa", "calories": liczba, "description": "opis"}],
+    "snacks": [{"name": "nazwa", "calories": liczba, "description": "opis"}]
   },
   "tips": ["wskazówka 1", "wskazówka 2", ...],
   "weeklySchedule": [
@@ -77,16 +77,11 @@ ZAWSZE odpowiadaj w formacie JSON zgodnym ze strukturą:
   ]
 }
 
-KRYTYCZNE ZASADY:
+Zasady:
 - Wszystkie teksty w języku polskim
 - Kalorie posiłków muszą sumować się do podanej dziennej normy
-- UŻYWAJ PEŁNYCH NAZW SKŁADNIKÓW: "pierś z kurczaka" zamiast "pierś", "filet z łososia" zamiast "łosoś", "jogurt naturalny" zamiast "jogurt"
-- PODAWAJ KONKRETNE GRAMATURKI dla każdego składnika w polu "ingredients"
-- W "description" zawsze wymieniaj składniki w formacie: "200g piersi z kurczaka, 100g ryżu, 50g brokuła"
-- EKONOMICZNE SKŁADNIKI: preferuj tańsze produkty (kurczak, jajka, sezonowe warzywa, kasza, ryż) zamiast drogich (łosoś, krewetki, awokado)
-- ROZSĄDNE PORCJE: maksymalnie 300g mięsa/ryby na posiłek, 200g węglowodanów
-- NIE POWTARZAJ tych samych posiłków w ciągu dnia
-- Różnicuj posiłki między dniami tygodnia
+- Dostosuj posiłki do typu diety
+- Podaj realistyczne, łatwe do przygotowania posiłki
 - Uwzględnij lokalne polskie produkty
 - Dodaj 5-7 praktycznych wskazówek
 - Plan tygodniowy na 7 dni`;
