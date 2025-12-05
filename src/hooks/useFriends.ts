@@ -27,7 +27,7 @@ export interface FriendRequest {
 }
 
 export function useFriends() {
-  const { user } = useAuth();
+  const { user, isInitialized } = useAuth();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
   const [sentRequests, setSentRequests] = useState<string[]>([]);
@@ -35,10 +35,12 @@ export function useFriends() {
   const operationInProgress = useRef(false);
 
   const fetchFriends = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setFriends([]);
+      return;
+    }
 
     try {
-      // Fetch accepted friendships
       const { data: friendships, error } = await supabase
         .from('friendships')
         .select('*')
@@ -56,7 +58,6 @@ export function useFriends() {
         return;
       }
 
-      // Fetch friend profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, username, display_name, avatar_url')
@@ -64,7 +65,6 @@ export function useFriends() {
 
       if (profilesError) throw profilesError;
 
-      // Fetch today's progress for friends
       const today = new Date().toISOString().split('T')[0];
       const { data: progressData } = await supabase
         .from('daily_progress')
@@ -72,7 +72,7 @@ export function useFriends() {
         .in('user_id', friendIds)
         .eq('progress_date', today);
 
-      const friendsList: Friend[] = profiles?.map(profile => {
+      const friendsList: Friend[] = (profiles || []).map(profile => {
         const friendship = friendships?.find(f => 
           f.sender_id === profile.user_id || f.receiver_id === profile.user_id
         );
@@ -91,19 +91,23 @@ export function useFriends() {
             activeMinutes: progress.active_minutes
           } : undefined
         };
-      }) || [];
+      });
 
       setFriends(friendsList);
     } catch (error) {
       console.error('Error fetching friends:', error);
+      setFriends([]);
     }
   }, [user]);
 
   const fetchPendingRequests = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setPendingRequests([]);
+      setSentRequests([]);
+      return;
+    }
 
     try {
-      // Fetch pending requests where current user is receiver
       const { data: requests, error } = await supabase
         .from('friendships')
         .select('*')
@@ -114,31 +118,29 @@ export function useFriends() {
 
       if (!requests || requests.length === 0) {
         setPendingRequests([]);
-        return;
+      } else {
+        const senderIds = requests.map(r => r.sender_id);
+        
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, username, display_name, avatar_url')
+          .in('user_id', senderIds);
+
+        const pendingList: FriendRequest[] = requests.map(req => {
+          const profile = profiles?.find(p => p.user_id === req.sender_id);
+          return {
+            id: req.id,
+            senderId: req.sender_id,
+            senderUsername: profile?.username || null,
+            senderDisplayName: profile?.display_name || null,
+            senderAvatarUrl: profile?.avatar_url || null,
+            createdAt: req.created_at
+          };
+        });
+
+        setPendingRequests(pendingList);
       }
 
-      const senderIds = requests.map(r => r.sender_id);
-      
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, username, display_name, avatar_url')
-        .in('user_id', senderIds);
-
-      const pendingList: FriendRequest[] = requests.map(req => {
-        const profile = profiles?.find(p => p.user_id === req.sender_id);
-        return {
-          id: req.id,
-          senderId: req.sender_id,
-          senderUsername: profile?.username || null,
-          senderDisplayName: profile?.display_name || null,
-          senderAvatarUrl: profile?.avatar_url || null,
-          createdAt: req.created_at
-        };
-      });
-
-      setPendingRequests(pendingList);
-
-      // Fetch sent requests
       const { data: sent } = await supabase
         .from('friendships')
         .select('receiver_id')
@@ -155,13 +157,11 @@ export function useFriends() {
     if (!user || !query.trim()) return [];
 
     try {
-      // Use secure RPC function for user discovery (requires authentication)
       const { data, error } = await supabase
         .rpc('search_profiles', { search_term: query });
 
       if (error) throw error;
 
-      // Filter out current user from results
       const filtered = (data || []).filter((p: { user_id: string }) => p.user_id !== user.id);
       return filtered.slice(0, 10);
     } catch (error) {
@@ -277,49 +277,57 @@ export function useFriends() {
   }, []);
 
   useEffect(() => {
-    if (user) {
-      setIsLoading(true);
-      Promise.all([fetchFriends(), fetchPendingRequests()])
-        .finally(() => setIsLoading(false));
-
-      // Real-time subscription to friendships changes
-      const channel = supabase
-        .channel('friendships-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'friendships',
-            filter: `sender_id=eq.${user.id}`
-          },
-          () => {
-            fetchFriends();
-            fetchPendingRequests();
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'friendships',
-            filter: `receiver_id=eq.${user.id}`
-          },
-          () => {
-            fetchFriends();
-            fetchPendingRequests();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    if (!isInitialized) return;
+    
+    if (!user) {
+      setFriends([]);
+      setPendingRequests([]);
+      setSentRequests([]);
+      setIsLoading(false);
+      return;
     }
-  }, [user, fetchFriends, fetchPendingRequests]);
+
+    setIsLoading(true);
+    Promise.all([fetchFriends(), fetchPendingRequests()])
+      .finally(() => setIsLoading(false));
+
+    const channel = supabase
+      .channel('friendships-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friendships',
+          filter: `sender_id=eq.${user.id}`
+        },
+        () => {
+          fetchFriends();
+          fetchPendingRequests();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friendships',
+          filter: `receiver_id=eq.${user.id}`
+        },
+        () => {
+          fetchFriends();
+          fetchPendingRequests();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, isInitialized, fetchFriends, fetchPendingRequests]);
 
   const getInviteLink = useCallback(() => {
+    if (typeof window === 'undefined') return '';
     return `${window.location.origin}/invite/${user?.id || ''}`;
   }, [user]);
 
@@ -334,17 +342,21 @@ export function useFriends() {
     };
 
     try {
-      if (navigator.share && navigator.canShare(shareData)) {
+      if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare?.(shareData)) {
         await navigator.share(shareData);
         toast.success('Link udostępniony!');
-      } else {
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(inviteLink);
         toast.success('Link skopiowany do schowka!');
       }
     } catch (error) {
       if ((error as Error).name !== 'AbortError') {
-        await navigator.clipboard.writeText(inviteLink);
-        toast.success('Link skopiowany do schowka!');
+        try {
+          await navigator.clipboard.writeText(inviteLink);
+          toast.success('Link skopiowany do schowka!');
+        } catch {
+          toast.error('Nie udało się skopiować linku');
+        }
       }
     }
   }, [user, getInviteLink]);

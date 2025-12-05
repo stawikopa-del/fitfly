@@ -1,6 +1,6 @@
 import { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -10,6 +10,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  errorInfo?: React.ErrorInfo;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -18,17 +19,30 @@ export class ErrorBoundary extends Component<Props, State> {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    this.setState({ errorInfo });
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: undefined });
-    window.location.href = '/';
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+  };
+
+  handleReload = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  };
+
+  handleGoHome = () => {
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
   render() {
@@ -47,12 +61,32 @@ export class ErrorBoundary extends Component<Props, State> {
               Coś poszło nie tak
             </h2>
             <p className="text-muted-foreground text-sm mb-6">
-              Wystąpił nieoczekiwany błąd. Spróbuj odświeżyć stronę.
+              Wystąpił nieoczekiwany błąd. Spróbuj odświeżyć stronę lub wrócić do strony głównej.
             </p>
-            <Button onClick={this.handleReset} className="w-full rounded-2xl">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Odśwież aplikację
-            </Button>
+            
+            <div className="space-y-2">
+              <Button onClick={this.handleReset} variant="outline" className="w-full rounded-2xl">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Spróbuj ponownie
+              </Button>
+              
+              <Button onClick={this.handleGoHome} className="w-full rounded-2xl">
+                <Home className="w-4 h-4 mr-2" />
+                Strona główna
+              </Button>
+            </div>
+
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details className="mt-4 text-left">
+                <summary className="text-xs text-muted-foreground cursor-pointer">
+                  Szczegóły błędu (dev)
+                </summary>
+                <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto max-h-32">
+                  {this.state.error.message}
+                  {this.state.errorInfo?.componentStack}
+                </pre>
+              </details>
+            )}
           </div>
         </div>
       );
@@ -60,4 +94,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return this.props.children;
   }
+}
+
+// Wrapper component for catching async errors in hooks
+export function SafeComponent({ children }: { children: ReactNode }) {
+  return <ErrorBoundary>{children}</ErrorBoundary>;
 }

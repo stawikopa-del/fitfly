@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -25,18 +25,20 @@ export interface ChatPreview {
 }
 
 export function useDirectMessages(friendId?: string) {
-  const { user } = useAuth();
+  const { user, isInitialized } = useAuth();
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [chatPreviews, setChatPreviews] = useState<ChatPreview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  // Fetch chat previews (all conversations)
   const fetchChatPreviews = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setChatPreviews([]);
+      return;
+    }
 
     try {
-      // Get all direct messages involving the user
       const { data: messagesData, error } = await supabase
         .from('direct_messages')
         .select('*')
@@ -45,13 +47,12 @@ export function useDirectMessages(friendId?: string) {
 
       if (error) throw error;
 
-      // Group by conversation partner
       const conversationsMap = new Map<string, {
         messages: any[];
         partnerId: string;
       }>();
 
-      messagesData?.forEach(msg => {
+      (messagesData || []).forEach(msg => {
         const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
         
         if (!conversationsMap.has(partnerId)) {
@@ -60,7 +61,6 @@ export function useDirectMessages(friendId?: string) {
         conversationsMap.get(partnerId)!.messages.push(msg);
       });
 
-      // Get partner profiles
       const partnerIds = Array.from(conversationsMap.keys());
       
       if (partnerIds.length === 0) {
@@ -78,6 +78,8 @@ export function useDirectMessages(friendId?: string) {
       conversationsMap.forEach((conv, partnerId) => {
         const profile = profiles?.find(p => p.user_id === partnerId);
         const latestMsg = conv.messages[0];
+        if (!latestMsg) return;
+        
         const unreadCount = conv.messages.filter(
           m => m.receiver_id === user.id && !m.read_at
         ).length;
@@ -85,17 +87,16 @@ export function useDirectMessages(friendId?: string) {
         previews.push({
           odgerId: partnerId,
           displayName: profile?.display_name || 'Użytkownik',
-          username: profile?.username,
-          avatarUrl: profile?.avatar_url,
+          username: profile?.username || null,
+          avatarUrl: profile?.avatar_url || null,
           lastMessage: latestMsg.message_type === 'recipe' 
             ? '📖 Udostępniono przepis' 
-            : latestMsg.content,
+            : latestMsg.content || '',
           lastMessageTime: latestMsg.created_at,
           unreadCount,
         });
       });
 
-      // Sort by most recent message
       previews.sort((a, b) => 
         new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
       );
@@ -103,12 +104,16 @@ export function useDirectMessages(friendId?: string) {
       setChatPreviews(previews);
     } catch (error) {
       console.error('Error fetching chat previews:', error);
+      setChatPreviews([]);
     }
   }, [user]);
 
-  // Fetch messages for specific conversation
   const fetchMessages = useCallback(async () => {
-    if (!user || !friendId) return;
+    if (!user || !friendId) {
+      setMessages([]);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -122,16 +127,16 @@ export function useDirectMessages(friendId?: string) {
       if (error) throw error;
 
       setMessages(
-        data?.map(m => ({
+        (data || []).map(m => ({
           id: m.id,
           senderId: m.sender_id,
           receiverId: m.receiver_id,
-          content: m.content,
-          messageType: m.message_type as 'text' | 'recipe',
+          content: m.content || '',
+          messageType: (m.message_type || 'text') as 'text' | 'recipe',
           recipeData: m.recipe_data,
           createdAt: m.created_at,
           readAt: m.read_at,
-        })) || []
+        }))
       );
 
       // Mark messages as read
@@ -144,13 +149,13 @@ export function useDirectMessages(friendId?: string) {
 
     } catch (error) {
       console.error('Error fetching messages:', error);
+      setMessages([]);
     } finally {
       setIsLoading(false);
     }
   }, [user, friendId]);
 
-  // Send message
-  const sendMessage = async (content: string, type: 'text' | 'recipe' = 'text', recipeData?: any) => {
+  const sendMessage = useCallback(async (content: string, type: 'text' | 'recipe' = 'text', recipeData?: any) => {
     if (!user || !friendId || !content.trim()) return false;
 
     setIsSending(true);
@@ -173,25 +178,39 @@ export function useDirectMessages(friendId?: string) {
     } finally {
       setIsSending(false);
     }
-  };
+  }, [user, friendId]);
 
   // Subscribe to realtime updates
   useEffect(() => {
-    if (!user) return;
+    if (!isInitialized || !user) return;
+
+    // Cleanup previous channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
 
     const channel = supabase
-      .channel('direct-messages-changes')
+      .channel(`direct-messages-${friendId || 'all'}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'direct_messages',
-          filter: friendId 
-            ? `or(and(sender_id.eq.${user.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${user.id}))`
-            : `or(sender_id.eq.${user.id},receiver_id.eq.${user.id})`,
         },
-        () => {
+        (payload) => {
+          const newRecord = payload.new as any;
+          const oldRecord = payload.old as any;
+          
+          // Check if this message is relevant to the current user
+          const isRelevant = 
+            newRecord?.sender_id === user.id || 
+            newRecord?.receiver_id === user.id ||
+            oldRecord?.sender_id === user.id ||
+            oldRecord?.receiver_id === user.id;
+            
+          if (!isRelevant) return;
+
           if (friendId) {
             fetchMessages();
           } else {
@@ -201,20 +220,27 @@ export function useDirectMessages(friendId?: string) {
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [user, friendId, fetchMessages, fetchChatPreviews]);
+  }, [user, isInitialized, friendId, fetchMessages, fetchChatPreviews]);
 
   // Initial fetch
   useEffect(() => {
+    if (!isInitialized) return;
+    
     if (friendId) {
       fetchMessages();
     } else {
       fetchChatPreviews();
       setIsLoading(false);
     }
-  }, [friendId, fetchMessages, fetchChatPreviews]);
+  }, [isInitialized, friendId, fetchMessages, fetchChatPreviews]);
 
   return {
     messages,

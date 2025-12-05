@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 interface HealthData {
   steps: number;
@@ -7,12 +6,6 @@ interface HealthData {
   isLoading: boolean;
   error: string | null;
 }
-
-// Ten hook będzie używał natywnego API kroków gdy aplikacja jest uruchomiona na urządzeniu
-// Na razie używa danych demonstracyjnych - pełna integracja wymaga:
-// 1. npx cap add ios / npx cap add android
-// 2. Instalacja pluginu zdrowia w projekcie natywnym
-// 3. Konfiguracja uprawnień w Info.plist (iOS) / AndroidManifest.xml
 
 export function useHealthData() {
   const [healthData, setHealthData] = useState<HealthData>({
@@ -22,11 +15,19 @@ export function useHealthData() {
     error: null,
   });
 
-  const isNativePlatform = Capacitor.isNativePlatform();
+  // Check if running on native platform - memoized and safe
+  const isNativePlatform = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      // Check for Capacitor
+      return !!(window as any).Capacitor?.isNativePlatform?.();
+    } catch {
+      return false;
+    }
+  }, []);
 
   const requestPermissions = useCallback(async () => {
     if (!isNativePlatform) {
-      // W przeglądarce - użyj danych demonstracyjnych
       setHealthData(prev => ({
         ...prev,
         isLoading: false,
@@ -35,13 +36,7 @@ export function useHealthData() {
       return false;
     }
 
-    // Na platformie natywnej - tutaj zostanie dodana integracja z HealthKit/Health Connect
     try {
-      // Placeholder dla natywnej integracji
-      // Po dodaniu pluginu zdrowia, odkomentuj i dostosuj:
-      // const { Health } = await import('native-health-plugin');
-      // const result = await Health.requestPermissions();
-      
       setHealthData(prev => ({
         ...prev,
         isAvailable: true,
@@ -65,14 +60,6 @@ export function useHealthData() {
     }
 
     try {
-      // Placeholder dla natywnej integracji
-      // Po dodaniu pluginu zdrowia:
-      // const { Health } = await import('native-health-plugin');
-      // const today = new Date();
-      // today.setHours(0, 0, 0, 0);
-      // const result = await Health.getSteps({ from: today.getTime(), to: Date.now() });
-      // return result.steps;
-      
       return 0;
     } catch (error) {
       console.error('Error fetching steps:', error);
