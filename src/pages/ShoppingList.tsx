@@ -24,20 +24,34 @@ interface Ingredient {
   displayAmount: string;
 }
 
+interface MealIngredient {
+  name: string;
+  amount: number;
+  unit: string;
+}
+
+interface ShoppingListItem {
+  name: string;
+  totalAmount: number;
+  unit: string;
+  category: string;
+}
+
 interface DietPlan {
   id: string;
   name: string;
   plan_data: {
     dailyMeals?: {
-      breakfast: Array<{ name: string; calories: number; description: string; ingredients?: Array<{ name: string; amount: number; unit: string }> }>;
-      lunch: Array<{ name: string; calories: number; description: string; ingredients?: Array<{ name: string; amount: number; unit: string }> }>;
-      dinner: Array<{ name: string; calories: number; description: string; ingredients?: Array<{ name: string; amount: number; unit: string }> }>;
-      snacks: Array<{ name: string; calories: number; description: string; ingredients?: Array<{ name: string; amount: number; unit: string }> }>;
+      breakfast: Array<{ name: string; calories: number; description: string; ingredients?: MealIngredient[] }>;
+      lunch: Array<{ name: string; calories: number; description: string; ingredients?: MealIngredient[] }>;
+      dinner: Array<{ name: string; calories: number; description: string; ingredients?: MealIngredient[] }>;
+      snacks: Array<{ name: string; calories: number; description: string; ingredients?: MealIngredient[] }>;
     };
     weeklySchedule?: Array<{
       day: string;
       meals: string[];
     }>;
+    shoppingList?: ShoppingListItem[];
   };
 }
 
@@ -770,50 +784,113 @@ export default function ShoppingList() {
     if (!dietPlan?.plan_data || !startDate || !endDate) return [];
     
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const dayMultiplier = daysDiff / 7; // Proporcja wybranych dni do pełnego tygodnia
     
-    // Collect all meals with ingredients data
-    const allMeals: Array<{ name: string; description: string; ingredients?: Array<{ name: string; amount: number; unit: string }> }> = [];
+    // PRIORYTET 1: Użyj gotowej listy zakupów od AI jeśli istnieje
+    if (dietPlan.plan_data.shoppingList && dietPlan.plan_data.shoppingList.length > 0) {
+      const result: Ingredient[] = [];
+      
+      dietPlan.plan_data.shoppingList.forEach(item => {
+        // Skaluj ilość do wybranych dni
+        const scaledAmount = Math.ceil(item.totalAmount * dayMultiplier);
+        const normalizedName = normalizeIngredientName(item.name);
+        const { count, size, packageUnit, packageName } = getPackageInfo(normalizedName, scaledAmount, item.unit);
+        const category = item.category || categorizeIngredient(normalizedName);
+        
+        // Format display amount
+        let displayAmount = '';
+        if (count > 1 || (packageName !== 'sztuka' && packageName !== 'szt')) {
+          const plural = count > 1 ? getPluralForm(packageName, count) : packageName;
+          if (size > 0 && scaledAmount > 0) {
+            displayAmount = `${count} ${plural} (${Math.round(scaledAmount)}${item.unit})`;
+          } else {
+            displayAmount = `${count} ${plural}`;
+          }
+        } else {
+          displayAmount = `${Math.round(scaledAmount)} szt`;
+        }
+        
+        result.push({
+          name: normalizedName.charAt(0).toUpperCase() + normalizedName.slice(1),
+          amount: scaledAmount,
+          unit: item.unit,
+          category,
+          checked: checkedItems.has(normalizedName.toLowerCase()),
+          packageCount: count,
+          packageSize: size,
+          packageUnit,
+          displayAmount,
+        });
+      });
+      
+      return result;
+    }
     
+    // PRIORYTET 2: Parsuj z składników posiłków
+    const ingredientMap = new Map<string, { amount: number; unit: string }>();
+    
+    const addToMap = (rawName: string, amount: number, unit: string) => {
+      const normalized = normalizeIngredientName(rawName);
+      if (!normalized || normalized.length < 2) return;
+      
+      const key = normalized.toLowerCase();
+      const existing = ingredientMap.get(key);
+      
+      if (existing) {
+        ingredientMap.set(key, {
+          amount: existing.amount + amount,
+          unit: existing.unit || unit,
+        });
+      } else {
+        ingredientMap.set(key, { amount, unit });
+      }
+    };
+    
+    // Zbierz składniki ze wszystkich posiłków
     if (dietPlan.plan_data.dailyMeals) {
       const { breakfast, lunch, dinner, snacks } = dietPlan.plan_data.dailyMeals;
-      [...(breakfast || []), ...(lunch || []), ...(dinner || []), ...(snacks || [])].forEach(meal => {
-        allMeals.push({ 
-          name: meal.name, 
-          description: meal.description || '',
-          ingredients: meal.ingredients 
-        });
+      const allMeals = [...(breakfast || []), ...(lunch || []), ...(dinner || []), ...(snacks || [])];
+      
+      allMeals.forEach(meal => {
+        if (meal.ingredients && Array.isArray(meal.ingredients)) {
+          meal.ingredients.forEach(ing => {
+            if (ing.name && ing.amount > 0) {
+              // Skaluj do wybranych dni
+              addToMap(ing.name, ing.amount * dayMultiplier, ing.unit || 'g');
+            }
+          });
+        }
       });
     }
     
-    // Parse and aggregate ingredients
-    const parsedIngredients = parseIngredientsFromMeals(allMeals, daysDiff);
-    
-    // Convert to final format with packaging
+    // Konwertuj do formatu końcowego z opakowaniami
     const result: Ingredient[] = [];
     
-    parsedIngredients.forEach((data, name) => {
-      const { count, size, packageUnit, packageName } = getPackageInfo(name, data.amount, data.unit);
+    ingredientMap.forEach((data, key) => {
+      const name = key.charAt(0).toUpperCase() + key.slice(1);
+      const roundedAmount = Math.ceil(data.amount);
+      const { count, size, packageUnit, packageName } = getPackageInfo(name, roundedAmount, data.unit);
       const category = categorizeIngredient(name);
       
       // Format display amount
       let displayAmount = '';
-      if (count > 1 || packageName !== 'sztuka') {
+      if (count > 1 || (packageName !== 'sztuka' && packageName !== 'szt')) {
         const plural = count > 1 ? getPluralForm(packageName, count) : packageName;
-        if (size > 0 && data.amount > 0) {
-          displayAmount = `${count} ${plural} (${Math.round(data.amount)}${data.unit})`;
+        if (size > 0 && roundedAmount > 0) {
+          displayAmount = `${count} ${plural} (${roundedAmount}${data.unit})`;
         } else {
           displayAmount = `${count} ${plural}`;
         }
       } else {
-        displayAmount = `${Math.round(data.count)} szt`;
+        displayAmount = `${Math.round(roundedAmount)} szt`;
       }
       
       result.push({
-        name: name.charAt(0).toUpperCase() + name.slice(1),
-        amount: data.amount,
+        name,
+        amount: roundedAmount,
         unit: data.unit,
         category,
-        checked: checkedItems.has(name.toLowerCase()),
+        checked: checkedItems.has(key),
         packageCount: count,
         packageSize: size,
         packageUnit,
