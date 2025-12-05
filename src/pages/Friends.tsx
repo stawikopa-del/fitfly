@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/flyfit/AppLayout';
 import { PageHeader } from '@/components/flyfit/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,13 +19,19 @@ import {
   Clock,
   Trash2,
   Loader2,
-  UserX
+  UserX,
+  Share2
 } from 'lucide-react';
 import { useFriends, Friend, FriendRequest } from '@/hooks/useFriends';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function Friends() {
+  const [searchParams] = useSearchParams();
+  const inviteUserId = searchParams.get('invite');
+  
   const { 
     friends, 
     pendingRequests, 
@@ -34,8 +41,36 @@ export default function Friends() {
     sendFriendRequest,
     acceptRequest,
     rejectRequest,
-    removeFriend
+    removeFriend,
+    shareInviteLink
   } = useFriends();
+
+  // Auto-send friend request if coming from invite link
+  useEffect(() => {
+    const handleInvite = async () => {
+      if (inviteUserId && !isLoading) {
+        const isFriend = friends.some(f => f.userId === inviteUserId);
+        const alreadySent = sentRequests.includes(inviteUserId);
+        
+        if (!isFriend && !alreadySent) {
+          // Fetch the inviter's profile to show their name
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('display_name, username')
+            .eq('user_id', inviteUserId)
+            .single();
+          
+          if (profile) {
+            const name = profile.display_name || profile.username || 'Użytkownik';
+            toast.info(`Wysyłanie zaproszenia do ${name}...`);
+            await sendFriendRequest(inviteUserId);
+          }
+        }
+      }
+    };
+    
+    handleInvite();
+  }, [inviteUserId, isLoading, friends, sentRequests, sendFriendRequest]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -214,7 +249,21 @@ export default function Friends() {
   return (
     <AppLayout>
       <div className="min-h-screen pb-24 px-4 pt-4">
-        <PageHeader title="Znajomi" backTo="/inne" />
+        <div className="flex items-center justify-between mb-2">
+          <PageHeader title="Znajomi" backTo="/inne" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              soundFeedback.buttonClick();
+              shareInviteLink();
+            }}
+            className="rounded-xl"
+          >
+            <Share2 className="h-4 w-4 mr-1" />
+            Zaproś
+          </Button>
+        </div>
 
         <Tabs defaultValue="friends" className="mt-4">
           <TabsList className="w-full grid grid-cols-3 bg-card/50">

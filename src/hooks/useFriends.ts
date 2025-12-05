@@ -282,8 +282,73 @@ export function useFriends() {
       setIsLoading(true);
       Promise.all([fetchFriends(), fetchPendingRequests()])
         .finally(() => setIsLoading(false));
+
+      // Real-time subscription to friendships changes
+      const channel = supabase
+        .channel('friendships-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'friendships',
+            filter: `sender_id=eq.${user.id}`
+          },
+          () => {
+            fetchFriends();
+            fetchPendingRequests();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'friendships',
+            filter: `receiver_id=eq.${user.id}`
+          },
+          () => {
+            fetchFriends();
+            fetchPendingRequests();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [user, fetchFriends, fetchPendingRequests]);
+
+  const getInviteLink = useCallback(() => {
+    return `${window.location.origin}/znajomi?invite=${encodeURIComponent(user?.id || '')}`;
+  }, [user]);
+
+  const shareInviteLink = useCallback(async () => {
+    if (!user) return;
+
+    const inviteLink = getInviteLink();
+    const shareData = {
+      title: 'Dołącz do FITFLY!',
+      text: 'Hej! Dodaj mnie do znajomych w FITFLY! 💪',
+      url: inviteLink
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        toast.success('Link udostępniony!');
+      } else {
+        await navigator.clipboard.writeText(inviteLink);
+        toast.success('Link skopiowany do schowka!');
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        await navigator.clipboard.writeText(inviteLink);
+        toast.success('Link skopiowany do schowka!');
+      }
+    }
+  }, [user, getInviteLink]);
 
   return {
     friends,
@@ -295,6 +360,8 @@ export function useFriends() {
     acceptRequest,
     rejectRequest,
     removeFriend,
+    shareInviteLink,
+    getInviteLink,
     refresh: () => Promise.all([fetchFriends(), fetchPendingRequests()])
   };
 }
