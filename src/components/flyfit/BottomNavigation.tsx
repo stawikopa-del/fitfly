@@ -45,9 +45,10 @@ export function BottomNavigation() {
                 >
                   <div className={cn(
                     'w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300',
-                    'bg-primary shadow-lg',
-                    'hover:scale-105 hover:shadow-xl',
-                    isActive && 'ring-4 ring-primary/30 scale-105'
+                    'bg-fitfly-cream border-2 border-fitfly-blue/20',
+                    'shadow-[0_0_20px_rgba(59,130,246,0.3)]',
+                    'hover:scale-105 hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]',
+                    isActive && 'ring-4 ring-fitfly-blue/40 scale-105 shadow-[0_0_35px_rgba(59,130,246,0.6)]'
                   )}>
                     <MessageCircle className="w-7 h-7 text-primary-foreground" />
                   </div>
