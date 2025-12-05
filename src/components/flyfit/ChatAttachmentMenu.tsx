@@ -478,24 +478,33 @@ export function PendingAttachmentPreview({
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  const togglePreviewPlayback = () => {
+  const togglePreviewPlayback = async () => {
     if (!pendingAttachment?.previewUrl) return;
 
     try { soundFeedback.buttonClick(); } catch {}
 
-    if (!previewAudioRef.current) {
-      previewAudioRef.current = new Audio(pendingAttachment.previewUrl);
-      previewAudioRef.current.onended = () => {
-        setIsPlayingPreview(false);
-      };
-    }
+    try {
+      if (!previewAudioRef.current) {
+        previewAudioRef.current = new Audio();
+        previewAudioRef.current.src = pendingAttachment.previewUrl;
+        previewAudioRef.current.onended = () => {
+          setIsPlayingPreview(false);
+        };
+        previewAudioRef.current.onerror = () => {
+          setIsPlayingPreview(false);
+        };
+      }
 
-    if (isPlayingPreview) {
-      previewAudioRef.current.pause();
+      if (isPlayingPreview) {
+        previewAudioRef.current.pause();
+        setIsPlayingPreview(false);
+      } else {
+        await previewAudioRef.current.play();
+        setIsPlayingPreview(true);
+      }
+    } catch (error) {
+      console.error('Preview playback error:', error);
       setIsPlayingPreview(false);
-    } else {
-      previewAudioRef.current.play();
-      setIsPlayingPreview(true);
     }
   };
 
