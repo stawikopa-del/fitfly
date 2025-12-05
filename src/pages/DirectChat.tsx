@@ -134,7 +134,7 @@ export default function DirectChat() {
 
   const goToProfile = () => {
     soundFeedback.buttonClick();
-    navigate(`/profil/${odgerId}`);
+    navigate(`/znajomi/${odgerId}`);
   };
 
   const RecipeMessage = ({ recipeData }: { recipeData: any }) => (
