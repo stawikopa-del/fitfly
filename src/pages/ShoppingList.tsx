@@ -44,6 +44,7 @@ interface SharedList {
     unit: string;
     category: string;
     displayAmount: string;
+    checked?: boolean;
   }>;
   date_range_start: string | null;
   date_range_end: string | null;
@@ -1241,8 +1242,6 @@ export default function ShoppingList() {
   const [sharedLists, setSharedLists] = useState<SharedList[]>([]);
   const [sentLists, setSentLists] = useState<SharedList[]>([]); // Lists I sent to others
   const [loadingSharedLists, setLoadingSharedLists] = useState(false);
-  const [expandedSharedListId, setExpandedSharedListId] = useState<string | null>(null);
-  const [checkedSharedItems, setCheckedSharedItems] = useState<Record<string, Set<string>>>({}); // listId -> Set of checked item names
 
   // Load shared lists from friends
   useEffect(() => {
@@ -1741,30 +1740,13 @@ export default function ShoppingList() {
             ) : (
               <div className="space-y-3">
                 {sharedLists.map(list => {
-                  const isExpanded = expandedSharedListId === list.id;
-                  const listCheckedItems = checkedSharedItems[list.id] || new Set<string>();
-                  const checkedCount = listCheckedItems.size;
                   const totalCount = list.items.length;
+                  // Count checked items from database (items with checked: true)
+                  const checkedCount = list.items.filter(item => item.checked).length;
                   const progressPercent = totalCount > 0 ? (checkedCount / totalCount) * 100 : 0;
-
-                  const toggleSharedItem = (itemName: string) => {
-                    try { soundFeedback.buttonClick(); } catch {}
-                    setCheckedSharedItems(prev => {
-                      const newMap = { ...prev };
-                      const currentSet = new Set(newMap[list.id] || []);
-                      if (currentSet.has(itemName.toLowerCase())) {
-                        currentSet.delete(itemName.toLowerCase());
-                      } else {
-                        currentSet.add(itemName.toLowerCase());
-                      }
-                      newMap[list.id] = currentSet;
-                      return newMap;
-                    });
-                  };
 
                   return (
                     <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
-                      {/* Header - always visible */}
                       <div className="p-3">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1788,82 +1770,33 @@ export default function ShoppingList() {
                         )}
                         
                         {/* Progress bar */}
-                        {isExpanded && (
-                          <div className="mb-3">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs text-muted-foreground">Postęp zakupów</span>
-                              <span className="text-xs font-medium text-primary">{checkedCount}/{totalCount}</span>
-                            </div>
-                            <div className="h-2 bg-background rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" 
-                                style={{ width: `${progressPercent}%` }} 
-                              />
-                            </div>
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">Postęp zakupów</span>
+                            <span className="text-xs font-medium text-primary">{checkedCount}/{totalCount}</span>
                           </div>
-                        )}
+                          <div className="h-2 bg-background rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" 
+                              style={{ width: `${progressPercent}%` }} 
+                            />
+                          </div>
+                        </div>
 
-                        {/* Expand/Collapse button */}
+                        {/* Open list button - navigates to dedicated page */}
                         <Button
-                          variant={isExpanded ? "secondary" : "outline"}
+                          variant="default"
                           size="sm"
                           className="w-full"
                           onClick={() => {
                             try { soundFeedback.buttonClick(); } catch {}
-                            setExpandedSharedListId(isExpanded ? null : list.id);
+                            navigate(`/lista-zakupow/${list.id}`);
                           }}
                         >
-                          {isExpanded ? (
-                            <>
-                              <ChevronDown className="w-4 h-4 mr-2 rotate-180" />
-                              Zwiń listę
-                            </>
-                          ) : (
-                            <>
-                              <ShoppingCart className="w-4 h-4 mr-2" />
-                              Zobacz listę ({totalCount} produktów)
-                            </>
-                          )}
+                          <ShoppingCart className="w-4 h-4 mr-2" />
+                          Otwórz listę ({totalCount} produktów)
                         </Button>
                       </div>
-
-                      {/* Expanded items list */}
-                      {isExpanded && (
-                        <div className="border-t border-border/30 p-3 space-y-2">
-                          {list.items.map((item, idx) => {
-                            const isChecked = listCheckedItems.has(item.name.toLowerCase());
-                            return (
-                              <button 
-                                key={idx} 
-                                onClick={() => toggleSharedItem(item.name)}
-                                className={cn(
-                                  "w-full flex items-center gap-3 p-2 rounded-lg transition-all text-left",
-                                  isChecked ? "bg-primary/5" : "hover:bg-muted"
-                                )}
-                              >
-                                <div className={cn(
-                                  "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0",
-                                  isChecked ? "bg-primary border-primary" : "border-border"
-                                )}>
-                                  {isChecked && <Check className="w-3 h-3 text-primary-foreground" />}
-                                </div>
-                                <span className={cn(
-                                  "flex-1 text-sm transition-all",
-                                  isChecked ? "text-muted-foreground line-through" : "text-foreground"
-                                )}>
-                                  {item.name}
-                                </span>
-                                <span className={cn(
-                                  "text-xs flex-shrink-0",
-                                  isChecked ? "text-muted-foreground/50" : "text-muted-foreground"
-                                )}>
-                                  {item.displayAmount}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
                     </div>
                   );
                 })}
