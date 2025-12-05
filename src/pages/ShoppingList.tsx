@@ -1548,10 +1548,7 @@ export default function ShoppingList() {
             <p className="text-sm text-muted-foreground mb-4">
               Wybierz okres na kalendarzu powyżej lub dodaj własne produkty
             </p>
-            <Button variant="outline" onClick={() => setShowAddDialog(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Dodaj własny produkt
-            </Button>
+            
           </div> : <>
             {/* Progress Bar */}
             <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-card-playful">
