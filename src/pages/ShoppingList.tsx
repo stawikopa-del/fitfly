@@ -1235,18 +1235,10 @@ export default function ShoppingList() {
               <Button onClick={() => navigate('/konfiguracja-diety')}>
                 Skonfiguruj dietę
               </Button>
-            <Button 
-              type="button"
-              variant="outline"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowAddDialog(true);
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Dodaj produkt ręcznie
-            </Button>
+              <Button variant="outline" onClick={() => setShowAddDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Dodaj produkt ręcznie
+              </Button>
             </div>
           </div>
         ) : !startDate || !endDate ? (
@@ -1255,15 +1247,7 @@ export default function ShoppingList() {
             <p className="text-sm text-muted-foreground mb-4">
               Wybierz okres na kalendarzu powyżej, aby zobaczyć listę zakupów
             </p>
-            <Button 
-              type="button"
-              variant="outline"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowAddDialog(true);
-              }}
-            >
+            <Button variant="outline" onClick={() => setShowAddDialog(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Dodaj produkt ręcznie
             </Button>
@@ -1274,15 +1258,7 @@ export default function ShoppingList() {
             <p className="text-sm text-muted-foreground mb-4">
               Brak składników w wybranym okresie
             </p>
-            <Button 
-              type="button"
-              variant="outline"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowAddDialog(true);
-              }}
-            >
+            <Button variant="outline" onClick={() => setShowAddDialog(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Dodaj produkt ręcznie
             </Button>
@@ -1320,16 +1296,7 @@ export default function ShoppingList() {
 
             {/* Quick Actions */}
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowAddDialog(true);
-                }}
-              >
+              <Button variant="outline" className="flex-1" onClick={() => setShowAddDialog(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Dodaj produkt
               </Button>
