@@ -104,6 +104,8 @@ export function ChatMessage({
     if (deltaY < 30 && deltaX > 0) {
       setIsSwiping(true);
       setSwipeX(Math.min(deltaX, 80));
+      // Hide scrollbar during swipe
+      document.body.style.overflow = 'hidden';
     }
   };
 
@@ -120,10 +122,11 @@ export function ChatMessage({
       onReply(id, content, isOwn ? 'Ty' : senderName);
     }
     
-    // Reset swipe
+    // Reset swipe and restore scrollbar
     setSwipeX(0);
     setIsSwiping(false);
     touchStartRef.current = null;
+    document.body.style.overflow = '';
   };
 
   const handleReactionClick = (emoji: string) => {
