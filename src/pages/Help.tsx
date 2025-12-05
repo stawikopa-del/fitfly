@@ -1,4 +1,5 @@
-import { ChevronDown, MessageCircle, Mail, ExternalLink, HelpCircle } from 'lucide-react';
+import { useState } from 'react';
+import { MessageCircle, Mail, Send, HelpCircle } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -6,8 +7,10 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/flyfit/PageHeader';
-
 const faqItems = [
   {
     question: 'Jak śledzić kroki?',
@@ -44,10 +47,62 @@ const faqItems = [
 ];
 
 export default function Help() {
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+
+  const handleSendEmail = () => {
+    const emailSubject = encodeURIComponent(subject || 'Zgłoszenie z FITFLY');
+    const emailBody = encodeURIComponent(message || '');
+    window.location.href = `mailto:pomoc@fitfly.app?subject=${emailSubject}&body=${emailBody}`;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <PageHeader title="Pomoc" emoji="❓" icon={<HelpCircle className="w-5 h-5 text-primary" />} />
       <div className="px-4 py-4 space-y-6 pb-24">
+
+      {/* Formularz kontaktowy */}
+      <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful relative z-10">
+        <h2 className="font-bold font-display text-foreground mb-4 text-lg">
+          Napisz do nas ✉️
+        </h2>
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="subject" className="text-sm font-medium">Temat</Label>
+            <Input
+              id="subject"
+              placeholder="np. Problem z logowaniem"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="rounded-xl border-2"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="message" className="text-sm font-medium">Wiadomość</Label>
+            <Textarea
+              id="message"
+              placeholder="Opisz swój problem lub pytanie..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="rounded-xl border-2 min-h-[120px] resize-none"
+            />
+          </div>
+          
+          <Button 
+            onClick={handleSendEmail}
+            className="w-full rounded-2xl h-12 font-medium"
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Wyślij wiadomość
+          </Button>
+          
+          <p className="text-xs text-muted-foreground text-center">
+            Kliknięcie otworzy Twoją aplikację pocztową
+          </p>
+        </div>
+      </div>
 
       {/* FAQ */}
       <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful relative z-10">
@@ -76,7 +131,7 @@ export default function Help() {
       {/* Kontakt */}
       <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful relative z-10">
         <h2 className="font-bold font-display text-foreground mb-4 text-lg">
-          Potrzebujesz więcej pomocy? 🤝
+          Inne sposoby kontaktu 🤝
         </h2>
         
         <div className="space-y-3">
@@ -86,7 +141,7 @@ export default function Help() {
             onClick={() => window.location.href = 'mailto:pomoc@fitfly.app'}
           >
             <Mail className="w-5 h-5 mr-3 text-primary" />
-            Napisz do nas: pomoc@fitfly.app
+            pomoc@fitfly.app
           </Button>
           
           <Button 
@@ -95,7 +150,7 @@ export default function Help() {
             onClick={() => window.open('https://instagram.com/fitfly_app', '_blank')}
           >
             <MessageCircle className="w-5 h-5 mr-3 text-primary" />
-            Napisz na Instagram @fitfly_app
+            @fitfly_app na Instagramie
           </Button>
         </div>
       </div>
