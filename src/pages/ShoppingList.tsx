@@ -961,6 +961,16 @@ export default function ShoppingList() {
       </header>
 
       <div className="px-4 py-6 space-y-6">
+        {/* Add Product Button - Before Calendar */}
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => setShowAddDialog(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Dodaj własny produkt
+        </Button>
+
         {/* Custom Items Notice */}
         {customItems.length > 0 && (!startDate || !endDate) && (
           <div className="bg-primary/10 rounded-2xl p-4 text-center">
@@ -1041,6 +1051,16 @@ export default function ShoppingList() {
             </div>
           )}
         </div>
+
+        {/* Add Product Button - After Calendar */}
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => setShowAddDialog(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Dodaj własny produkt
+        </Button>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
