@@ -229,8 +229,9 @@ export default function DirectChat() {
       }
     }
     
-    // Swipe to the right for reply
+    // Swipe to the right for reply - prevent page scrolling
     if (deltaY < 30 && deltaX > 0) {
+      e.preventDefault();
       setSwipeX(Math.min(deltaX, 80));
     }
   };
@@ -434,12 +435,14 @@ export default function DirectChat() {
             <div
               key={message.id}
               className={cn(
-                'flex gap-3 relative',
+                'flex gap-3 relative select-none',
                 isOwn ? 'flex-row-reverse' : 'flex-row'
               )}
               style={{
                 transform: isSwiping ? `translateX(${swipeX}px)` : 'translateX(0)',
                 transition: isSwiping ? 'none' : 'transform 0.2s ease-out',
+                WebkitUserSelect: 'none',
+                touchAction: swipingMessageId ? 'none' : 'pan-y',
               }}
               onTouchStart={(e) => handleTouchStart(e, message.id, isOwn)}
               onTouchMove={handleTouchMove}
