@@ -1545,9 +1545,8 @@ export default function ShoppingList() {
             </div>
           </div> : ingredients.length === 0 ? <div className="text-center py-8 px-4">
             <Calendar className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <p className="text-sm text-muted-foreground mb-4">
-              Wybierz okres na kalendarzu powyżej lub dodaj własne produkty
-            </p>
+            <p className="text-sm text-muted-foreground mb-4">Wybierz okres na kalendarzu powyżej
+lub dodaj własne produkty</p>
             
           </div> : <>
             {/* Progress Bar */}
