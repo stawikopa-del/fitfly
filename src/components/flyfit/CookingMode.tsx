@@ -176,11 +176,11 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
               <div className="bg-card rounded-2xl p-4 border border-border">
                 <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
                   <Utensils className="w-5 h-5 text-accent" />
-                  Potrzebne narzędzia
+                  Potrzebny sprzęt
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {recipe.tools_needed.map((tool, i) => (
-                    <span key={i} className="bg-accent/10 text-accent-foreground px-3 py-1.5 rounded-full text-sm">
+                    <span key={i} className="bg-accent/20 text-foreground px-3 py-1.5 rounded-full text-sm font-medium">
                       {tool}
                     </span>
                   ))}

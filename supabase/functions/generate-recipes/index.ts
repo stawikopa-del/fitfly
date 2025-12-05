@@ -79,7 +79,7 @@ serve(async (req) => {
       "description": "Krótki opis dania",
       "servings": 2,
       "total_time_minutes": 45,
-      "tools_needed": ["patelnia", "garnek", "deska do krojenia"],
+      "tools_needed": ["piekarnik", "mikser", "blender"], // TYLKO sprzęt kuchenny jak: piekarnik, mikrofalówka, kuchenka, mikser, blender, robot kuchenny, toster, grill elektryczny, frytkownica - NIE akcesoria jak noże czy deski
       "steps": [
         {
           "step_number": 1,
@@ -113,7 +113,7 @@ Dla każdego przepisu podaj szczegółowe informacje:
 - Krótki opis dania
 - Liczba porcji
 - Całkowity czas przygotowania w minutach
-- Lista potrzebnych narzędzi kuchennych
+- Lista potrzebnego sprzętu kuchennego (TYLKO urządzenia jak: piekarnik, mikrofalówka, kuchenka, płyta indukcyjna, mikser, blender, robot kuchenny, toster, grill elektryczny, frytkownica, parowar - NIE akcesoria jak noże, deski, garnki)
 - Kroki wykonania (każdy krok osobno z czasem trwania, składnikami potrzebnymi w danym kroku i opcjonalną wskazówką)
 - Wartości odżywcze na porcję
 
@@ -143,7 +143,7 @@ Dla każdego przepisu podaj szczegółowe informacje:
 - Krótki opis dania
 - Liczba porcji
 - Całkowity czas przygotowania w minutach
-- Lista potrzebnych narzędzi kuchennych
+- Lista potrzebnego sprzętu kuchennego (TYLKO urządzenia jak: piekarnik, mikrofalówka, kuchenka, płyta indukcyjna, mikser, blender, robot kuchenny, toster, grill elektryczny, frytkownica, parowar - NIE akcesoria jak noże, deski, garnki)
 - Kroki wykonania (każdy krok osobno z czasem trwania, składnikami potrzebnymi w danym kroku i opcjonalną wskazówką)
 - Wartości odżywcze na porcję
 
