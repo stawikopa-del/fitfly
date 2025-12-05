@@ -1239,6 +1239,7 @@ export default function ShoppingList() {
 
   // State for shared lists received from friends
   const [sharedLists, setSharedLists] = useState<SharedList[]>([]);
+  const [sentLists, setSentLists] = useState<SharedList[]>([]); // Lists I sent to others
   const [loadingSharedLists, setLoadingSharedLists] = useState(false);
   const [expandedSharedListId, setExpandedSharedListId] = useState<string | null>(null);
   const [checkedSharedItems, setCheckedSharedItems] = useState<Record<string, Set<string>>>({}); // listId -> Set of checked item names
@@ -1256,22 +1257,37 @@ export default function ShoppingList() {
           .eq('shared_with_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching shared_shopping_lists:', error);
+          setSharedLists([]);
+          return;
+        }
+
+        
 
         if (shared && shared.length > 0) {
-          // Get owner profiles
+          // Get owner profiles - use RPC function to bypass RLS
           const ownerIds = [...new Set(shared.map(s => s.owner_id))];
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('user_id, display_name')
-            .in('user_id', ownerIds);
+          
+          // Fetch profiles for each owner using the get_friend_profile RPC
+          const profilesMap: Record<string, string> = {};
+          for (const ownerId of ownerIds) {
+            try {
+              const { data: profileData } = await supabase
+                .rpc('get_friend_profile', { friend_user_id: ownerId });
+              if (profileData && profileData.length > 0) {
+                profilesMap[ownerId] = profileData[0].display_name || 'Znajomy';
+              }
+            } catch (e) {
+              console.error('Error fetching owner profile:', e);
+            }
+          }
 
           const listsWithNames: SharedList[] = shared.map(s => {
-            const ownerProfile = profiles?.find(p => p.user_id === s.owner_id);
             return {
               id: s.id,
               owner_id: s.owner_id,
-              owner_name: ownerProfile?.display_name || 'Znajomy',
+              owner_name: profilesMap[s.owner_id] || 'Znajomy',
               items: (s.items as SharedList['items']) || [],
               date_range_start: s.date_range_start,
               date_range_end: s.date_range_end,
@@ -1281,6 +1297,43 @@ export default function ShoppingList() {
           setSharedLists(listsWithNames);
         } else {
           setSharedLists([]);
+        }
+
+        // Also fetch lists I sent to others
+        const { data: mySentLists, error: sentError } = await supabase
+          .from('shared_shopping_lists')
+          .select('*')
+          .eq('owner_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (!sentError && mySentLists && mySentLists.length > 0) {
+          const recipientIds = [...new Set(mySentLists.map(s => s.shared_with_id))];
+          const recipientsMap: Record<string, string> = {};
+          
+          for (const recipientId of recipientIds) {
+            try {
+              const { data: profileData } = await supabase
+                .rpc('get_friend_profile', { friend_user_id: recipientId });
+              if (profileData && profileData.length > 0) {
+                recipientsMap[recipientId] = profileData[0].display_name || 'Znajomy';
+              }
+            } catch (e) {
+              console.error('Error fetching recipient profile:', e);
+            }
+          }
+
+          const sentListsWithNames: SharedList[] = mySentLists.map(s => ({
+            id: s.id,
+            owner_id: s.owner_id,
+            owner_name: recipientsMap[s.shared_with_id] || 'Znajomy',
+            items: (s.items as SharedList['items']) || [],
+            date_range_start: s.date_range_start,
+            date_range_end: s.date_range_end,
+            created_at: s.created_at
+          }));
+          setSentLists(sentListsWithNames);
+        } else {
+          setSentLists([]);
         }
       } catch (err) {
         console.error('Error fetching shared lists:', err);
@@ -1670,145 +1723,199 @@ export default function ShoppingList() {
         </div>
 
         {/* Shared Lists from Friends */}
-        {sharedLists.length > 0 && (
+        {(loadingSharedLists || sharedLists.length > 0) && (
           <div className="bg-card rounded-2xl border-2 border-secondary/30 p-4 shadow-card-playful">
             <h2 className="font-bold font-display text-foreground mb-3 flex items-center gap-2">
               <Gift className="w-5 h-5 text-secondary" />
               Udostępnione listy zakupów
             </h2>
-            <div className="space-y-3">
-              {sharedLists.map(list => {
-                const isExpanded = expandedSharedListId === list.id;
-                const listCheckedItems = checkedSharedItems[list.id] || new Set<string>();
-                const checkedCount = listCheckedItems.size;
-                const totalCount = list.items.length;
-                const progressPercent = totalCount > 0 ? (checkedCount / totalCount) * 100 : 0;
+            
+            {loadingSharedLists ? (
+              <div className="flex items-center justify-center py-6">
+                <div className="animate-spin w-6 h-6 border-3 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : sharedLists.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Brak udostępnionych list
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {sharedLists.map(list => {
+                  const isExpanded = expandedSharedListId === list.id;
+                  const listCheckedItems = checkedSharedItems[list.id] || new Set<string>();
+                  const checkedCount = listCheckedItems.size;
+                  const totalCount = list.items.length;
+                  const progressPercent = totalCount > 0 ? (checkedCount / totalCount) * 100 : 0;
 
-                const toggleSharedItem = (itemName: string) => {
-                  try { soundFeedback.buttonClick(); } catch {}
-                  setCheckedSharedItems(prev => {
-                    const newMap = { ...prev };
-                    const currentSet = new Set(newMap[list.id] || []);
-                    if (currentSet.has(itemName.toLowerCase())) {
-                      currentSet.delete(itemName.toLowerCase());
-                    } else {
-                      currentSet.add(itemName.toLowerCase());
-                    }
-                    newMap[list.id] = currentSet;
-                    return newMap;
-                  });
-                };
+                  const toggleSharedItem = (itemName: string) => {
+                    try { soundFeedback.buttonClick(); } catch {}
+                    setCheckedSharedItems(prev => {
+                      const newMap = { ...prev };
+                      const currentSet = new Set(newMap[list.id] || []);
+                      if (currentSet.has(itemName.toLowerCase())) {
+                        currentSet.delete(itemName.toLowerCase());
+                      } else {
+                        currentSet.add(itemName.toLowerCase());
+                      }
+                      newMap[list.id] = currentSet;
+                      return newMap;
+                    });
+                  };
 
-                return (
-                  <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
-                    {/* Header - always visible */}
-                    <div className="p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <User className="w-4 h-4 text-primary flex-shrink-0" />
-                          <span className="text-sm font-medium text-foreground truncate">
-                            Udostępnione przez {declinePolishName(list.owner_name)}
-                          </span>
-                        </div>
-                        <button 
-                          onClick={() => deleteSharedList(list.id)}
-                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      {list.date_range_start && list.date_range_end && (
-                        <p className="text-xs text-muted-foreground mb-2">
-                          <Calendar className="w-3 h-3 inline mr-1" />
-                          {format(new Date(list.date_range_start), 'd MMM', { locale: pl })} — {format(new Date(list.date_range_end), 'd MMM', { locale: pl })}
-                        </p>
-                      )}
-                      
-                      {/* Progress bar */}
-                      {isExpanded && (
-                        <div className="mb-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-muted-foreground">Postęp zakupów</span>
-                            <span className="text-xs font-medium text-primary">{checkedCount}/{totalCount}</span>
+                  return (
+                    <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
+                      {/* Header - always visible */}
+                      <div className="p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <User className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span className="text-sm font-medium text-foreground truncate">
+                              Udostępnione przez {declinePolishName(list.owner_name)}
+                            </span>
                           </div>
-                          <div className="h-2 bg-background rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" 
-                              style={{ width: `${progressPercent}%` }} 
-                            />
-                          </div>
+                          <button 
+                            onClick={() => deleteSharedList(list.id)}
+                            className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                      )}
-
-                      {/* Expand/Collapse button */}
-                      <Button
-                        variant={isExpanded ? "secondary" : "outline"}
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          try { soundFeedback.buttonClick(); } catch {}
-                          setExpandedSharedListId(isExpanded ? null : list.id);
-                        }}
-                      >
-                        {isExpanded ? (
-                          <>
-                            <ChevronDown className="w-4 h-4 mr-2 rotate-180" />
-                            Zwiń listę
-                          </>
-                        ) : (
-                          <>
-                            <ShoppingCart className="w-4 h-4 mr-2" />
-                            Zobacz listę ({totalCount} produktów)
-                          </>
+                        {list.date_range_start && list.date_range_end && (
+                          <p className="text-xs text-muted-foreground mb-2">
+                            <Calendar className="w-3 h-3 inline mr-1" />
+                            {format(new Date(list.date_range_start), 'd MMM', { locale: pl })} — {format(new Date(list.date_range_end), 'd MMM', { locale: pl })}
+                          </p>
                         )}
-                      </Button>
-                    </div>
+                        
+                        {/* Progress bar */}
+                        {isExpanded && (
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-muted-foreground">Postęp zakupów</span>
+                              <span className="text-xs font-medium text-primary">{checkedCount}/{totalCount}</span>
+                            </div>
+                            <div className="h-2 bg-background rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" 
+                                style={{ width: `${progressPercent}%` }} 
+                              />
+                            </div>
+                          </div>
+                        )}
 
-                    {/* Expanded items list */}
-                    {isExpanded && (
-                      <div className="border-t border-border/30 p-3 space-y-2">
-                        {list.items.map((item, idx) => {
-                          const isChecked = listCheckedItems.has(item.name.toLowerCase());
-                          return (
-                            <button 
-                              key={idx} 
-                              onClick={() => toggleSharedItem(item.name)}
-                              className={cn(
-                                "w-full flex items-center gap-3 p-2 rounded-lg transition-all text-left",
-                                isChecked ? "bg-primary/5" : "hover:bg-muted"
-                              )}
-                            >
-                              <div className={cn(
-                                "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0",
-                                isChecked ? "bg-primary border-primary" : "border-border"
-                              )}>
-                                {isChecked && <Check className="w-3 h-3 text-primary-foreground" />}
-                              </div>
-                              <span className={cn(
-                                "flex-1 text-sm transition-all",
-                                isChecked ? "text-muted-foreground line-through" : "text-foreground"
-                              )}>
-                                {item.name}
-                              </span>
-                              <span className={cn(
-                                "text-xs flex-shrink-0",
-                                isChecked ? "text-muted-foreground/50" : "text-muted-foreground"
-                              )}>
-                                {item.displayAmount}
-                              </span>
-                            </button>
-                          );
-                        })}
+                        {/* Expand/Collapse button */}
+                        <Button
+                          variant={isExpanded ? "secondary" : "outline"}
+                          size="sm"
+                          className="w-full"
+                          onClick={() => {
+                            try { soundFeedback.buttonClick(); } catch {}
+                            setExpandedSharedListId(isExpanded ? null : list.id);
+                          }}
+                        >
+                          {isExpanded ? (
+                            <>
+                              <ChevronDown className="w-4 h-4 mr-2 rotate-180" />
+                              Zwiń listę
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingCart className="w-4 h-4 mr-2" />
+                              Zobacz listę ({totalCount} produktów)
+                            </>
+                          )}
+                        </Button>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+
+                      {/* Expanded items list */}
+                      {isExpanded && (
+                        <div className="border-t border-border/30 p-3 space-y-2">
+                          {list.items.map((item, idx) => {
+                            const isChecked = listCheckedItems.has(item.name.toLowerCase());
+                            return (
+                              <button 
+                                key={idx} 
+                                onClick={() => toggleSharedItem(item.name)}
+                                className={cn(
+                                  "w-full flex items-center gap-3 p-2 rounded-lg transition-all text-left",
+                                  isChecked ? "bg-primary/5" : "hover:bg-muted"
+                                )}
+                              >
+                                <div className={cn(
+                                  "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0",
+                                  isChecked ? "bg-primary border-primary" : "border-border"
+                                )}>
+                                  {isChecked && <Check className="w-3 h-3 text-primary-foreground" />}
+                                </div>
+                                <span className={cn(
+                                  "flex-1 text-sm transition-all",
+                                  isChecked ? "text-muted-foreground line-through" : "text-foreground"
+                                )}>
+                                  {item.name}
+                                </span>
+                                <span className={cn(
+                                  "text-xs flex-shrink-0",
+                                  isChecked ? "text-muted-foreground/50" : "text-muted-foreground"
+                                )}>
+                                  {item.displayAmount}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Add Product Button - After Calendar */}
+        {/* Lists I sent to others */}
+        {sentLists.length > 0 && (
+          <div className="bg-card rounded-2xl border-2 border-primary/30 p-4 shadow-card-playful">
+            <h2 className="font-bold font-display text-foreground mb-3 flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-primary" />
+              Wysłane listy zakupów
+            </h2>
+            <div className="space-y-2">
+              {sentLists.map(list => (
+                <div key={list.id} className="bg-muted/50 rounded-xl p-3 flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      Wysłano do: {list.owner_name}
+                    </p>
+                    {list.date_range_start && list.date_range_end && (
+                      <p className="text-xs text-muted-foreground">
+                        <Calendar className="w-3 h-3 inline mr-1" />
+                        {format(new Date(list.date_range_start), 'd MMM', { locale: pl })} — {format(new Date(list.date_range_end), 'd MMM', { locale: pl })}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {list.items.length} produktów
+                    </p>
+                  </div>
+                  <button 
+                    onClick={async () => {
+                      try { soundFeedback.buttonClick(); } catch {}
+                      try {
+                        await supabase.from('shared_shopping_lists').delete().eq('id', list.id);
+                        setSentLists(prev => prev.filter(l => l.id !== list.id));
+                        toast.success('Usunięto udostępnioną listę');
+                      } catch (err) {
+                        toast.error('Nie udało się usunąć');
+                      }
+                    }}
+                    className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <Button variant="outline" className="w-full" onClick={() => setShowAddDialog(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Dodaj własny produkt
