@@ -13,6 +13,26 @@ const PRODUCT_TIER_MAP: Record<string, 'start' | 'fit' | 'premium'> = {
   'PREMIUM': 'premium',
 };
 
+// Verify Shopify HMAC signature
+const verifyShopifyHmac = async (body: string, hmacHeader: string, secret: string): Promise<boolean> => {
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(body));
+    const computed = btoa(String.fromCharCode(...new Uint8Array(signature)));
+    return computed === hmacHeader;
+  } catch (error) {
+    console.error('HMAC verification error:', error);
+    return false;
+  }
+};
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -20,17 +40,50 @@ serve(async (req) => {
   }
 
   try {
+    // Get the raw body for HMAC verification
+    const rawBody = await req.text();
+    
+    // Verify HMAC signature
+    const hmacHeader = req.headers.get('x-shopify-hmac-sha256');
+    const webhookSecret = Deno.env.get('SHOPIFY_WEBHOOK_SECRET');
+    
+    if (!webhookSecret) {
+      console.error('SHOPIFY_WEBHOOK_SECRET not configured');
+      return new Response(JSON.stringify({ error: 'Webhook secret not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    if (!hmacHeader) {
+      console.error('Missing x-shopify-hmac-sha256 header');
+      return new Response(JSON.stringify({ error: 'Missing HMAC signature' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    const isValidHmac = await verifyShopifyHmac(rawBody, hmacHeader, webhookSecret);
+    if (!isValidHmac) {
+      console.error('Invalid HMAC signature');
+      return new Response(JSON.stringify({ error: 'Invalid HMAC signature' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    console.log('HMAC signature verified successfully');
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     // Create Supabase client with service role for admin operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const body = await req.json();
+    const body = JSON.parse(rawBody);
     const topic = req.headers.get('x-shopify-topic');
     
     console.log('Received Shopify webhook:', topic);
-    console.log('Order data:', JSON.stringify(body, null, 2));
 
     // Handle order paid webhook
     if (topic === 'orders/paid' || topic === 'orders/create') {
@@ -77,8 +130,6 @@ serve(async (req) => {
 
       if (!user) {
         console.log(`No user found with email ${customerEmail}, storing for later linking`);
-        // Store the order for later linking when user signs up
-        // For now, just log it
         return new Response(JSON.stringify({ 
           success: true, 
           message: 'Order stored, user not found yet',
