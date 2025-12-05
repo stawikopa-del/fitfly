@@ -6,9 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const preferencesSchema = z.object({
+  taste: z.string().optional(),
+  maxTime: z.number().min(5).max(180).optional(),
+  maxCalories: z.number().min(50).max(2000).optional(),
+  description: z.string().max(500).optional()
+}).optional();
+
 const inputSchema = z.object({
   ingredients: z.array(z.string().min(1).max(100)).max(30).optional(),
-  imageBase64: z.string().max(10_000_000).optional()
+  imageBase64: z.string().max(10_000_000).optional(),
+  preferences: preferencesSchema
 }).refine(data => data.ingredients || data.imageBase64, {
   message: 'Wymagane ingredients lub imageBase64'
 });
@@ -30,11 +38,26 @@ serve(async (req) => {
       });
     }
     
-    const { ingredients, imageBase64 } = parseResult.data;
+    const { ingredients, imageBase64, preferences } = parseResult.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    // Build preferences string for prompt
+    let preferencesText = '';
+    if (preferences) {
+      const parts = [];
+      if (preferences.taste === 'sweet') parts.push('przepisy słodkie');
+      if (preferences.taste === 'salty') parts.push('przepisy słone/wytrawne');
+      if (preferences.maxTime) parts.push(`czas przygotowania maksymalnie ${preferences.maxTime} minut`);
+      if (preferences.maxCalories) parts.push(`maksymalnie ${preferences.maxCalories} kcal na porcję`);
+      if (preferences.description) parts.push(`użytkownik chce: "${preferences.description}"`);
+      
+      if (parts.length > 0) {
+        preferencesText = `\n\nUWAGA - Preferencje użytkownika:\n- ${parts.join('\n- ')}\n\nDostosuj przepisy do tych preferencji!`;
+      }
     }
 
     let userContent: any[];
@@ -74,6 +97,7 @@ serve(async (req) => {
         {
           type: "text",
           text: `Przeanalizuj zdjęcie lodówki i zidentyfikuj wszystkie widoczne produkty spożywcze. Następnie zaproponuj 3 przepisy, które można przygotować z tych składników.
+${preferencesText}
 
 Dla każdego przepisu podaj szczegółowe informacje:
 - Nazwa przepisu
@@ -103,6 +127,7 @@ ${recipeJsonStructure}`
           text: `Mam następujące składniki: ${ingredients.join(", ")}.
 
 Zaproponuj 3 przepisy, które można przygotować z tych składników (możesz założyć, że mam podstawowe przyprawy).
+${preferencesText}
 
 Dla każdego przepisu podaj szczegółowe informacje:
 - Nazwa przepisu

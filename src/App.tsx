@@ -36,6 +36,8 @@ import SharedRecipe from "./pages/SharedRecipe";
 import Invite from "./pages/Invite";
 import DietConfig from "./pages/DietConfig";
 import Recipes from "./pages/Recipes";
+import QuickMeal from "./pages/QuickMeal";
+import QuickMealMethod from "./pages/QuickMealMethod";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -313,6 +315,22 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Recipes />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/szybki-posilek"
+      element={
+        <ProtectedRoute>
+          <QuickMeal />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/szybki-posilek/:method"
+      element={
+        <ProtectedRoute>
+          <QuickMealMethod />
         </ProtectedRoute>
       }
     />
