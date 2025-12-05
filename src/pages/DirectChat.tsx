@@ -42,10 +42,12 @@ export default function DirectChat() {
   const [replyingTo, setReplyingTo] = useState<ReplyData | null>(null);
   const [contextMenuMessage, setContextMenuMessage] = useState<string | null>(null);
   const [friendIsTyping, setFriendIsTyping] = useState(false);
+  const [friendIsOnline, setFriendIsOnline] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(messages.length);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Touch handling refs
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -135,6 +137,31 @@ export default function DirectChat() {
         clearTimeout(typingTimeoutRef.current);
       }
       supabase.removeChannel(channel);
+    };
+  }, [user?.id, odgerId]);
+
+  // Online presence tracking
+  useEffect(() => {
+    if (!user?.id || !odgerId) return;
+
+    const presenceChannel = supabase.channel('online-users');
+    
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const onlineUsers = Object.values(state).flat() as unknown as { user_id: string }[];
+        setFriendIsOnline(onlineUsers.some(u => u.user_id === odgerId));
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({ user_id: user.id, online_at: new Date().toISOString() });
+        }
+      });
+
+    presenceChannelRef.current = presenceChannel;
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
     };
   }, [user?.id, odgerId]);
 
@@ -422,20 +449,25 @@ export default function DirectChat() {
             onClick={goToProfile}
             className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity"
           >
-            <Avatar className="h-10 w-10 border-2 border-border">
-              <AvatarImage src={friendProfile.avatarUrl || undefined} />
-              <AvatarFallback className="bg-primary/20 text-primary font-bold">
-                {(friendProfile.displayName?.[0] || 'U').toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-10 w-10 border-2 border-border">
+                <AvatarImage src={friendProfile.avatarUrl || undefined} />
+                <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                  {(friendProfile.displayName?.[0] || 'U').toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              {friendIsOnline && (
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-secondary rounded-full border-2 border-card" />
+              )}
+            </div>
 
             <div className="flex-1 min-w-0 text-left">
               <p className="font-semibold text-foreground truncate">
                 {friendProfile.displayName}
               </p>
-              {friendProfile.username && (
-                <p className="text-xs text-muted-foreground">@{friendProfile.username}</p>
-              )}
+              <p className="text-xs text-muted-foreground">
+                {friendIsTyping ? 'pisze...' : friendIsOnline ? 'online' : friendProfile.username ? `@${friendProfile.username}` : 'offline'}
+              </p>
             </div>
           </button>
 
