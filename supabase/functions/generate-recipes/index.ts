@@ -16,7 +16,9 @@ const preferencesSchema = z.object({
 const inputSchema = z.object({
   ingredients: z.array(z.string().min(1).max(100)).max(30).optional(),
   imageBase64: z.string().max(10_000_000).optional(),
-  preferences: preferencesSchema
+  preferences: preferencesSchema,
+  singleRecipe: z.boolean().optional(),
+  excludeRecipes: z.array(z.string()).optional()
 }).refine(data => data.ingredients || data.imageBase64, {
   message: 'Wymagane ingredients lub imageBase64'
 });
@@ -38,8 +40,14 @@ serve(async (req) => {
       });
     }
     
-    const { ingredients, imageBase64, preferences } = parseResult.data;
+    const { ingredients, imageBase64, preferences, singleRecipe, excludeRecipes } = parseResult.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    
+    const recipeCount = singleRecipe ? 1 : 3;
+    let excludeText = '';
+    if (excludeRecipes && excludeRecipes.length > 0) {
+      excludeText = `\n\nNIE GENERUJ tych przepisów (już zostały zaproponowane): ${excludeRecipes.join(', ')}. Wygeneruj INNE, alternatywne przepisy!`;
+    }
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
@@ -96,8 +104,8 @@ serve(async (req) => {
       userContent = [
         {
           type: "text",
-          text: `Przeanalizuj zdjęcie lodówki i zidentyfikuj wszystkie widoczne produkty spożywcze. Następnie zaproponuj 3 przepisy, które można przygotować z tych składników.
-${preferencesText}
+          text: `Przeanalizuj zdjęcie lodówki i zidentyfikuj wszystkie widoczne produkty spożywcze. Następnie zaproponuj ${recipeCount} ${recipeCount === 1 ? 'przepis' : 'przepisy'}, które można przygotować z tych składników.
+${preferencesText}${excludeText}
 
 Dla każdego przepisu podaj szczegółowe informacje:
 - Nazwa przepisu
@@ -126,8 +134,8 @@ ${recipeJsonStructure}`
           type: "text",
           text: `Mam następujące składniki: ${ingredients.join(", ")}.
 
-Zaproponuj 3 przepisy, które można przygotować z tych składników (możesz założyć, że mam podstawowe przyprawy).
-${preferencesText}
+Zaproponuj ${recipeCount} ${recipeCount === 1 ? 'przepis' : 'przepisy'}, które można przygotować z tych składników (możesz założyć, że mam podstawowe przyprawy).
+${preferencesText}${excludeText}
 
 Dla każdego przepisu podaj szczegółowe informacje:
 - Nazwa przepisu

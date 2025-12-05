@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Camera, Sparkles, Plus, X, Loader2, ChefHat, PlayCircle, Clock, Utensils, Heart, Share2, Cookie, Salad, Flame } from 'lucide-react';
+import { ArrowLeft, Camera, Sparkles, Plus, X, Loader2, ChefHat, PlayCircle, Clock, Utensils, Heart, Share2, Cookie, Salad, Flame, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,7 @@ export default function QuickMealMethod() {
   const [savingFavorite, setSavingFavorite] = useState<string | null>(null);
   const [shareRecipe, setShareRecipe] = useState<{ id: string; name: string } | null>(null);
   const [cookingRecipe, setCookingRecipe] = useState<DetailedRecipe | null>(null);
+  const [swappingIndex, setSwappingIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch favorites
@@ -216,6 +217,44 @@ export default function QuickMealMethod() {
       toast.error('Nie udało się wygenerować przepisów');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSwapRecipe = async (index: number) => {
+    setSwappingIndex(index);
+    const currentRecipe = recipes[index];
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-recipes', {
+        body: { 
+          ingredients: ingredients.length > 0 ? ingredients : detectedIngredients,
+          preferences: {
+            taste: preferences.taste,
+            maxTime: preferences.maxTime,
+            maxCalories: preferences.maxCalories,
+            description: `Wygeneruj przepis INNY niż "${currentRecipe.name}". ${preferences.description || ''}`
+          },
+          singleRecipe: true,
+          excludeRecipes: recipes.map(r => r.name)
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.recipes && data.recipes.length > 0) {
+        const newRecipes = [...recipes];
+        newRecipes[index] = data.recipes[0];
+        setRecipes(newRecipes);
+        soundFeedback.success();
+        toast.success('Zmieniono przepis! 🔄');
+      } else {
+        toast.error('Nie udało się znaleźć alternatywnego przepisu');
+      }
+    } catch (error) {
+      console.error('Error swapping recipe:', error);
+      toast.error('Nie udało się zmienić przepisu');
+    } finally {
+      setSwappingIndex(null);
     }
   };
 
@@ -405,9 +444,9 @@ export default function QuickMealMethod() {
 
         {/* Recipes List */}
         {recipes.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-bold text-foreground">🍳 Propozycje przepisów:</p>
+              <p className="text-sm font-bold text-foreground">🍳 {recipes.length} propozycje przepisów:</p>
               <button 
                 onClick={() => {
                   setRecipes([]);
@@ -422,42 +461,15 @@ export default function QuickMealMethod() {
 
             {recipes.map((recipe, index) => (
               <div
-                key={index}
+                key={`${recipe.name}-${index}`}
                 className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful"
               >
-                <div className="flex items-start justify-between mb-2">
+                {/* Recipe number badge */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="bg-primary text-primary-foreground w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold">
+                    {index + 1}
+                  </span>
                   <h4 className="font-bold font-display text-foreground text-lg flex-1">{recipe.name}</h4>
-                  <div className="flex items-center gap-1">
-                    {isFavorite(recipe.name) && (
-                      <button
-                        onClick={() => {
-                          const fav = favorites.find(f => f.recipe_name === recipe.name);
-                          if (fav) setShareRecipe({ id: fav.id, name: recipe.name });
-                        }}
-                        className="p-2 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
-                      >
-                        <Share2 className="w-5 h-5" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => toggleFavorite(recipe)}
-                      disabled={savingFavorite === recipe.name}
-                      className={cn(
-                        "p-2 rounded-full transition-all duration-300",
-                        isFavorite(recipe.name) 
-                          ? "text-destructive bg-destructive/10" 
-                          : "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      )}
-                    >
-                      <Heart 
-                        className={cn(
-                          "w-5 h-5 transition-all",
-                          isFavorite(recipe.name) && "fill-current",
-                          savingFavorite === recipe.name && "animate-pulse"
-                        )} 
-                      />
-                    </button>
-                  </div>
                 </div>
                 
                 <div className="flex items-center gap-3 mb-3 text-xs text-muted-foreground">
@@ -509,15 +521,79 @@ export default function QuickMealMethod() {
 
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{recipe.description}</p>
 
-                {recipe.steps && recipe.steps.length > 0 && (
-                  <Button 
-                    onClick={() => setCookingRecipe(recipe)}
-                    className="w-full rounded-2xl"
-                  >
-                    <PlayCircle className="w-5 h-5 mr-2" />
-                    Gotuj krok po kroku
-                  </Button>
-                )}
+                {/* Action buttons */}
+                <div className="flex flex-col gap-2">
+                  {recipe.steps && recipe.steps.length > 0 && (
+                    <Button 
+                      onClick={() => {
+                        soundFeedback.buttonClick();
+                        setCookingRecipe(recipe);
+                      }}
+                      className="w-full rounded-2xl"
+                    >
+                      <PlayCircle className="w-5 h-5 mr-2" />
+                      Gotuj krok po kroku
+                    </Button>
+                  )}
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        soundFeedback.buttonClick();
+                        handleSwapRecipe(index);
+                      }}
+                      disabled={swappingIndex === index}
+                      className="rounded-xl"
+                    >
+                      {swappingIndex === index ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                      )}
+                      Zamień
+                    </Button>
+                    
+                    <Button 
+                      variant={isFavorite(recipe.name) ? "default" : "outline"}
+                      onClick={() => {
+                        soundFeedback.buttonClick();
+                        toggleFavorite(recipe);
+                      }}
+                      disabled={savingFavorite === recipe.name}
+                      className={cn(
+                        "rounded-xl",
+                        isFavorite(recipe.name) && "bg-destructive hover:bg-destructive/90"
+                      )}
+                    >
+                      <Heart 
+                        className={cn(
+                          "w-4 h-4 mr-2",
+                          isFavorite(recipe.name) && "fill-current",
+                          savingFavorite === recipe.name && "animate-pulse"
+                        )} 
+                      />
+                      {isFavorite(recipe.name) ? 'W ulubionych' : 'Do ulubionych'}
+                    </Button>
+                  </div>
+                  
+                  {isFavorite(recipe.name) && (
+                    <Button 
+                      variant="ghost"
+                      onClick={() => {
+                        const fav = favorites.find(f => f.recipe_name === recipe.name);
+                        if (fav) {
+                          soundFeedback.buttonClick();
+                          setShareRecipe({ id: fav.id, name: recipe.name });
+                        }
+                      }}
+                      className="rounded-xl text-muted-foreground"
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Udostępnij znajomemu
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
