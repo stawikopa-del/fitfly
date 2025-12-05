@@ -50,7 +50,10 @@ export function BottomNavigation() {
                     'hover:scale-105 hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]',
                     isActive && 'ring-4 ring-fitfly-blue/40 scale-105 shadow-[0_0_35px_rgba(59,130,246,0.6)]'
                   )}>
-                    <MessageCircle className="w-7 h-7 text-primary-foreground" />
+                    <MessageCircle className={cn(
+                      "w-7 h-7 transition-colors",
+                      isActive ? "text-primary" : "text-muted-foreground"
+                    )} />
                   </div>
                   <span className={cn(
                     'text-[10px] font-bold mt-1',
