@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Send, ArrowLeft, MoreVertical, BookOpen, Check, CheckCheck, ShoppingCart, X, Reply } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, BookOpen, Check, CheckCheck, ShoppingCart, X, Reply, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages, ReplyData } from '@/hooks/useDirectMessages';
+import { ChatAttachmentMenu } from '@/components/flyfit/ChatAttachmentMenu';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { toast } from 'sonner';
 import { format, differenceInMinutes } from 'date-fns';
@@ -32,7 +33,7 @@ export default function DirectChat() {
   const { odgerId } = useParams<{ odgerId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { messages, isLoading, isSending, sendMessage, deleteMessage, toggleReaction } = useDirectMessages(odgerId);
+  const { messages, isLoading, isSending, sendMessage, sendImageMessage, sendVoiceMessage, sendShoppingListMessage, deleteMessage, toggleReaction } = useDirectMessages(odgerId);
   
   const [input, setInput] = useState('');
   const [friendProfile, setFriendProfile] = useState<FriendProfile | null>(null);
@@ -330,6 +331,95 @@ export default function DirectChat() {
     touchStartRef.current = null;
   };
 
+  // Image message component
+  const ImageMessage = ({ imageUrl }: { imageUrl: string }) => {
+    return (
+      <div className="mt-2 rounded-2xl overflow-hidden max-w-[250px]">
+        <img 
+          src={imageUrl} 
+          alt="Zdjęcie" 
+          className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
+          onClick={() => window.open(imageUrl, '_blank')}
+        />
+      </div>
+    );
+  };
+
+  // Voice message component
+  const VoiceMessage = ({ audioUrl, duration, isOwn }: { audioUrl: string; duration?: number; isOwn: boolean }) => {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    const togglePlay = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!audioRef.current) {
+        audioRef.current = new Audio(audioUrl);
+        audioRef.current.onended = () => {
+          setIsPlaying(false);
+          setProgress(0);
+        };
+        audioRef.current.ontimeupdate = () => {
+          if (audioRef.current) {
+            setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
+          }
+        };
+      }
+
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+    };
+
+    const formatDuration = (seconds?: number) => {
+      if (!seconds) return '0:00';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    return (
+      <div className="flex items-center gap-3 min-w-[150px]">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={togglePlay}
+          className={cn(
+            "h-10 w-10 rounded-full shrink-0",
+            isOwn ? "bg-primary-foreground/20 hover:bg-primary-foreground/30" : "bg-primary/20 hover:bg-primary/30"
+          )}
+        >
+          {isPlaying ? (
+            <Pause className={cn("h-5 w-5", isOwn ? "text-primary-foreground" : "text-primary")} />
+          ) : (
+            <Play className={cn("h-5 w-5", isOwn ? "text-primary-foreground" : "text-primary")} />
+          )}
+        </Button>
+        <div className="flex-1">
+          <div className={cn(
+            "h-1 rounded-full overflow-hidden",
+            isOwn ? "bg-primary-foreground/30" : "bg-muted"
+          )}>
+            <div 
+              className={cn("h-full transition-all", isOwn ? "bg-primary-foreground" : "bg-primary")}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span className={cn(
+            "text-xs mt-1 block",
+            isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
+          )}>
+            {formatDuration(duration)}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   const RecipeMessage = ({ recipeData }: { recipeData: any }) => {
     if (!recipeData) return null;
     
@@ -580,18 +670,38 @@ export default function DirectChat() {
                     activeReactionMessageId === message.id ? null : message.id
                   )}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  {/* Text message */}
+                  {message.messageType === 'text' && (
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  )}
+
+                  {/* Image message */}
+                  {message.messageType === 'image' && (
+                    <ImageMessage imageUrl={message.content} />
+                  )}
+
+                  {/* Voice message */}
+                  {message.messageType === 'voice' && (
+                    <VoiceMessage 
+                      audioUrl={message.content} 
+                      duration={message.recipeData?.duration}
+                      isOwn={isOwn}
+                    />
+                  )}
                   
                   {message.messageType === 'recipe' && message.recipeData && (
                     <RecipeMessage recipeData={message.recipeData} />
                   )}
                   
                   {(message.messageType === 'shopping_list' || message.messageType === 'shopping_list_activity') && (
-                    <ShoppingListMessage 
-                      shoppingListId={message.shoppingListId || (message.recipeData as any)?.shoppingListId || ''} 
-                      activityData={message.recipeData}
-                      isSender={isOwn}
-                    />
+                    <>
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      <ShoppingListMessage
+                        shoppingListId={message.shoppingListId || (message.recipeData as any)?.shoppingListId || ''} 
+                        activityData={message.recipeData}
+                        isSender={isOwn}
+                      />
+                    </>
                   )}
                   
                   {/* Reactions with animation */}
@@ -774,7 +884,13 @@ export default function DirectChat() {
 
       {/* Input */}
       <div className="px-4 py-4 border-t border-border/50 bg-card/80 backdrop-blur-sm">
-        <div className="flex gap-3">
+        <div className="flex gap-2 items-end">
+          <ChatAttachmentMenu
+            onSendImage={sendImageMessage}
+            onSendVoice={sendVoiceMessage}
+            onSendShoppingList={sendShoppingListMessage}
+            disabled={isSending}
+          />
           <Input
             value={input}
             onChange={(e) => {
