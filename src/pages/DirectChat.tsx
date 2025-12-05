@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Send, ArrowLeft, MoreVertical, BookOpen, Check, CheckCheck } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, BookOpen, Check, CheckCheck, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -189,6 +189,29 @@ export default function DirectChat() {
     );
   };
 
+  const ShoppingListMessage = ({ shoppingListId }: { shoppingListId: string }) => {
+    return (
+      <Card className="bg-card/50 border-border/50 mt-2">
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <ShoppingCart className="h-4 w-4 text-secondary" />
+            <span className="font-semibold text-sm">Lista zakupów</span>
+          </div>
+          <Button 
+            size="sm" 
+            className="w-full mt-2"
+            onClick={() => {
+              soundFeedback.buttonClick();
+              navigate('/lista-zakupow');
+            }}
+          >
+            Zobacz listę zakupów
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  };
+
   // Loading state
   if (profileLoading || isLoading) {
     return (
@@ -323,6 +346,10 @@ export default function DirectChat() {
                   
                   {message.messageType === 'recipe' && message.recipeData && (
                     <RecipeMessage recipeData={message.recipeData} />
+                  )}
+                  
+                  {message.messageType === 'shopping_list' && message.shoppingListId && (
+                    <ShoppingListMessage shoppingListId={message.shoppingListId} />
                   )}
                 </div>
                 
