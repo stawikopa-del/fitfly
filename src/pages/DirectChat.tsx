@@ -352,45 +352,96 @@ export default function DirectChat() {
   const VoiceMessage = ({ audioUrl, duration, isOwn }: { audioUrl: string; duration?: number; isOwn: boolean }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [actualDuration, setActualDuration] = useState<number | undefined>(duration);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    const togglePlay = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (!audioRef.current) {
-        audioRef.current = new Audio(audioUrl);
-        audioRef.current.onended = () => {
-          setIsPlaying(false);
-          setProgress(0);
-        };
-        audioRef.current.ontimeupdate = () => {
-          if (audioRef.current) {
-            setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
-          }
-        };
-      }
+    useEffect(() => {
+      // Cleanup audio on unmount
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.src = '';
+          audioRef.current = null;
+        }
+      };
+    }, []);
 
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        audioRef.current.play();
-        setIsPlaying(true);
+    const togglePlay = async (e: React.MouseEvent | React.TouchEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      try {
+        if (!audioRef.current) {
+          audioRef.current = new Audio();
+          audioRef.current.crossOrigin = 'anonymous';
+          audioRef.current.preload = 'metadata';
+          
+          audioRef.current.onloadedmetadata = () => {
+            if (audioRef.current && audioRef.current.duration && isFinite(audioRef.current.duration)) {
+              setActualDuration(audioRef.current.duration);
+            }
+          };
+          
+          audioRef.current.onended = () => {
+            setIsPlaying(false);
+            setProgress(0);
+          };
+          
+          audioRef.current.ontimeupdate = () => {
+            if (audioRef.current && audioRef.current.duration && isFinite(audioRef.current.duration)) {
+              setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
+            }
+          };
+          
+          audioRef.current.onerror = (error) => {
+            console.error('Audio playback error:', error);
+            setIsPlaying(false);
+            toast.error('Nie udało się odtworzyć wiadomości głosowej');
+          };
+          
+          audioRef.current.src = audioUrl;
+        }
+
+        if (isPlaying) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        } else {
+          try {
+            await audioRef.current.play();
+            setIsPlaying(true);
+          } catch (playError) {
+            console.error('Play error:', playError);
+            toast.error('Nie udało się odtworzyć wiadomości głosowej');
+          }
+        }
+      } catch (error) {
+        console.error('Voice message error:', error);
       }
     };
 
     const formatDuration = (seconds?: number) => {
-      if (!seconds) return '0:00';
+      if (!seconds || !isFinite(seconds)) return '0:00';
       const mins = Math.floor(seconds / 60);
       const secs = Math.floor(seconds % 60);
       return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     return (
-      <div className="flex items-center gap-3 min-w-[150px]">
+      <div 
+        className="flex items-center gap-3 min-w-[150px]"
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+      >
         <Button
           variant="ghost"
           size="icon"
           onClick={togglePlay}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            togglePlay(e);
+          }}
           className={cn(
             "h-10 w-10 rounded-full shrink-0",
             isOwn ? "bg-primary-foreground/20 hover:bg-primary-foreground/30" : "bg-primary/20 hover:bg-primary/30"
@@ -416,7 +467,7 @@ export default function DirectChat() {
             "text-xs mt-1 block",
             isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
           )}>
-            {formatDuration(duration)}
+            {formatDuration(actualDuration)}
           </span>
         </div>
       </div>
