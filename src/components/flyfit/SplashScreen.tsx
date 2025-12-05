@@ -11,12 +11,20 @@ export function SplashScreen({ onComplete, minDuration = 2000 }: SplashScreenPro
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
+    console.log('[SplashScreen] Starting splash screen timer');
     const timer = setTimeout(() => {
+      console.log('[SplashScreen] Timer finished, starting exit animation');
       setIsExiting(true);
-      setTimeout(onComplete, 500); // Wait for exit animation
+      setTimeout(() => {
+        console.log('[SplashScreen] Calling onComplete');
+        onComplete();
+      }, 500); // Wait for exit animation
     }, minDuration);
 
-    return () => clearTimeout(timer);
+    return () => {
+      console.log('[SplashScreen] Cleanup timer');
+      clearTimeout(timer);
+    };
   }, [onComplete, minDuration]);
 
   return (
