@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Send, ArrowLeft, MoreVertical, Image, BookOpen } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, BookOpen, Check, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,7 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { toast } from 'sonner';
-import { formatDistanceToNow } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
 interface FriendProfile {
@@ -30,11 +30,13 @@ export default function DirectChat() {
   const { odgerId } = useParams<{ odgerId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { messages, isLoading, isSending, sendMessage } = useDirectMessages(odgerId);
+  const { messages, isLoading, isSending, sendMessage, refreshMessages } = useDirectMessages(odgerId);
   
   const [input, setInput] = useState('');
   const [friendProfile, setFriendProfile] = useState<FriendProfile | null>(null);
+  const [optimisticMessages, setOptimisticMessages] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLengthRef = useRef(messages.length);
 
   // Fetch friend profile
   useEffect(() => {
@@ -65,18 +67,47 @@ export default function DirectChat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+    
+    // Play sound when new message arrives from friend
+    if (messages.length > prevMessagesLengthRef.current) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage && lastMessage.senderId !== user?.id) {
+        soundFeedback.messageReceived();
+      }
+    }
+    prevMessagesLengthRef.current = messages.length;
+    
+    // Clear optimistic messages when real ones arrive
+    setOptimisticMessages([]);
+  }, [messages, user?.id]);
 
   const handleSend = async () => {
     if (!input.trim() || isSending) return;
 
-    soundFeedback.buttonClick();
-    const success = await sendMessage(input);
+    const messageContent = input.trim();
+    setInput('');
     
-    if (success) {
-      setInput('');
-    } else {
+    // Play send sound
+    soundFeedback.messageSent();
+    
+    // Add optimistic message
+    const optimisticMessage = {
+      id: `optimistic-${Date.now()}`,
+      senderId: user?.id,
+      receiverId: odgerId,
+      content: messageContent,
+      messageType: 'text',
+      createdAt: new Date().toISOString(),
+      readAt: null,
+      isOptimistic: true,
+    };
+    setOptimisticMessages(prev => [...prev, optimisticMessage]);
+    
+    const success = await sendMessage(messageContent);
+    
+    if (!success) {
       toast.error('Nie udało się wysłać wiadomości');
+      setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
     }
   };
 
@@ -87,8 +118,23 @@ export default function DirectChat() {
     }
   };
 
-  const formatTime = (dateStr: string) => {
-    return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: pl });
+  const formatMessageTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const minutesAgo = differenceInMinutes(now, date);
+    
+    if (minutesAgo < 1) {
+      return 'teraz';
+    } else if (minutesAgo < 30) {
+      return `${minutesAgo} min temu`;
+    } else {
+      return format(date, 'HH:mm', { locale: pl });
+    }
+  };
+
+  const goToProfile = () => {
+    soundFeedback.buttonClick();
+    navigate(`/profil/${odgerId}`);
   };
 
   const RecipeMessage = ({ recipeData }: { recipeData: any }) => (
@@ -115,6 +161,11 @@ export default function DirectChat() {
     );
   }
 
+  // Combine real messages with optimistic ones
+  const allMessages = [...messages, ...optimisticMessages.filter(om => 
+    !messages.some(m => m.content === om.content && m.senderId === om.senderId)
+  )];
+
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Header */}
@@ -131,21 +182,26 @@ export default function DirectChat() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
 
-          <Avatar className="h-10 w-10 border-2 border-border">
-            <AvatarImage src={friendProfile.avatarUrl || undefined} />
-            <AvatarFallback className="bg-primary/20 text-primary font-bold">
-              {friendProfile.displayName[0].toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          <button 
+            onClick={goToProfile}
+            className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity"
+          >
+            <Avatar className="h-10 w-10 border-2 border-border">
+              <AvatarImage src={friendProfile.avatarUrl || undefined} />
+              <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                {friendProfile.displayName[0].toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
 
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-foreground truncate">
-              {friendProfile.displayName}
-            </p>
-            {friendProfile.username && (
-              <p className="text-xs text-muted-foreground">@{friendProfile.username}</p>
-            )}
-          </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="font-semibold text-foreground truncate">
+                {friendProfile.displayName}
+              </p>
+              {friendProfile.username && (
+                <p className="text-xs text-muted-foreground">@{friendProfile.username}</p>
+              )}
+            </div>
+          </button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -154,7 +210,7 @@ export default function DirectChat() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate(`/profil/${odgerId}`)}>
+              <DropdownMenuItem onClick={goToProfile}>
                 Zobacz profil
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -164,14 +220,16 @@ export default function DirectChat() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {messages.length === 0 && !isLoading && (
+        {allMessages.length === 0 && !isLoading && (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
-            <Avatar className="h-20 w-20 border-4 border-border mb-4">
-              <AvatarImage src={friendProfile.avatarUrl || undefined} />
-              <AvatarFallback className="bg-primary/20 text-primary font-bold text-2xl">
-                {friendProfile.displayName[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <button onClick={goToProfile}>
+              <Avatar className="h-20 w-20 border-4 border-border mb-4 hover:opacity-80 transition-opacity">
+                <AvatarImage src={friendProfile.avatarUrl || undefined} />
+                <AvatarFallback className="bg-primary/20 text-primary font-bold text-2xl">
+                  {friendProfile.displayName[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </button>
             <h2 className="text-lg font-bold text-foreground mb-1">
               {friendProfile.displayName}
             </h2>
@@ -181,8 +239,9 @@ export default function DirectChat() {
           </div>
         )}
 
-        {messages.map((message) => {
+        {allMessages.map((message) => {
           const isOwn = message.senderId === user?.id;
+          const isOptimistic = (message as any).isOptimistic;
           
           return (
             <div
@@ -193,12 +252,14 @@ export default function DirectChat() {
               )}
             >
               {!isOwn && (
-                <Avatar className="h-8 w-8 shrink-0">
-                  <AvatarImage src={friendProfile.avatarUrl || undefined} />
-                  <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
-                    {friendProfile.displayName[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <button onClick={goToProfile}>
+                  <Avatar className="h-8 w-8 shrink-0 hover:opacity-80 transition-opacity">
+                    <AvatarImage src={friendProfile.avatarUrl || undefined} />
+                    <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
+                      {friendProfile.displayName[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
               )}
               
               <div className={cn('max-w-[75%]', isOwn && 'text-right')}>
@@ -207,7 +268,8 @@ export default function DirectChat() {
                     'px-4 py-3 rounded-3xl inline-block',
                     isOwn
                       ? 'bg-primary text-primary-foreground rounded-br-lg'
-                      : 'bg-card border-2 border-border/50 text-foreground rounded-bl-lg'
+                      : 'bg-card border-2 border-border/50 text-foreground rounded-bl-lg',
+                    isOptimistic && 'opacity-70'
                   )}
                 >
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -216,9 +278,26 @@ export default function DirectChat() {
                     <RecipeMessage recipeData={message.recipeData} />
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 px-2">
-                  {formatTime(message.createdAt)}
-                </p>
+                
+                <div className={cn(
+                  'flex items-center gap-1 mt-1 px-2',
+                  isOwn ? 'justify-end' : 'justify-start'
+                )}>
+                  <p className="text-xs text-muted-foreground">
+                    {formatMessageTime(message.createdAt)}
+                  </p>
+                  
+                  {/* Read status for own messages */}
+                  {isOwn && !isOptimistic && (
+                    <span className="text-muted-foreground">
+                      {message.readAt ? (
+                        <CheckCheck className="h-3.5 w-3.5 text-primary" />
+                      ) : (
+                        <Check className="h-3.5 w-3.5" />
+                      )}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );
