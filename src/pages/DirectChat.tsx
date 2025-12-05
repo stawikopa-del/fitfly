@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Send, ArrowLeft, MoreVertical, BookOpen, Check, CheckCheck, ShoppingCart } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, BookOpen, Check, CheckCheck, ShoppingCart, X, Reply } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { useDirectMessages, ReplyData } from '@/hooks/useDirectMessages';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { toast } from 'sonner';
 import { format, differenceInMinutes } from 'date-fns';
@@ -32,15 +32,23 @@ export default function DirectChat() {
   const { odgerId } = useParams<{ odgerId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { messages, isLoading, isSending, sendMessage, toggleReaction } = useDirectMessages(odgerId);
+  const { messages, isLoading, isSending, sendMessage, deleteMessage, toggleReaction } = useDirectMessages(odgerId);
   
   const [input, setInput] = useState('');
   const [friendProfile, setFriendProfile] = useState<FriendProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [optimisticMessages, setOptimisticMessages] = useState<any[]>([]);
   const [activeReactionMessageId, setActiveReactionMessageId] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<ReplyData | null>(null);
+  const [contextMenuMessage, setContextMenuMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(messages.length);
+
+  // Touch handling refs
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [swipingMessageId, setSwipingMessageId] = useState<string | null>(null);
+  const [swipeX, setSwipeX] = useState(0);
 
   // Fetch friend profile
   useEffect(() => {
@@ -119,6 +127,8 @@ export default function DirectChat() {
 
     const messageContent = input.trim();
     setInput('');
+    const currentReplyTo = replyingTo;
+    setReplyingTo(null);
     
     soundFeedback.messageSent();
     
@@ -131,10 +141,11 @@ export default function DirectChat() {
       createdAt: new Date().toISOString(),
       readAt: null,
       isOptimistic: true,
+      replyTo: currentReplyTo,
     };
     setOptimisticMessages(prev => [...prev, optimisticMessage]);
     
-    const success = await sendMessage(messageContent);
+    const success = await sendMessage(messageContent, 'text', undefined, currentReplyTo?.id);
     
     if (!success) {
       toast.error('Nie udało się wysłać wiadomości');
@@ -147,6 +158,21 @@ export default function DirectChat() {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    const success = await deleteMessage(messageId);
+    if (success) {
+      toast.success('Wiadomość usunięta');
+    } else {
+      toast.error('Nie udało się usunąć wiadomości');
+    }
+    setContextMenuMessage(null);
+  };
+
+  const handleReply = (messageId: string, content: string, senderName: string) => {
+    setReplyingTo({ id: messageId, content, senderName });
+    setContextMenuMessage(null);
   };
 
   const formatMessageTime = (dateStr: string) => {
@@ -170,6 +196,60 @@ export default function DirectChat() {
   const goToProfile = () => {
     soundFeedback.buttonClick();
     navigate(`/znajomi/${odgerId}`);
+  };
+
+  // Touch handlers for swipe and long press
+  const handleTouchStart = (e: React.TouchEvent, messageId: string, isOwn: boolean) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+    setSwipingMessageId(messageId);
+    
+    // Start long press timer
+    longPressTimerRef.current = setTimeout(() => {
+      setContextMenuMessage(messageId);
+      try { soundFeedback.buttonClick(); } catch {}
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 500);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || !swipingMessageId) return;
+    
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+    
+    // Cancel long press if moving
+    if (Math.abs(deltaX) > 10 || deltaY > 10) {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
+    
+    // Swipe to the right for reply
+    if (deltaY < 30 && deltaX > 0) {
+      setSwipeX(Math.min(deltaX, 80));
+    }
+  };
+
+  const handleTouchEnd = (messageId: string, content: string, senderName: string) => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    
+    // Trigger reply if swiped enough
+    if (swipeX > 60) {
+      try { soundFeedback.buttonClick(); } catch {}
+      handleReply(messageId, content, senderName);
+    }
+    
+    setSwipeX(0);
+    setSwipingMessageId(null);
+    touchStartRef.current = null;
   };
 
   const RecipeMessage = ({ recipeData }: { recipeData: any }) => {
@@ -200,13 +280,10 @@ export default function DirectChat() {
     const handleClick = (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      try {
-        soundFeedback.buttonClick();
-      } catch {}
+      try { soundFeedback.buttonClick(); } catch {}
       navigate(`/lista-zakupow/${shoppingListId}`);
     };
 
-    // Determine activity type message for self-sent
     const getSelfMessage = () => {
       if (!activityData || !isSender) return null;
       
@@ -243,11 +320,7 @@ export default function DirectChat() {
           {selfMessage && (
             <p className="text-xs text-muted-foreground mb-2">{selfMessage}</p>
           )}
-          <Button 
-            size="sm" 
-            className="w-full mt-1"
-            onClick={handleClick}
-          >
+          <Button size="sm" className="w-full mt-1" onClick={handleClick}>
             Wyświetl
           </Button>
         </CardContent>
@@ -264,7 +337,7 @@ export default function DirectChat() {
     );
   }
 
-  // No profile found - show fallback
+  // No profile found
   if (!friendProfile) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-background p-4">
@@ -274,7 +347,6 @@ export default function DirectChat() {
     );
   }
 
-  // Combine real messages with optimistic ones
   const allMessages = [...messages, ...optimisticMessages.filter(om => 
     !messages.some(m => m.content === om.content && m.senderId === om.senderId)
   )];
@@ -355,15 +427,37 @@ export default function DirectChat() {
         {allMessages.map((message) => {
           const isOwn = message.senderId === user?.id;
           const isOptimistic = (message as any).isOptimistic;
+          const isSwiping = swipingMessageId === message.id;
+          const senderName = isOwn ? 'Ty' : friendProfile.displayName;
           
           return (
             <div
               key={message.id}
               className={cn(
-                'flex gap-3 animate-slide-up-fade',
+                'flex gap-3 relative',
                 isOwn ? 'flex-row-reverse' : 'flex-row'
               )}
+              style={{
+                transform: isSwiping ? `translateX(${swipeX}px)` : 'translateX(0)',
+                transition: isSwiping ? 'none' : 'transform 0.2s ease-out',
+              }}
+              onTouchStart={(e) => handleTouchStart(e, message.id, isOwn)}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={() => handleTouchEnd(message.id, message.content, senderName)}
             >
+              {/* Swipe reply indicator */}
+              {isSwiping && swipeX > 20 && (
+                <div 
+                  className={cn(
+                    'absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full flex items-center justify-center',
+                    'w-10 h-10 rounded-full bg-primary/20 transition-opacity',
+                    swipeX > 60 ? 'opacity-100' : 'opacity-50'
+                  )}
+                >
+                  <Reply className="h-5 w-5 text-primary" />
+                </div>
+              )}
+
               {!isOwn && (
                 <button onClick={goToProfile}>
                   <Avatar className="h-8 w-8 shrink-0 hover:opacity-80 transition-opacity">
@@ -376,6 +470,18 @@ export default function DirectChat() {
               )}
               
               <div className={cn('max-w-[75%]', isOwn && 'text-right')}>
+                {/* Reply preview */}
+                {message.replyTo && (
+                  <div className={cn(
+                    'mb-1 px-3 py-1.5 rounded-xl text-xs border-l-2 border-primary/50',
+                    'bg-muted/50 text-muted-foreground max-w-full',
+                    isOwn ? 'ml-auto text-right' : 'text-left'
+                  )}>
+                    <span className="font-medium text-primary/80">{message.replyTo.senderName}</span>
+                    <p className="truncate">{message.replyTo.content}</p>
+                  </div>
+                )}
+
                 {/* Message bubble */}
                 <div
                   className={cn(
@@ -403,7 +509,7 @@ export default function DirectChat() {
                     />
                   )}
                   
-                  {/* Existing reactions display */}
+                  {/* Reactions with animation */}
                   {message.reactions && Object.keys(message.reactions).length > 0 && (
                     <div className={cn(
                       'flex items-center gap-1 mt-2 flex-wrap',
@@ -419,13 +525,14 @@ export default function DirectChat() {
                             key={emoji}
                             onClick={() => {
                               try { soundFeedback.buttonClick(); } catch {}
-                              toggleReaction(message.id, emoji, user?.id === odgerId ? friendProfile?.displayName || 'Ty' : 'Ty');
+                              toggleReaction(message.id, emoji, 'Ty');
                             }}
                             title={names}
                             className={cn(
-                              'text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 transition-all',
+                              'text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5',
+                              'transition-all duration-200 hover:scale-110',
                               hasReacted 
-                                ? 'bg-primary/30 border border-primary' 
+                                ? 'bg-primary/30 border border-primary animate-[bounce-in_0.3s_ease-out]' 
                                 : 'bg-muted/50 border border-transparent hover:bg-muted'
                             )}
                           >
@@ -440,10 +547,11 @@ export default function DirectChat() {
                   {/* Reaction picker */}
                   {activeReactionMessageId === message.id && !isOptimistic && (
                     <div className={cn(
-                      'absolute -bottom-8 bg-card rounded-full shadow-lg border border-border/50 px-2 py-1 flex items-center gap-1 z-20',
+                      'absolute -bottom-10 bg-card rounded-full shadow-lg border border-border/50 px-2 py-1.5 flex items-center gap-1 z-20',
+                      'animate-scale-in',
                       isOwn ? 'right-0' : 'left-0'
                     )}>
-                      {MESSAGE_REACTION_EMOJIS.map(emoji => (
+                      {MESSAGE_REACTION_EMOJIS.map((emoji, idx) => (
                         <button
                           key={emoji}
                           onClick={() => {
@@ -452,6 +560,9 @@ export default function DirectChat() {
                             setActiveReactionMessageId(null);
                           }}
                           className="text-lg hover:scale-125 transition-transform p-0.5"
+                          style={{ 
+                            animation: `pop 0.2s ease-out ${idx * 0.05}s both`
+                          }}
                         >
                           {emoji}
                         </button>
@@ -486,6 +597,70 @@ export default function DirectChat() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Context menu overlay */}
+      {contextMenuMessage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center animate-fade-in"
+          onClick={() => setContextMenuMessage(null)}
+        >
+          <div 
+            className="bg-card rounded-2xl shadow-xl border border-border/50 overflow-hidden animate-scale-in min-w-[200px]"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => {
+                const msg = allMessages.find(m => m.id === contextMenuMessage);
+                if (msg) {
+                  const senderName = msg.senderId === user?.id ? 'Ty' : friendProfile.displayName;
+                  handleReply(msg.id, msg.content, senderName);
+                }
+              }}
+              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors"
+            >
+              <Reply className="h-5 w-5 text-primary" />
+              <span>Odpowiedz</span>
+            </button>
+            
+            {allMessages.find(m => m.id === contextMenuMessage)?.senderId === user?.id && (
+              <button
+                onClick={() => handleDeleteMessage(contextMenuMessage)}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors text-destructive"
+              >
+                <X className="h-5 w-5" />
+                <span>Usuń</span>
+              </button>
+            )}
+            
+            <button
+              onClick={() => setContextMenuMessage(null)}
+              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors border-t border-border/50"
+            >
+              <X className="h-5 w-5 text-muted-foreground" />
+              <span className="text-muted-foreground">Anuluj</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Reply indicator */}
+      {replyingTo && (
+        <div className="px-4 py-2 bg-muted/50 border-t border-border/50 flex items-center gap-3 animate-slide-up-fade">
+          <div className="w-1 h-10 bg-primary rounded-full" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-primary">{replyingTo.senderName}</p>
+            <p className="text-sm text-muted-foreground truncate">{replyingTo.content}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setReplyingTo(null)}
+            className="shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       {/* Input */}
       <div className="px-4 py-4 border-t border-border/50 bg-card/80 backdrop-blur-sm">
         <div className="flex gap-3">
@@ -493,7 +668,7 @@ export default function DirectChat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Napisz wiadomość..."
+            placeholder={replyingTo ? "Napisz odpowiedź..." : "Napisz wiadomość..."}
             disabled={isSending}
             className="flex-1 rounded-2xl border-2 h-12"
           />

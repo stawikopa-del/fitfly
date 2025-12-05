@@ -11,6 +11,12 @@ export interface MessageReactions {
   [emoji: string]: MessageReaction[];
 }
 
+export interface ReplyData {
+  id: string;
+  content: string;
+  senderName: string;
+}
+
 export interface DirectMessage {
   id: string;
   senderId: string;
@@ -22,6 +28,8 @@ export interface DirectMessage {
   createdAt: string;
   readAt: string | null;
   reactions?: MessageReactions;
+  replyToId?: string | null;
+  replyTo?: ReplyData | null;
 }
 
 export interface ChatPreview {
@@ -141,8 +149,9 @@ export function useDirectMessages(friendId?: string) {
 
       if (error) throw error;
 
-      setMessages(
-        (data || []).map(m => ({
+      const messagesWithReplies = (data || []).map(m => {
+        const replyToMsg = m.reply_to_id ? data.find(r => r.id === m.reply_to_id) : null;
+        return {
           id: m.id,
           senderId: m.sender_id,
           receiverId: m.receiver_id,
@@ -153,8 +162,16 @@ export function useDirectMessages(friendId?: string) {
           createdAt: m.created_at,
           readAt: m.read_at,
           reactions: (m as any).reactions || {},
-        }))
-      );
+          replyToId: (m as any).reply_to_id || null,
+          replyTo: replyToMsg ? {
+            id: replyToMsg.id,
+            content: replyToMsg.content || '',
+            senderName: replyToMsg.sender_id === user.id ? 'Ty' : 'Znajomy',
+          } : null,
+        };
+      });
+
+      setMessages(messagesWithReplies);
 
       // Mark messages as read
       await supabase
@@ -172,20 +189,31 @@ export function useDirectMessages(friendId?: string) {
     }
   }, [user, friendId]);
 
-  const sendMessage = useCallback(async (content: string, type: 'text' | 'recipe' | 'shopping_list' = 'text', recipeData?: any) => {
+  const sendMessage = useCallback(async (
+    content: string, 
+    type: 'text' | 'recipe' | 'shopping_list' = 'text', 
+    recipeData?: any,
+    replyToId?: string | null
+  ) => {
     if (!user || !friendId || !content.trim()) return false;
 
     setIsSending(true);
     try {
+      const insertData: any = {
+        sender_id: user.id,
+        receiver_id: friendId,
+        content: content.trim(),
+        message_type: type,
+        recipe_data: recipeData,
+      };
+      
+      if (replyToId) {
+        insertData.reply_to_id = replyToId;
+      }
+
       const { error } = await supabase
         .from('direct_messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: friendId,
-          content: content.trim(),
-          message_type: type,
-          recipe_data: recipeData,
-        });
+        .insert(insertData);
 
       if (error) throw error;
       return true;
@@ -196,6 +224,27 @@ export function useDirectMessages(friendId?: string) {
       setIsSending(false);
     }
   }, [user, friendId]);
+
+  // Delete a message
+  const deleteMessage = useCallback(async (messageId: string) => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('direct_messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('sender_id', user.id);
+
+      if (error) throw error;
+
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+      return true;
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      return false;
+    }
+  }, [user]);
 
   // Toggle reaction on a message
   const toggleReaction = useCallback(async (messageId: string, emoji: string, userName: string) => {
@@ -321,6 +370,7 @@ export function useDirectMessages(friendId?: string) {
     isLoading,
     isSending,
     sendMessage,
+    deleteMessage,
     toggleReaction,
     refreshMessages: fetchMessages,
     refreshPreviews: fetchChatPreviews,

@@ -176,6 +176,7 @@ export type Database = {
           read_at: string | null
           receiver_id: string
           recipe_data: Json | null
+          reply_to_id: string | null
           sender_id: string
         }
         Insert: {
@@ -186,6 +187,7 @@ export type Database = {
           read_at?: string | null
           receiver_id: string
           recipe_data?: Json | null
+          reply_to_id?: string | null
           sender_id: string
         }
         Update: {
@@ -196,9 +198,18 @@ export type Database = {
           read_at?: string | null
           receiver_id?: string
           recipe_data?: Json | null
+          reply_to_id?: string | null
           sender_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       favorite_recipes: {
         Row: {
