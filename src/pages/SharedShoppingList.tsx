@@ -31,9 +31,17 @@ interface Comment {
   createdAt: string;
 }
 
-interface Reactions {
-  [emoji: string]: string[]; // emoji -> array of user IDs who reacted
+interface ReactionUser {
+  id: string;
+  name: string;
 }
+
+interface Reactions {
+  [emoji: string]: ReactionUser[]; // emoji -> array of users who reacted
+}
+
+// For backward compatibility with old format (string[])
+type LegacyReactions = { [emoji: string]: string[] };
 
 interface SharedList {
   id: string;
@@ -41,6 +49,8 @@ interface SharedList {
   shared_with_id: string;
   owner_name: string;
   recipient_name: string;
+  owner_gender: string | null;
+  recipient_gender: string | null;
   items: SharedListItem[];
   date_range_start: string | null;
   date_range_end: string | null;
@@ -219,12 +229,15 @@ export default function SharedShoppingList() {
         // Get owner profile
         let ownerName = 'Znajomy';
         let recipientName = 'Znajomy';
+        let ownerGender: string | null = null;
+        let recipientGender: string | null = null;
         
         try {
           const { data: ownerData } = await supabase
             .rpc('get_friend_profile', { friend_user_id: data.owner_id });
           if (ownerData && ownerData.length > 0) {
             ownerName = ownerData[0].display_name || 'Znajomy';
+            ownerGender = ownerData[0].gender || null;
           }
         } catch (e) {
           console.error('Error fetching owner profile:', e);
@@ -235,6 +248,7 @@ export default function SharedShoppingList() {
             .rpc('get_friend_profile', { friend_user_id: data.shared_with_id });
           if (recipientData && recipientData.length > 0) {
             recipientName = recipientData[0].display_name || 'Znajomy';
+            recipientGender = recipientData[0].gender || null;
           }
         } catch (e) {
           console.error('Error fetching recipient profile:', e);
@@ -249,7 +263,24 @@ export default function SharedShoppingList() {
           }
         });
 
-        const parsedReactions = (data as any).reactions || {};
+        // Parse reactions - handle backward compatibility with old string[] format
+        const rawReactions = (data as any).reactions || {};
+        const parsedReactions: Reactions = {};
+        Object.keys(rawReactions).forEach(emoji => {
+          const users = rawReactions[emoji];
+          if (Array.isArray(users)) {
+            parsedReactions[emoji] = users.map((u: any) => {
+              if (typeof u === 'string') {
+                // Old format - just user ID, get name based on who they are
+                const name = u === data.owner_id ? ownerName : 
+                            u === data.shared_with_id ? recipientName : 'Użytkownik';
+                return { id: u, name };
+              }
+              return u as ReactionUser;
+            });
+          }
+        });
+        
         const parsedComments = (data as any).comments || [];
 
         setSharedList({
@@ -258,6 +289,8 @@ export default function SharedShoppingList() {
           shared_with_id: data.shared_with_id,
           owner_name: ownerName,
           recipient_name: recipientName,
+          owner_gender: ownerGender,
+          recipient_gender: recipientGender,
           items: items,
           date_range_start: data.date_range_start,
           date_range_end: data.date_range_end,
@@ -440,9 +473,18 @@ export default function SharedShoppingList() {
     saveItems(updatedItems);
   }, [sharedList, saveItems]);
 
-  // Save notes with debounce
+  // Save notes with debounce (and send notification)
+  const lastNoteSentRef = useRef<string>('');
+  
   const saveNotes = useCallback(async (newNotes: string) => {
-    if (!sharedList) return;
+    if (!sharedList || !user) return;
+    
+    const isOwner = sharedList.owner_id === user.id;
+    const userName = isOwner ? sharedList.owner_name : sharedList.recipient_name;
+    const userGender = isOwner ? sharedList.owner_gender : sharedList.recipient_gender;
+    const partnerId = isOwner ? sharedList.shared_with_id : sharedList.owner_id;
+    const hadNote = lastNoteSentRef.current.length > 0;
+    const hasNewNote = newNotes.trim().length > 0;
     
     try {
       const { error } = await supabase
@@ -452,11 +494,34 @@ export default function SharedShoppingList() {
 
       if (error) {
         console.error('Error saving notes:', error);
+        return;
+      }
+      
+      // Send notification only if adding new note (not editing)
+      if (hasNewNote && !hadNote) {
+        const genderVerb = userGender === 'female' ? 'dodała' : 
+                          userGender === 'male' ? 'dodał' : 'dodał/a';
+        const shortNote = newNotes.length > 30 ? newNotes.slice(0, 30) + '...' : newNotes;
+        
+        await supabase.from('direct_messages').insert({
+          sender_id: user.id,
+          receiver_id: partnerId,
+          content: `📝 ${genderVerb} notatkę: "${shortNote}"`,
+          message_type: 'shopping_list_activity',
+          recipe_data: { 
+            shoppingListId: sharedList.id, 
+            activityType: 'note',
+            noteText: newNotes,
+            senderName: userName,
+            senderGender: userGender
+          }
+        });
+        lastNoteSentRef.current = newNotes;
       }
     } catch (err) {
       console.error('Error:', err);
     }
-  }, [sharedList]);
+  }, [sharedList, user]);
 
   const handleNotesChange = useCallback((value: string) => {
     setNotes(value);
@@ -478,19 +543,26 @@ export default function SharedShoppingList() {
     
     try { soundFeedback.buttonClick(); } catch {}
     
+    const isOwner = sharedList.owner_id === user.id;
+    const currentUserName = isOwner ? sharedList.owner_name : sharedList.recipient_name;
+    const currentUserGender = isOwner ? sharedList.owner_gender : sharedList.recipient_gender;
+    const partnerId = isOwner ? sharedList.shared_with_id : sharedList.owner_id;
+    
     const currentReactions = { ...reactions };
     const userReactions = currentReactions[emoji] || [];
-    const hasReacted = userReactions.includes(user.id);
+    const hasReacted = userReactions.some(r => r.id === user.id);
+    const wasAdding = !hasReacted;
     
     if (hasReacted) {
       // Remove reaction
-      currentReactions[emoji] = userReactions.filter(id => id !== user.id);
+      currentReactions[emoji] = userReactions.filter(r => r.id !== user.id);
       if (currentReactions[emoji].length === 0) {
         delete currentReactions[emoji];
       }
     } else {
       // Add reaction
-      currentReactions[emoji] = [...userReactions, user.id];
+      const newReaction: ReactionUser = { id: user.id, name: currentUserName || 'Ty' };
+      currentReactions[emoji] = [...userReactions, newReaction];
     }
     
     setReactions(currentReactions);
@@ -498,11 +570,33 @@ export default function SharedShoppingList() {
     try {
       const { error } = await supabase
         .from('shared_shopping_lists')
-        .update({ reactions: currentReactions })
+        .update({ reactions: currentReactions as any })
         .eq('id', sharedList.id);
       
       if (error) {
         console.error('Error saving reaction:', error);
+        return;
+      }
+      
+      // Send notification message to partner if adding reaction
+      if (wasAdding) {
+        const genderVerb = currentUserGender === 'female' ? 'zareagowała' : 
+                          currentUserGender === 'male' ? 'zareagował' : 'zareagował/a';
+        const emojiLabel = REACTION_EMOJIS.find(e => e.emoji === emoji)?.label || emoji;
+        
+        await supabase.from('direct_messages').insert({
+          sender_id: user.id,
+          receiver_id: partnerId,
+          content: `${emoji} ${genderVerb} na listę zakupów: "${emojiLabel}"`,
+          message_type: 'shopping_list_activity',
+          recipe_data: { 
+            shoppingListId: sharedList.id, 
+            activityType: 'reaction',
+            emoji,
+            senderName: currentUserName,
+            senderGender: currentUserGender
+          }
+        });
       }
     } catch (err) {
       console.error('Error:', err);
@@ -517,12 +611,15 @@ export default function SharedShoppingList() {
     
     const isOwner = sharedList.owner_id === user.id;
     const userName = isOwner ? sharedList.owner_name : sharedList.recipient_name;
+    const userGender = isOwner ? sharedList.owner_gender : sharedList.recipient_gender;
+    const partnerId = isOwner ? sharedList.shared_with_id : sharedList.owner_id;
+    const commentText = newComment.trim();
     
     const comment: Comment = {
       id: crypto.randomUUID(),
       userId: user.id,
       userName: userName || 'Ty',
-      text: newComment.trim(),
+      text: commentText,
       createdAt: new Date().toISOString(),
     };
     
@@ -538,7 +635,27 @@ export default function SharedShoppingList() {
       
       if (error) {
         console.error('Error saving comment:', error);
+        return;
       }
+      
+      // Send notification message to partner
+      const genderVerb = userGender === 'female' ? 'skomentowała' : 
+                        userGender === 'male' ? 'skomentował' : 'skomentował/a';
+      const shortComment = commentText.length > 30 ? commentText.slice(0, 30) + '...' : commentText;
+      
+      await supabase.from('direct_messages').insert({
+        sender_id: user.id,
+        receiver_id: partnerId,
+        content: `💬 ${genderVerb} listę zakupów: "${shortComment}"`,
+        message_type: 'shopping_list_activity',
+        recipe_data: { 
+          shoppingListId: sharedList.id, 
+          activityType: 'comment',
+          commentText,
+          senderName: userName,
+          senderGender: userGender
+        }
+      });
     } catch (err) {
       console.error('Error:', err);
     }
@@ -734,14 +851,15 @@ export default function SharedShoppingList() {
                 <span className="text-xs text-muted-foreground">Reakcje:</span>
                 {REACTION_EMOJIS.map(({ emoji, label }) => {
                   const reactionUsers = reactions[emoji] || [];
-                  const hasReacted = user ? reactionUsers.includes(user.id) : false;
+                  const hasReacted = user ? reactionUsers.some(r => r.id === user.id) : false;
                   const count = reactionUsers.length;
+                  const reactionNames = reactionUsers.map(r => r.name).join(', ');
                   
                   return (
                     <button
                       key={emoji}
                       onClick={() => toggleReaction(emoji)}
-                      title={label}
+                      title={count > 0 ? `${label}: ${reactionNames}` : label}
                       className={cn(
                         "flex items-center gap-1 px-2 py-1 rounded-full transition-all text-sm",
                         hasReacted 
@@ -751,12 +869,19 @@ export default function SharedShoppingList() {
                     >
                       <span className="text-base">{emoji}</span>
                       {count > 0 && (
-                        <span className={cn(
-                          "text-xs font-medium",
-                          hasReacted ? "text-primary" : "text-muted-foreground"
-                        )}>
-                          {count}
-                        </span>
+                        <>
+                          <span className={cn(
+                            "text-xs font-medium",
+                            hasReacted ? "text-primary" : "text-muted-foreground"
+                          )}>
+                            {count}
+                          </span>
+                          {/* Show first name */}
+                          <span className="text-xs text-muted-foreground hidden sm:inline truncate max-w-16">
+                            {reactionUsers[0]?.name}
+                            {count > 1 && ` +${count - 1}`}
+                          </span>
+                        </>
                       )}
                     </button>
                   );
