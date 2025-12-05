@@ -21,9 +21,13 @@ interface FavoriteRecipe {
 
 export default function QuickMealMethod() {
   const navigate = useNavigate();
-  const { method } = useParams<{ method: 'scan' | 'ingredients' }>();
+  const { method } = useParams<{ method: string }>();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+
+  // Determine if this is ingredients or scan method
+  const isIngredientsMethod = method === 'ingredients';
+  const isScanMethod = method === 'scan';
 
   // Get preferences from URL
   const preferences = {
@@ -69,10 +73,10 @@ export default function QuickMealMethod() {
 
   // Auto-open camera for scan method
   useEffect(() => {
-    if (method === 'scan') {
+    if (isScanMethod) {
       setTimeout(() => fileInputRef.current?.click(), 500);
     }
-  }, [method]);
+  }, [isScanMethod]);
 
   const isFavorite = (recipeName: string) => favorites.some(f => f.recipe_name === recipeName);
 
@@ -273,9 +277,7 @@ export default function QuickMealMethod() {
     );
   }
 
-  const methodTitle = method === 'scan' ? 'Skanuj lodówkę' : 'Wpisz składniki';
-  const methodIcon = method === 'scan' ? Camera : Sparkles;
-  const MethodIcon = methodIcon;
+  const methodTitle = isScanMethod ? 'Skanuj lodówkę' : 'Wpisz składniki';
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -326,7 +328,7 @@ export default function QuickMealMethod() {
         </div>
 
         {/* Scan Method */}
-        {method === 'scan' && !recipes.length && (
+        {isScanMethod && !recipes.length && (
           <div className="bg-card rounded-3xl p-6 border-2 border-accent/30 shadow-card-playful">
             <div className="flex flex-col items-center text-center">
               <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-accent to-yellow-400 flex items-center justify-center mb-4 shadow-lg">
@@ -358,7 +360,7 @@ export default function QuickMealMethod() {
         )}
 
         {/* Ingredients Method */}
-        {method === 'ingredients' && !recipes.length && (
+        {isIngredientsMethod && recipes.length === 0 && (
           <div className="bg-card rounded-3xl p-5 border-2 border-primary/30 shadow-card-playful space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-fitfly-purple flex items-center justify-center shadow-lg">
@@ -374,9 +376,10 @@ export default function QuickMealMethod() {
               <Input
                 value={newIngredient}
                 onChange={(e) => setNewIngredient(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddIngredient()}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddIngredient()}
                 placeholder="np. kurczak, ryż, papryka..."
                 className="rounded-xl"
+                autoFocus
               />
               <Button onClick={handleAddIngredient} size="icon" className="rounded-xl shrink-0">
                 <Plus className="w-5 h-5" />
@@ -420,7 +423,7 @@ export default function QuickMealMethod() {
         )}
 
         {/* Loading */}
-        {loading && method === 'scan' && (
+        {loading && isScanMethod && (
           <div className="bg-card rounded-3xl p-8 border-2 border-border/50 shadow-card-playful flex flex-col items-center justify-center">
             <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
             <p className="text-foreground font-bold">Analizuję zdjęcie...</p>
