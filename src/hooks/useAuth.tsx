@@ -131,19 +131,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initSession();
 
-    // Set up periodic session refresh (every 10 minutes)
-    const refreshInterval = setInterval(() => {
-      if (session) {
-        refreshSession();
-      }
-    }, 10 * 60 * 1000);
-
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      clearInterval(refreshInterval);
     };
-  }, [refreshSession]);
+  }, []);
 
   const signUp = useCallback(async (email: string, password: string, profileData?: ProfileData) => {
     const redirectUrl = `${window.location.origin}/`;
