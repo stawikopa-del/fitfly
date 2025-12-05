@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Check, Share2, Calendar, ChevronLeft, ChevronRight, Trash2, Copy, Users } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Check, Share2, Calendar, ChevronLeft, ChevronRight, Trash2, Copy, Users, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +13,14 @@ import { format, addDays, startOfWeek, isSameDay, isWithinInterval } from 'date-
 import { pl } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useFriends } from '@/hooks/useFriends';
+
+interface CustomProduct {
+  id: string;
+  name: string;
+  amount: number;
+  unit: string;
+  category: string;
+}
 
 interface Ingredient {
   name: string;
@@ -693,6 +703,14 @@ export default function ShoppingList() {
   const [loading, setLoading] = useState(true);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  
+  // Custom products state
+  const [customProducts, setCustomProducts] = useState<CustomProduct[]>([]);
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductAmount, setNewProductAmount] = useState('');
+  const [newProductUnit, setNewProductUnit] = useState('szt');
+  const [newProductCategory, setNewProductCategory] = useState('inne');
   
   // Date range selection
   const [weekOffset, setWeekOffset] = useState(0);
@@ -734,11 +752,16 @@ export default function ShoppingList() {
     fetchDietPlan();
   }, [user]);
 
-  // Load checked items from localStorage
+  // Load checked items and custom products from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('shoppingListChecked');
-    if (saved) {
-      setCheckedItems(new Set(JSON.parse(saved)));
+    const savedChecked = localStorage.getItem('shoppingListChecked');
+    if (savedChecked) {
+      setCheckedItems(new Set(JSON.parse(savedChecked)));
+    }
+    
+    const savedProducts = localStorage.getItem('shoppingListCustomProducts');
+    if (savedProducts) {
+      setCustomProducts(JSON.parse(savedProducts));
     }
   }, []);
 
@@ -746,6 +769,54 @@ export default function ShoppingList() {
   useEffect(() => {
     localStorage.setItem('shoppingListChecked', JSON.stringify([...checkedItems]));
   }, [checkedItems]);
+  
+  // Save custom products to localStorage
+  useEffect(() => {
+    localStorage.setItem('shoppingListCustomProducts', JSON.stringify(customProducts));
+  }, [customProducts]);
+
+  const handleAddProduct = () => {
+    const trimmedName = newProductName.trim();
+    if (!trimmedName) {
+      toast.error('Podaj nazwę produktu');
+      return;
+    }
+    
+    if (trimmedName.length > 100) {
+      toast.error('Nazwa produktu jest za długa (max 100 znaków)');
+      return;
+    }
+    
+    const amount = parseFloat(newProductAmount) || 1;
+    if (amount <= 0 || amount > 10000) {
+      toast.error('Podaj prawidłową ilość (1-10000)');
+      return;
+    }
+    
+    soundFeedback.buttonClick();
+    
+    const newProduct: CustomProduct = {
+      id: `custom-${Date.now()}`,
+      name: trimmedName.charAt(0).toUpperCase() + trimmedName.slice(1).toLowerCase(),
+      amount,
+      unit: newProductUnit,
+      category: newProductCategory,
+    };
+    
+    setCustomProducts(prev => [...prev, newProduct]);
+    setNewProductName('');
+    setNewProductAmount('');
+    setNewProductUnit('szt');
+    setNewProductCategory('inne');
+    setShowAddDialog(false);
+    toast.success('Dodano produkt!');
+  };
+
+  const removeCustomProduct = (id: string) => {
+    soundFeedback.buttonClick();
+    setCustomProducts(prev => prev.filter(p => p.id !== id));
+    toast.success('Usunięto produkt');
+  };
 
   const handleDateClick = (date: Date) => {
     soundFeedback.buttonClick();
@@ -916,10 +987,44 @@ export default function ShoppingList() {
     return result;
   }, [dietPlan, startDate, endDate, checkedItems]);
 
+  // Dodaj własne produkty do listy
+  const allIngredients = useMemo(() => {
+    const combined = [...ingredients];
+    
+    // Dodaj własne produkty
+    customProducts.forEach(product => {
+      const { count, size, packageUnit, packageName } = getPackageInfo(product.name, product.amount, product.unit);
+      
+      let displayAmount = '';
+      if (product.unit === 'szt') {
+        displayAmount = `${Math.round(product.amount)} szt`;
+      } else if (count > 1 || packageName !== 'sztuka') {
+        const plural = count > 1 ? getPluralForm(packageName, count) : packageName;
+        displayAmount = `${count} ${plural} (${Math.round(product.amount)}${product.unit})`;
+      } else {
+        displayAmount = `${Math.round(product.amount)}${product.unit}`;
+      }
+      
+      combined.push({
+        name: product.name,
+        amount: product.amount,
+        unit: product.unit,
+        category: product.category,
+        checked: checkedItems.has(product.name.toLowerCase()),
+        packageCount: count,
+        packageSize: size,
+        packageUnit,
+        displayAmount,
+      });
+    });
+    
+    return combined;
+  }, [ingredients, customProducts, checkedItems]);
+
   const groupedIngredients = useMemo(() => {
     const groups: Record<string, Ingredient[]> = {};
     
-    ingredients.forEach(ing => {
+    allIngredients.forEach(ing => {
       if (!groups[ing.category]) {
         groups[ing.category] = [];
       }
@@ -935,7 +1040,7 @@ export default function ShoppingList() {
     });
 
     return sortedGroups;
-  }, [ingredients]);
+  }, [allIngredients]);
 
   const toggleItem = (name: string) => {
     soundFeedback.buttonClick();
@@ -1133,12 +1238,16 @@ export default function ShoppingList() {
               Wybierz okres na kalendarzu powyżej, aby zobaczyć listę zakupów
             </p>
           </div>
-        ) : ingredients.length === 0 ? (
+        ) : allIngredients.length === 0 && customProducts.length === 0 ? (
           <div className="text-center py-8 px-4">
             <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-4">
               Brak składników w wybranym okresie
             </p>
+            <Button onClick={() => setShowAddDialog(true)} variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Dodaj produkt ręcznie
+            </Button>
           </div>
         ) : (
           <>
@@ -1149,13 +1258,13 @@ export default function ShoppingList() {
                   Postęp zakupów
                 </span>
                 <span className="text-sm font-bold text-primary">
-                  {checkedCount}/{ingredients.length}
+                  {checkedCount}/{allIngredients.length}
                 </span>
               </div>
               <div className="h-3 bg-muted rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300"
-                  style={{ width: `${progress}%` }}
+                  style={{ width: `${allIngredients.length > 0 ? (checkedCount / allIngredients.length) * 100 : 0}%` }}
                 />
               </div>
               {checkedCount > 0 && (
@@ -1176,18 +1285,24 @@ export default function ShoppingList() {
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={copyToClipboard}
+                onClick={() => setShowAddDialog(true)}
               >
-                <Copy className="w-4 h-4 mr-2" />
-                Kopiuj listę
+                <Plus className="w-4 h-4 mr-2" />
+                Dodaj produkt
               </Button>
               <Button
                 variant="outline"
-                className="flex-1"
+                size="icon"
+                onClick={copyToClipboard}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={() => setShowShareDialog(true)}
               >
-                <Users className="w-4 h-4 mr-2" />
-                Wyślij znajomemu
+                <Users className="w-4 h-4" />
               </Button>
             </div>
 
@@ -1302,6 +1417,102 @@ export default function ShoppingList() {
             <Copy className="w-4 h-4 mr-2" />
             Kopiuj do schowka
           </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Product Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Dodaj produkt
+            </DialogTitle>
+            <DialogDescription>
+              Dodaj własny produkt do listy zakupów
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Nazwa produktu</label>
+              <Input
+                placeholder="np. Ser gouda"
+                value={newProductName}
+                onChange={(e) => setNewProductName(e.target.value.slice(0, 100))}
+                maxLength={100}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Ilość</label>
+                <Input
+                  type="number"
+                  placeholder="1"
+                  value={newProductAmount}
+                  onChange={(e) => setNewProductAmount(e.target.value)}
+                  min="0"
+                  max="10000"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Jednostka</label>
+                <Select value={newProductUnit} onValueChange={setNewProductUnit}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="szt">szt</SelectItem>
+                    <SelectItem value="g">g</SelectItem>
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="ml">ml</SelectItem>
+                    <SelectItem value="l">l</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Kategoria</label>
+              <Select value={newProductCategory} onValueChange={setNewProductCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(INGREDIENT_CATEGORIES).map(([key, { label, emoji }]) => (
+                    <SelectItem key={key} value={key}>
+                      {emoji} {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button onClick={handleAddProduct} className="w-full">
+              <Plus className="w-4 h-4 mr-2" />
+              Dodaj do listy
+            </Button>
+          </div>
+          
+          {customProducts.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-sm font-medium text-foreground mb-2">Dodane produkty ({customProducts.length})</p>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {customProducts.map(product => (
+                  <div key={product.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                    <span className="text-sm text-foreground">{product.name} ({product.amount}{product.unit})</span>
+                    <button
+                      onClick={() => removeCustomProduct(product.id)}
+                      className="p-1 hover:bg-destructive/10 rounded text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
