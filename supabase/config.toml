@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.shopify-webhook]
 verify_jwt = false
+
+[functions.generate-diet-plan]
+verify_jwt = true
