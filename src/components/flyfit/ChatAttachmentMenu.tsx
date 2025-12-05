@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Plus, Image, Mic, ShoppingCart, X, Send, Square } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Plus, Image, Mic, ShoppingCart, X, Send, Square, Play, Pause, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,6 +18,14 @@ interface ShoppingListItem {
   dateRangeStart: string | null;
   dateRangeEnd: string | null;
   itemsCount: number;
+}
+
+interface PendingAttachment {
+  type: 'image' | 'voice';
+  file?: File;
+  blob?: Blob;
+  previewUrl?: string;
+  duration?: number;
 }
 
 interface ChatAttachmentMenuProps {
@@ -41,11 +49,27 @@ export function ChatAttachmentMenu({
   const [showShoppingListDialog, setShowShoppingListDialog] = useState(false);
   const [shoppingLists, setShoppingLists] = useState<ShoppingListItem[]>([]);
   const [loadingLists, setLoadingLists] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState<PendingAttachment | null>(null);
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Cleanup preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (pendingAttachment?.previewUrl) {
+        URL.revokeObjectURL(pendingAttachment.previewUrl);
+      }
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        previewAudioRef.current = null;
+      }
+    };
+  }, [pendingAttachment?.previewUrl]);
 
   const handleToggle = () => {
     try { soundFeedback.buttonClick(); } catch {}
@@ -73,8 +97,25 @@ export function ChatAttachmentMenu({
       return;
     }
 
+    // Create preview URL and set pending attachment
+    const previewUrl = URL.createObjectURL(file);
+    setPendingAttachment({
+      type: 'image',
+      file,
+      previewUrl,
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const sendPendingImage = async () => {
+    if (!pendingAttachment?.file || !user) return;
+
     setIsUploading(true);
     try {
+      const file = pendingAttachment.file;
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
@@ -92,15 +133,13 @@ export function ChatAttachmentMenu({
       const success = await onSendImage(data.publicUrl);
       if (success) {
         toast.success('Zdjęcie wysłane');
+        clearPendingAttachment();
       }
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error('Nie udało się wysłać zdjęcia');
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
   };
 
@@ -126,7 +165,15 @@ export function ChatAttachmentMenu({
         if (audioChunksRef.current.length === 0) return;
 
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        await uploadVoiceMessage(audioBlob, recordingDuration);
+        const previewUrl = URL.createObjectURL(audioBlob);
+        
+        // Set pending attachment for preview instead of uploading immediately
+        setPendingAttachment({
+          type: 'voice',
+          blob: audioBlob,
+          previewUrl,
+          duration: recordingDuration,
+        });
       };
 
       mediaRecorder.start();
@@ -146,12 +193,14 @@ export function ChatAttachmentMenu({
   const stopRecording = () => {
     try { soundFeedback.buttonClick(); } catch {}
     if (mediaRecorderRef.current && isRecording) {
+      const finalDuration = recordingDuration;
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
         recordingIntervalRef.current = null;
       }
+      // Keep recordingDuration for the pending attachment
     }
   };
 
@@ -170,8 +219,8 @@ export function ChatAttachmentMenu({
     }
   };
 
-  const uploadVoiceMessage = async (audioBlob: Blob, duration: number) => {
-    if (!user) return;
+  const sendPendingVoice = async () => {
+    if (!pendingAttachment?.blob || !user) return;
 
     setIsUploading(true);
     try {
@@ -180,7 +229,7 @@ export function ChatAttachmentMenu({
 
       const { error: uploadError } = await supabase.storage
         .from('chat-media')
-        .upload(filePath, audioBlob);
+        .upload(filePath, pendingAttachment.blob);
 
       if (uploadError) throw uploadError;
 
@@ -188,17 +237,51 @@ export function ChatAttachmentMenu({
         .from('chat-media')
         .getPublicUrl(filePath);
 
-      const success = await onSendVoice(data.publicUrl, duration);
+      const success = await onSendVoice(data.publicUrl, pendingAttachment.duration || 0);
       if (success) {
         toast.success('Wiadomość głosowa wysłana');
+        clearPendingAttachment();
       }
     } catch (error) {
       console.error('Error uploading voice message:', error);
       toast.error('Nie udało się wysłać wiadomości głosowej');
     } finally {
       setIsUploading(false);
-      setRecordingDuration(0);
     }
+  };
+
+  const togglePreviewPlayback = () => {
+    if (!pendingAttachment?.previewUrl) return;
+
+    try { soundFeedback.buttonClick(); } catch {}
+
+    if (!previewAudioRef.current) {
+      previewAudioRef.current = new Audio(pendingAttachment.previewUrl);
+      previewAudioRef.current.onended = () => {
+        setIsPlayingPreview(false);
+      };
+    }
+
+    if (isPlayingPreview) {
+      previewAudioRef.current.pause();
+      setIsPlayingPreview(false);
+    } else {
+      previewAudioRef.current.play();
+      setIsPlayingPreview(true);
+    }
+  };
+
+  const clearPendingAttachment = () => {
+    if (pendingAttachment?.previewUrl) {
+      URL.revokeObjectURL(pendingAttachment.previewUrl);
+    }
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    setPendingAttachment(null);
+    setIsPlayingPreview(false);
+    setRecordingDuration(0);
   };
 
   // Shopping list handling
@@ -276,6 +359,77 @@ export function ChatAttachmentMenu({
           className="h-10 w-10 rounded-full bg-destructive hover:bg-destructive/90"
         >
           <Square className="h-4 w-4 fill-current" />
+        </Button>
+      </div>
+    );
+  }
+
+  // Pending attachment preview UI
+  if (pendingAttachment) {
+    return (
+      <div className="flex items-center gap-2 bg-muted/50 rounded-2xl px-4 py-2 border border-border/50">
+        {pendingAttachment.type === 'image' && (
+          <>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-primary/10 flex items-center justify-center">
+                {pendingAttachment.previewUrl ? (
+                  <img 
+                    src={pendingAttachment.previewUrl} 
+                    alt="Podgląd" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Image className="h-5 w-5 text-primary" />
+                )}
+              </div>
+              <span className="text-sm font-medium truncate">Zdjęcie 🖼️</span>
+            </div>
+          </>
+        )}
+
+        {pendingAttachment.type === 'voice' && (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={togglePreviewPlayback}
+              className="h-10 w-10 rounded-full bg-destructive/10 hover:bg-destructive/20 shrink-0"
+            >
+              {isPlayingPreview ? (
+                <Pause className="h-5 w-5 text-destructive" />
+              ) : (
+                <Play className="h-5 w-5 text-destructive" />
+              )}
+            </Button>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="text-sm font-medium">Głosówka 🎙️</span>
+              <span className="text-xs text-muted-foreground">
+                {formatDuration(pendingAttachment.duration || 0)}
+              </span>
+            </div>
+          </>
+        )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={clearPendingAttachment}
+          disabled={isUploading}
+          className="h-8 w-8 shrink-0"
+        >
+          <Trash2 className="h-4 w-4 text-muted-foreground" />
+        </Button>
+        <Button
+          size="icon"
+          onClick={pendingAttachment.type === 'image' ? sendPendingImage : sendPendingVoice}
+          disabled={isUploading}
+          className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 shrink-0"
+        >
+          {isUploading ? (
+            <div className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
         </Button>
       </div>
     );
