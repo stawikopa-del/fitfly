@@ -31,6 +31,7 @@ import Privacy from "./pages/Privacy";
 import Achievements from "./pages/Achievements";
 import Goals from "./pages/Goals";
 import Friends from "./pages/Friends";
+import FriendProfile from "./pages/FriendProfile";
 import SharedRecipe from "./pages/SharedRecipe";
 import Invite from "./pages/Invite";
 import NotFound from "./pages/NotFound";
@@ -281,6 +282,16 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <AppLayout>
             <Friends />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/znajomi/:friendId"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <FriendProfile />
           </AppLayout>
         </ProtectedRoute>
       }

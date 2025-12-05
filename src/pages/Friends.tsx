@@ -77,7 +77,13 @@ export default function Friends() {
   };
 
   const FriendCard = ({ friend }: { friend: Friend }) => (
-    <Card className="bg-card/80 backdrop-blur-sm border-border/50 hover:-translate-y-0.5 hover:shadow-card-playful transition-all">
+    <Card 
+      className="bg-card/80 backdrop-blur-sm border-border/50 hover:-translate-y-0.5 hover:shadow-card-playful transition-all cursor-pointer"
+      onClick={() => {
+        soundFeedback.buttonClick();
+        navigate(`/znajomi/${friend.userId}`);
+      }}
+    >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 border-2 border-primary/30">
@@ -101,7 +107,8 @@ export default function Friends() {
               variant="outline"
               size="icon"
               className="text-primary hover:bg-primary/10"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 soundFeedback.buttonClick();
                 navigate(`/czat/${friend.userId}`);
               }}
@@ -112,7 +119,10 @@ export default function Friends() {
               variant="ghost"
               size="icon"
               className="text-destructive hover:bg-destructive/10"
-              onClick={() => handleRemove(friend.friendshipId)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemove(friend.friendshipId);
+              }}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
