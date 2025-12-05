@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2, CheckCircle2, RefreshCw, ArrowRight, Sparkles, Scale, Target, Users } from 'lucide-react';
+import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2, CheckCircle2, RefreshCw, ArrowRight, Sparkles, Scale, Target, Users, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { TestimonialsCarousel } from '@/components/flyfit/TestimonialsCarousel';
@@ -19,6 +19,7 @@ const menuItems = [
   { to: '/wyzwania', icon: Trophy, label: 'Wyzwania', emoji: '🏆', description: 'Podejmij nowe wyzwania' },
   { to: '/znajomi', icon: Users, label: 'Znajomi', emoji: '👥', description: 'Dodaj znajomych i rywalizuj' },
   { to: '/osiagniecia', icon: Award, label: 'Osiągnięcia', emoji: '🎖️', description: 'Poziomy, odznaki i XP' },
+  { to: '/lista-zakupow', icon: ShoppingCart, label: 'Lista zakupów', emoji: '🛒', description: 'Zaplanuj zakupy na okres diety' },
 ];
 
 const additionalItems = [
