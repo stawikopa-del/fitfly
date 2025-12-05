@@ -286,47 +286,62 @@ const INGREDIENT_CATEGORIES: Record<string, { label: string; emoji: string; keyw
   pieczywo: { 
     label: 'Pieczywo', 
     emoji: '🍞', 
-    keywords: ['chleb', 'bułk', 'bagiet', 'rogal', 'pieczywo', 'toast', 'chałk'] 
+    keywords: ['chleb', 'bułk', 'bagiet', 'rogal', 'pieczywo', 'toast', 'chałk', 'pita', 'wrap', 'tortill', 'ciabatt', 'croissant', 'drożdżów', 'kajzer'] 
   },
   nabial: { 
     label: 'Nabiał', 
     emoji: '🥛', 
-    keywords: ['mleko', 'ser', 'jogurt', 'śmietana', 'masło', 'twaróg', 'kefir', 'maślank', 'jaj'] 
+    keywords: ['mleko', 'ser', 'jogurt', 'śmietana', 'masło', 'twaróg', 'kefir', 'maślank', 'jaj', 'feta', 'mozzarell', 'parmezan', 'ricott', 'mascarpone'] 
   },
   mieso: { 
     label: 'Mięso i ryby', 
     emoji: '🥩', 
-    keywords: ['kurczak', 'wołowin', 'wieprzow', 'mięso', 'szynk', 'boczek', 'kiełbas', 'ryb', 'łosoś', 'tuńczyk', 'krewetk', 'indyk', 'pierś', 'filet'] 
+    keywords: ['kurczak', 'wołowin', 'wieprzow', 'mięso', 'szynk', 'boczek', 'kiełbas', 'ryb', 'łosoś', 'tuńczyk', 'krewetk', 'indyk', 'pierś', 'filet', 'parówk', 'kabanos', 'salami', 'pstrąg', 'dorsz', 'makrela', 'śledź'] 
   },
   warzywa: { 
     label: 'Warzywa', 
     emoji: '🥬', 
-    keywords: ['marchew', 'cebul', 'czosnek', 'pomidor', 'ogórek', 'sałat', 'papryka', 'brokuł', 'szpinak', 'kapust', 'ziemniak', 'cukini', 'bakłażan', 'kalafior', 'por', 'seler', 'burak', 'awokado', 'pietruszk', 'szczypior', 'rukola'] 
+    keywords: ['marchew', 'cebul', 'czosnek', 'pomidor', 'ogórek', 'sałat', 'papryka', 'brokuł', 'szpinak', 'kapust', 'ziemniak', 'cukini', 'bakłażan', 'kalafior', 'por', 'seler', 'burak', 'awokado', 'pietruszk', 'szczypior', 'rukola', 'dynia', 'fasolka', 'groszek', 'kukurydz', 'rzodkiew'] 
   },
   owoce: { 
     label: 'Owoce', 
     emoji: '🍎', 
-    keywords: ['jabłk', 'banan', 'pomarańcz', 'cytryn', 'truskawk', 'maliny', 'jagod', 'winogrona', 'arbuz', 'melon', 'grejpfrut', 'kiwi', 'mango', 'ananas', 'borówk'] 
+    keywords: ['jabłk', 'banan', 'pomarańcz', 'cytryn', 'truskawk', 'maliny', 'jagod', 'winogrona', 'arbuz', 'melon', 'grejpfrut', 'kiwi', 'mango', 'ananas', 'borówk', 'gruszk', 'śliwk', 'brzoskwin', 'morela', 'nektarynk', 'limonk'] 
+  },
+  nasiona: {
+    label: 'Nasiona i rośliny strączkowe',
+    emoji: '🌱',
+    keywords: ['chia', 'siemię', 'słonecznik', 'dyni nasion', 'sezam', 'len', 'ciecierzyc', 'soczewic', 'fasol', 'groch', 'bób', 'tofu', 'tempeh', 'hummus']
   },
   przyprawy: { 
     label: 'Przyprawy i oleje', 
     emoji: '🧂', 
-    keywords: ['sól', 'pieprz', 'oregano', 'bazylia', 'tymianek', 'kurkuma', 'curry', 'cynamon', 'imbir', 'przyprawa', 'oliw', 'olej', 'ocet'] 
+    keywords: ['sól', 'pieprz', 'oregano', 'bazylia', 'tymianek', 'kurkuma', 'curry', 'cynamon', 'imbir', 'przyprawa', 'oliw', 'olej', 'ocet', 'sos sojow', 'musztard', 'ketchup', 'majonez', 'koper', 'rozmaryn', 'papryka w proszku', 'chili'] 
   },
   zboza: { 
     label: 'Zboża i makarony', 
     emoji: '🍝', 
-    keywords: ['ryż', 'makaron', 'kasza', 'płatki', 'mąka', 'owsian', 'jęczmien', 'quinoa', 'kuskus', 'spaghetti'] 
+    keywords: ['ryż', 'makaron', 'kasza', 'płatki', 'mąka', 'owsian', 'jęczmien', 'quinoa', 'kuskus', 'spaghetti', 'penne', 'tagliatelle', 'lasagne', 'noodle', 'vermicelli', 'bulgur', 'amarant'] 
   },
   napoje: { 
     label: 'Napoje', 
     emoji: '🥤', 
-    keywords: ['woda', 'sok', 'herbat', 'kawa', 'napój', 'kompot'] 
+    keywords: ['woda', 'sok', 'herbat', 'kawa', 'napój', 'kompot', 'mleko roślin', 'mleko owsiane', 'mleko migdał', 'mleko kokos', 'smoothie'] 
   },
   slodycze: { 
     label: 'Słodycze i przekąski', 
     emoji: '🍫', 
-    keywords: ['czekolad', 'cukier', 'miód', 'dżem', 'ciast', 'baton', 'herbatnik', 'orzechy', 'bakalie', 'migdał', 'masło orzechowe'] 
+    keywords: ['czekolad', 'cukier', 'miód', 'dżem', 'ciast', 'baton', 'herbatnik', 'orzechy', 'bakalie', 'migdał', 'masło orzechowe', 'syrop', 'nutella', 'wafel', 'ciastk', 'słodycz'] 
+  },
+  konserwy: {
+    label: 'Konserwy i przetwory',
+    emoji: '🥫',
+    keywords: ['puszka', 'konserw', 'passata', 'pelati', 'koncentrat', 'groszek konserwow', 'kukurydza konserwow', 'fasolka konserwow', 'ogórki konserwow', 'marynow']
+  },
+  mrozonki: {
+    label: 'Mrożonki',
+    emoji: '🧊',
+    keywords: ['mrożon', 'lody', 'frozen', 'zamrożon', 'mrożone warzywa', 'mrożone owoce']
   },
   inne: { 
     label: 'Inne', 
