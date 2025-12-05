@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { useGamification } from './useGamification';
 
 export interface Habit {
   id: string;
@@ -177,9 +176,23 @@ export const suggestedChallenges = [
   },
 ];
 
+// Callbacks for gamification - to be set by components
+let onHabitCompletedCallback: (() => void) | null = null;
+let onChallengeCompletedCallback: (() => void) | null = null;
+let awardBadgeCallback: ((badge: string) => void) | null = null;
+
+export function setGamificationCallbacks(callbacks: {
+  onHabitCompleted?: () => void;
+  onChallengeCompleted?: () => void;
+  awardBadge?: (badge: string) => void;
+}) {
+  onHabitCompletedCallback = callbacks.onHabitCompleted || null;
+  onChallengeCompletedCallback = callbacks.onChallengeCompleted || null;
+  awardBadgeCallback = callbacks.awardBadge || null;
+}
+
 export function useHabitsAndChallenges() {
   const { user, isInitialized } = useAuth();
-  const { onHabitCompleted, onChallengeCompleted, awardBadge } = useGamification();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [todayLogs, setTodayLogs] = useState<HabitLog[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -188,6 +201,7 @@ export function useHabitsAndChallenges() {
   
   // Prevent concurrent operations
   const operationInProgressRef = useRef(false);
+  const hasFetchedRef = useRef(false);
 
   const fetchHabits = useCallback(async () => {
     if (!user) return;
@@ -256,6 +270,35 @@ export function useHabitsAndChallenges() {
     } catch (err) {
       console.error('Error fetching challenges:', err);
       setError('Nie udało się pobrać wyzwań');
+    }
+  }, [user]);
+
+  // Single fetch effect
+  useEffect(() => {
+    if (!isInitialized || !user || hasFetchedRef.current) return;
+    
+    hasFetchedRef.current = true;
+    
+    const fetchAll = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([fetchHabits(), fetchTodayLogs(), fetchChallenges()]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchAll();
+  }, [isInitialized, user, fetchHabits, fetchTodayLogs, fetchChallenges]);
+
+  // Reset on user change
+  useEffect(() => {
+    if (!user) {
+      hasFetchedRef.current = false;
+      setHabits([]);
+      setTodayLogs([]);
+      setChallenges([]);
+      setLoading(true);
     }
   }, [user]);
 
@@ -333,7 +376,7 @@ export function useHabitsAndChallenges() {
       // Update streak and award XP
       if (newCompleted) {
         await updateStreak(habitId, true);
-        onHabitCompleted();
+        onHabitCompletedCallback?.();
       }
     } else {
       // Create new log
@@ -353,13 +396,13 @@ export function useHabitsAndChallenges() {
       }
       
       await updateStreak(habitId, true);
-      onHabitCompleted();
+      onHabitCompletedCallback?.();
       
       // Check for habit streak badges
       const newStreak = habit.streak_current + 1;
-      if (newStreak === 7) awardBadge('konsekwentny');
-      if (newStreak === 30) awardBadge('niezniszczalny');
-      if (habit.total_completions + 1 >= 100) awardBadge('mistrz_nawykow');
+      if (newStreak === 7) awardBadgeCallback?.('konsekwentny');
+      if (newStreak === 30) awardBadgeCallback?.('niezniszczalny');
+      if (habit.total_completions + 1 >= 100) awardBadgeCallback?.('mistrz_nawykow');
     }
     
     fetchTodayLogs();
@@ -392,7 +435,7 @@ export function useHabitsAndChallenges() {
         .from('habits')
         .delete()
         .eq('id', habitId)
-        .eq('user_id', user.id); // Extra safety check
+        .eq('user_id', user.id);
       
       if (deleteError) {
         console.error('Error deleting habit:', deleteError);
@@ -491,7 +534,7 @@ export function useHabitsAndChallenges() {
     
     if (isCompleted && wasNotCompleted) {
       toast.success(`Wyzwanie ukończone! +${challenge.points} punktów 🎉`);
-      onChallengeCompleted();
+      onChallengeCompletedCallback?.();
     }
     
     fetchChallenges();
@@ -505,7 +548,7 @@ export function useHabitsAndChallenges() {
         .from('challenges')
         .delete()
         .eq('id', challengeId)
-        .eq('user_id', user.id); // Extra safety check
+        .eq('user_id', user.id);
       
       if (deleteError) {
         console.error('Error deleting challenge:', deleteError);
@@ -522,32 +565,23 @@ export function useHabitsAndChallenges() {
   };
 
   const isHabitCompletedToday = (habitId: string) => {
-    return todayLogs.some(log => log.habit_id === habitId && log.is_completed);
+    const log = todayLogs.find(l => l.habit_id === habitId);
+    return log?.is_completed || false;
   };
+
+  const getActiveChallenge = () => challenges.find(c => c.is_active && !c.is_completed);
+  
+  const getCompletedChallenges = () => challenges.filter(c => c.is_completed);
 
   const getTotalPoints = () => {
     return challenges
       .filter(c => c.is_completed)
-      .reduce((sum, c) => sum + c.points, 0);
+      .reduce((sum, c) => sum + (c.points || 0), 0);
   };
 
   const getCompletedHabitsToday = () => {
-    return todayLogs.filter(log => log.is_completed).length;
+    return todayLogs.filter(l => l.is_completed).length;
   };
-
-  useEffect(() => {
-    if (isInitialized && user) {
-      setLoading(true);
-      setError(null);
-      Promise.all([fetchHabits(), fetchTodayLogs(), fetchChallenges()])
-        .finally(() => setLoading(false));
-    } else if (isInitialized && !user) {
-      setHabits([]);
-      setTodayLogs([]);
-      setChallenges([]);
-      setLoading(false);
-    }
-  }, [isInitialized, user, fetchHabits, fetchTodayLogs, fetchChallenges]);
 
   return {
     habits,
@@ -563,14 +597,13 @@ export function useHabitsAndChallenges() {
     updateChallengeProgress,
     deleteChallenge,
     isHabitCompletedToday,
+    getActiveChallenge,
+    getCompletedChallenges,
     getTotalPoints,
     getCompletedHabitsToday,
-    suggestedHabits,
-    suggestedChallenges,
-    refetch: () => {
-      fetchHabits();
-      fetchTodayLogs();
-      fetchChallenges();
+    refresh: async () => {
+      hasFetchedRef.current = false;
+      await Promise.all([fetchHabits(), fetchTodayLogs(), fetchChallenges()]);
     },
   };
 }
