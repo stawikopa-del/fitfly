@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import { format, isToday, subDays, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { useGamification } from './useGamification';
 
 export interface Habit {
@@ -178,29 +178,39 @@ export const suggestedChallenges = [
 ];
 
 export function useHabitsAndChallenges() {
-  const { user } = useAuth();
+  const { user, isInitialized } = useAuth();
   const { onHabitCompleted, onChallengeCompleted, awardBadge } = useGamification();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [todayLogs, setTodayLogs] = useState<HabitLog[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Prevent concurrent operations
+  const operationInProgressRef = useRef(false);
 
   const fetchHabits = useCallback(async () => {
     if (!user) return;
     
-    const { data, error } = await supabase
-      .from('habits')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .order('created_at', { ascending: true });
-    
-    if (error) {
-      console.error('Error fetching habits:', error);
-      return;
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('habits')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: true });
+      
+      if (fetchError) {
+        console.error('Error fetching habits:', fetchError);
+        setError('Nie udało się pobrać nawyków');
+        return;
+      }
+      
+      setHabits(data || []);
+    } catch (err) {
+      console.error('Error fetching habits:', err);
+      setError('Nie udało się pobrać nawyków');
     }
-    
-    setHabits(data || []);
   }, [user]);
 
   const fetchTodayLogs = useCallback(async () => {
@@ -208,70 +218,90 @@ export function useHabitsAndChallenges() {
     
     const today = format(new Date(), 'yyyy-MM-dd');
     
-    const { data, error } = await supabase
-      .from('habit_logs')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('log_date', today);
-    
-    if (error) {
-      console.error('Error fetching today logs:', error);
-      return;
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('habit_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('log_date', today);
+      
+      if (fetchError) {
+        console.error('Error fetching today logs:', fetchError);
+        return;
+      }
+      
+      setTodayLogs(data || []);
+    } catch (err) {
+      console.error('Error fetching today logs:', err);
     }
-    
-    setTodayLogs(data || []);
   }, [user]);
 
   const fetchChallenges = useCallback(async () => {
     if (!user) return;
     
-    const { data, error } = await supabase
-      .from('challenges')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching challenges:', error);
-      return;
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('challenges')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (fetchError) {
+        console.error('Error fetching challenges:', fetchError);
+        setError('Nie udało się pobrać wyzwań');
+        return;
+      }
+      
+      setChallenges(data || []);
+    } catch (err) {
+      console.error('Error fetching challenges:', err);
+      setError('Nie udało się pobrać wyzwań');
     }
-    
-    setChallenges(data || []);
   }, [user]);
 
   const addHabit = async (habit: Partial<Habit>) => {
-    if (!user) return null;
+    if (!user || operationInProgressRef.current) return null;
     
-    const { data, error } = await supabase
-      .from('habits')
-      .insert([{
-        title: habit.title || '',
-        description: habit.description,
-        category: habit.category || 'health',
-        icon: habit.icon || 'target',
-        color: habit.color || 'primary',
-        frequency: habit.frequency || 'daily',
-        target_value: habit.target_value || 1,
-        unit: habit.unit || 'razy',
-        reminder_time: habit.reminder_time,
-        reminder_enabled: habit.reminder_enabled || false,
-        cue: habit.cue,
-        reward: habit.reward,
-        habit_stack_after: habit.habit_stack_after,
-        user_id: user.id,
-      }])
-      .select()
-      .single();
+    operationInProgressRef.current = true;
     
-    if (error) {
-      console.error('Error adding habit:', error);
+    try {
+      const { data, error: insertError } = await supabase
+        .from('habits')
+        .insert([{
+          title: habit.title || '',
+          description: habit.description,
+          category: habit.category || 'health',
+          icon: habit.icon || 'target',
+          color: habit.color || 'primary',
+          frequency: habit.frequency || 'daily',
+          target_value: habit.target_value || 1,
+          unit: habit.unit || 'razy',
+          reminder_time: habit.reminder_time,
+          reminder_enabled: habit.reminder_enabled || false,
+          cue: habit.cue,
+          reward: habit.reward,
+          habit_stack_after: habit.habit_stack_after,
+          user_id: user.id,
+        }])
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('Error adding habit:', insertError);
+        toast.error('Nie udało się dodać nawyku');
+        return null;
+      }
+      
+      toast.success('Nawyk dodany! 🎯');
+      fetchHabits();
+      return data;
+    } catch (err) {
+      console.error('Error adding habit:', err);
       toast.error('Nie udało się dodać nawyku');
       return null;
+    } finally {
+      operationInProgressRef.current = false;
     }
-    
-    toast.success('Nawyk dodany! 🎯');
-    fetchHabits();
-    return data;
   };
 
   const toggleHabitCompletion = async (habitId: string) => {
@@ -355,19 +385,27 @@ export function useHabitsAndChallenges() {
   };
 
   const deleteHabit = async (habitId: string) => {
-    const { error } = await supabase
-      .from('habits')
-      .delete()
-      .eq('id', habitId);
+    if (!user) return;
     
-    if (error) {
-      console.error('Error deleting habit:', error);
+    try {
+      const { error: deleteError } = await supabase
+        .from('habits')
+        .delete()
+        .eq('id', habitId)
+        .eq('user_id', user.id); // Extra safety check
+      
+      if (deleteError) {
+        console.error('Error deleting habit:', deleteError);
+        toast.error('Nie udało się usunąć nawyku');
+        return;
+      }
+      
+      toast.success('Nawyk usunięty');
+      setHabits(prev => prev.filter(h => h.id !== habitId));
+    } catch (err) {
+      console.error('Error deleting habit:', err);
       toast.error('Nie udało się usunąć nawyku');
-      return;
     }
-    
-    toast.success('Nawyk usunięty');
-    fetchHabits();
   };
 
   const addChallenge = async (challenge: Partial<Challenge>) => {
@@ -460,19 +498,27 @@ export function useHabitsAndChallenges() {
   };
 
   const deleteChallenge = async (challengeId: string) => {
-    const { error } = await supabase
-      .from('challenges')
-      .delete()
-      .eq('id', challengeId);
+    if (!user) return;
     
-    if (error) {
-      console.error('Error deleting challenge:', error);
+    try {
+      const { error: deleteError } = await supabase
+        .from('challenges')
+        .delete()
+        .eq('id', challengeId)
+        .eq('user_id', user.id); // Extra safety check
+      
+      if (deleteError) {
+        console.error('Error deleting challenge:', deleteError);
+        toast.error('Nie udało się usunąć wyzwania');
+        return;
+      }
+      
+      toast.success('Wyzwanie usunięte');
+      setChallenges(prev => prev.filter(c => c.id !== challengeId));
+    } catch (err) {
+      console.error('Error deleting challenge:', err);
       toast.error('Nie udało się usunąć wyzwania');
-      return;
     }
-    
-    toast.success('Wyzwanie usunięte');
-    fetchChallenges();
   };
 
   const isHabitCompletedToday = (habitId: string) => {
@@ -490,18 +536,25 @@ export function useHabitsAndChallenges() {
   };
 
   useEffect(() => {
-    if (user) {
+    if (isInitialized && user) {
       setLoading(true);
+      setError(null);
       Promise.all([fetchHabits(), fetchTodayLogs(), fetchChallenges()])
         .finally(() => setLoading(false));
+    } else if (isInitialized && !user) {
+      setHabits([]);
+      setTodayLogs([]);
+      setChallenges([]);
+      setLoading(false);
     }
-  }, [user, fetchHabits, fetchTodayLogs, fetchChallenges]);
+  }, [isInitialized, user, fetchHabits, fetchTodayLogs, fetchChallenges]);
 
   return {
     habits,
     todayLogs,
     challenges,
     loading,
+    error,
     addHabit,
     toggleHabitCompletion,
     deleteHabit,

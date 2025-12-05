@@ -58,7 +58,7 @@ export const TIER_FEATURES: Record<SubscriptionTier, {
 };
 
 export function useSubscription() {
-  const { user } = useAuth();
+  const { user, isInitialized } = useAuth();
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +72,8 @@ export function useSubscription() {
 
     try {
       setLoading(true);
+      setError(null);
+      
       const { data, error: fetchError } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -88,15 +90,17 @@ export function useSubscription() {
       setSubscription(data as UserSubscription | null);
     } catch (err) {
       console.error('Subscription fetch error:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : 'Nieznany błąd');
     } finally {
       setLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
-    fetchSubscription();
-  }, [fetchSubscription]);
+    if (isInitialized) {
+      fetchSubscription();
+    }
+  }, [isInitialized, fetchSubscription]);
 
   const currentTier: SubscriptionTier = subscription?.tier || 'start';
   const isActive = subscription?.status === 'active' && 
