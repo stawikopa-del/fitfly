@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Bell, Moon, Sun, Palette, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2, Settings as SettingsIcon, Globe } from 'lucide-react';
+import { Bell, Moon, Sun, Palette, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2, Settings as SettingsIcon } from 'lucide-react';
 import { useTheme, Theme } from '@/hooks/useTheme';
-import { useLanguage } from '@/hooks/useLanguage';
-import { useTranslation } from '@/i18n';
 import { PageHeader } from '@/components/flyfit/PageHeader';
 import {
   AlertDialog,
@@ -29,8 +27,6 @@ export default function Settings() {
   const { user, signOut } = useAuth();
   const { isSupported: isBiometricSupported, hasRegisteredBiometric, registerBiometric, removeBiometric, isRegistering } = useWebAuthn();
   const { theme, setTheme } = useTheme();
-  const { language, setLanguage } = useLanguage();
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [settings, setSettings] = useState({
@@ -236,51 +232,7 @@ export default function Settings() {
             <div className="flex items-center gap-2 mb-2">
               <Sun className="w-6 h-6 text-foreground" />
               <span className="font-bold text-sm">Minimal jasny</span>
-      </div>
-
-      {/* Language Section */}
-      <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful relative z-10 animate-float">
-        <h2 className="font-bold font-display text-foreground mb-4 flex items-center gap-2 text-lg">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Globe className="w-5 h-5 text-primary" />
-          </div>
-          {t.settings.language} 🌍
-        </h2>
-        
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => { setLanguage('pl'); toast.success(t.toasts.languageChanged); }}
-            className={cn(
-              "p-4 rounded-2xl border-2 transition-all text-left",
-              language === 'pl' 
-                ? "border-primary bg-primary/10" 
-                : "border-border/50 bg-muted/30 hover:border-primary/50"
-            )}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">🇵🇱</span>
-              <span className="font-bold text-sm">{t.settings.polish}</span>
             </div>
-            <p className="text-xs text-muted-foreground">Domyślny</p>
-          </button>
-
-          <button
-            onClick={() => { setLanguage('en'); toast.success('Language changed!'); }}
-            className={cn(
-              "p-4 rounded-2xl border-2 transition-all text-left",
-              language === 'en' 
-                ? "border-primary bg-primary/10" 
-                : "border-border/50 bg-muted/30 hover:border-primary/50"
-            )}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">🇬🇧</span>
-              <span className="font-bold text-sm">{t.settings.english}</span>
-            </div>
-            <p className="text-xs text-muted-foreground">English</p>
-          </button>
-        </div>
-      </div>
             <p className="text-xs text-muted-foreground">Biały, bez kolorów</p>
           </button>
         </div>
