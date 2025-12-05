@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Send, Sparkles, Trash2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -8,6 +9,7 @@ import greetingVideo from '@/assets/fitfly-greeting.mp4';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { soundFeedback } from '@/utils/soundFeedback';
 
 interface Message {
   id?: string;
@@ -17,7 +19,8 @@ interface Message {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fitek-chat`;
 
-export default function Chat() {
+export default function FitekChat() {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -198,13 +201,23 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)]">
+    <div className="flex flex-col h-screen bg-background">
       {/* Header */}
-      <header className="px-4 py-3 border-b border-border/50 bg-card/80 backdrop-blur-sm relative z-10">
+      <header className="px-4 py-3 border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                soundFeedback.buttonClick();
+                navigate('/czat');
+              }}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
             <div className="relative">
-              <div className="w-12 h-12 rounded-full bg-white border-2 border-primary/20 shadow-playful overflow-hidden">
+              <div className="w-10 h-10 rounded-full bg-white border-2 border-primary/20 shadow-playful overflow-hidden">
                 <img src={fitekAvatar} alt="FITEK" className="w-full h-full object-cover" />
               </div>
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-secondary rounded-full border-2 border-card" />

@@ -17,7 +17,9 @@ import Progress from "./pages/Progress";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import More from "./pages/More";
-import Chat from "./pages/Chat";
+import ChatList from "./pages/ChatList";
+import FitekChat from "./pages/FitekChat";
+import DirectChat from "./pages/DirectChat";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import ProfileSetup from "./pages/ProfileSetup";
@@ -172,8 +174,24 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <AppLayout>
-            <Chat />
+            <ChatList />
           </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/czat/fitek"
+      element={
+        <ProtectedRoute>
+          <FitekChat />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/czat/:odgerId"
+      element={
+        <ProtectedRoute>
+          <DirectChat />
         </ProtectedRoute>
       }
     />
