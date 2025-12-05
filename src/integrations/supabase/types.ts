@@ -760,6 +760,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_friend_activity_stats: {
+        Args: { friend_user_id: string }
+        Returns: {
+          days_tracked: number
+          total_active_minutes: number
+          total_steps: number
+          total_water: number
+        }[]
+      }
+      get_friend_profile: {
+        Args: { friend_user_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          display_name: string
+          gender: string
+          user_id: string
+          username: string
+        }[]
+      }
       get_user_subscription_tier: {
         Args: { p_user_id: string }
         Returns: Database["public"]["Enums"]["subscription_tier"]
