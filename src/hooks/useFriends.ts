@@ -155,8 +155,9 @@ export function useFriends() {
     if (!user || !query.trim()) return [];
 
     try {
+      // Use searchable_profiles view for safe user discovery (only exposes non-sensitive data)
       const { data, error } = await supabase
-        .from('profiles')
+        .from('searchable_profiles')
         .select('user_id, username, display_name, avatar_url')
         .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
         .neq('user_id', user.id)
