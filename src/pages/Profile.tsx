@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ProfileData {
   display_name: string | null;
+  username: string | null;
   gender: string | null;
   age: number | null;
   height: number | null;
@@ -72,6 +73,7 @@ export default function Profile() {
       .from('profiles')
       .update({
         display_name: editedProfile.display_name,
+        username: editedProfile.username,
         goal_weight: editedProfile.goal_weight,
         daily_steps_goal: editedProfile.daily_steps_goal,
         daily_water: editedProfile.daily_water,
@@ -142,20 +144,34 @@ export default function Profile() {
           />
         </div>
         {isEditing ? (
-          <Input 
-            type="text"
-            value={editedProfile.display_name ?? displayName}
-            onChange={(e) => setEditedProfile({...editedProfile, display_name: e.target.value})}
-            className="max-w-48 mx-auto text-center text-xl font-extrabold font-display rounded-xl h-10"
-            placeholder="Twoje imię"
-          />
+          <div className="space-y-2 max-w-48 mx-auto">
+            <Input 
+              type="text"
+              value={editedProfile.display_name ?? displayName}
+              onChange={(e) => setEditedProfile({...editedProfile, display_name: e.target.value})}
+              className="text-center text-xl font-extrabold font-display rounded-xl h-10"
+              placeholder="Twoje imię"
+            />
+            <Input 
+              type="text"
+              value={editedProfile.username ?? profile?.username ?? ''}
+              onChange={(e) => setEditedProfile({...editedProfile, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')})}
+              className="text-center text-sm rounded-xl h-9"
+              placeholder="@nick (do wyszukiwania)"
+            />
+          </div>
         ) : (
           <button 
             onClick={() => setIsEditing(true)}
-            className="inline-flex items-center gap-1.5 group"
+            className="inline-flex flex-col items-center gap-0.5 group"
           >
-            <h1 className="text-2xl font-extrabold font-display text-foreground">{displayName}</h1>
-            <Edit3 className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            <div className="inline-flex items-center gap-1.5">
+              <h1 className="text-2xl font-extrabold font-display text-foreground">{displayName}</h1>
+              <Edit3 className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </div>
+            {profile?.username && (
+              <span className="text-sm text-muted-foreground">@{profile.username}</span>
+            )}
           </button>
         )}
         <p className="text-sm text-muted-foreground font-medium mt-1">{weight} kg • {height} cm</p>

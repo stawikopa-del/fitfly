@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, ChefHat, Sparkles, Plus, X, Loader2, PlayCircle, Clock, Utensils, Heart } from 'lucide-react';
+import { Camera, ChefHat, Sparkles, Plus, X, Loader2, PlayCircle, Clock, Utensils, Heart, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { ShareDialog } from './ShareDialog';
 
 export interface RecipeStep {
   step_number: number;
@@ -56,6 +57,7 @@ export function RecipesSection({ onStartCooking }: RecipesSectionProps) {
   const [detectedIngredients, setDetectedIngredients] = useState<string[]>([]);
   const [favorites, setFavorites] = useState<FavoriteRecipe[]>([]);
   const [savingFavorite, setSavingFavorite] = useState<string | null>(null);
+  const [shareRecipe, setShareRecipe] = useState<{ id: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
@@ -410,24 +412,37 @@ export function RecipesSection({ onStartCooking }: RecipesSectionProps) {
             >
               <div className="flex items-start justify-between mb-2">
                 <h4 className="font-bold font-display text-foreground text-lg flex-1">{recipe.name}</h4>
-                <button
-                  onClick={() => toggleFavorite(recipe)}
-                  disabled={savingFavorite === recipe.name}
-                  className={cn(
-                    "p-2 rounded-full transition-all duration-300",
-                    isFavorite(recipe.name) 
-                      ? "text-destructive bg-destructive/10" 
-                      : "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                <div className="flex items-center gap-1">
+                  {isFavorite(recipe.name) && (
+                    <button
+                      onClick={() => {
+                        const fav = favorites.find(f => f.recipe_name === recipe.name);
+                        if (fav) setShareRecipe({ id: fav.id, name: recipe.name });
+                      }}
+                      className="p-2 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+                    >
+                      <Share2 className="w-5 h-5" />
+                    </button>
                   )}
-                >
-                  <Heart 
+                  <button
+                    onClick={() => toggleFavorite(recipe)}
+                    disabled={savingFavorite === recipe.name}
                     className={cn(
-                      "w-5 h-5 transition-all",
-                      isFavorite(recipe.name) && "fill-current",
-                      savingFavorite === recipe.name && "animate-pulse"
-                    )} 
-                  />
-                </button>
+                      "p-2 rounded-full transition-all duration-300",
+                      isFavorite(recipe.name) 
+                        ? "text-destructive bg-destructive/10" 
+                        : "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    )}
+                  >
+                    <Heart 
+                      className={cn(
+                        "w-5 h-5 transition-all",
+                        isFavorite(recipe.name) && "fill-current",
+                        savingFavorite === recipe.name && "animate-pulse"
+                      )} 
+                    />
+                  </button>
+                </div>
               </div>
               
               {/* Time & Tools summary */}
@@ -510,6 +525,17 @@ export function RecipesSection({ onStartCooking }: RecipesSectionProps) {
         onChange={handleImageUpload}
         className="hidden"
       />
+
+      {/* Share dialog */}
+      {shareRecipe && (
+        <ShareDialog
+          open={!!shareRecipe}
+          onOpenChange={(open) => !open && setShareRecipe(null)}
+          type="recipe"
+          itemId={shareRecipe.id}
+          itemName={shareRecipe.name}
+        />
+      )}
     </section>
   );
 }
