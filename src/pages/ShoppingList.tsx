@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Check, Share2, Calendar, ChevronLeft, ChevronRight, ChevronDown, Trash2, Copy, Users, Plus, X } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Check, Share2, Calendar, ChevronLeft, ChevronRight, ChevronDown, Trash2, Copy, Users, Plus, X, Gift, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { format, addDays, startOfWeek, isSameDay, isWithinInterval } from 'date-
 import { pl } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useFriends } from '@/hooks/useFriends';
+
 interface Ingredient {
   name: string;
   amount: number;
@@ -24,6 +25,7 @@ interface Ingredient {
   displayAmount: string;
   isCustom?: boolean;
 }
+
 interface CustomItem {
   id: string;
   name: string;
@@ -31,6 +33,133 @@ interface CustomItem {
   amount: number;
   unit: string;
 }
+
+interface SharedList {
+  id: string;
+  owner_id: string;
+  owner_name: string;
+  items: Array<{
+    name: string;
+    amount: number;
+    unit: string;
+    category: string;
+    displayAmount: string;
+  }>;
+  date_range_start: string | null;
+  date_range_end: string | null;
+  created_at: string;
+}
+
+// Polish name declension helper (genitive case - "od kogo?")
+const declinePolishName = (name: string): string => {
+  if (!name) return '';
+  
+  const trimmed = name.trim();
+  const lastChar = trimmed.slice(-1).toLowerCase();
+  const lastTwoChars = trimmed.slice(-2).toLowerCase();
+  
+  // Names ending in -a (feminine and some masculine)
+  if (lastChar === 'a') {
+    // Exception for -ia endings (Maria -> Marii)
+    if (lastTwoChars === 'ia') {
+      return trimmed.slice(0, -1) + 'i';
+    }
+    // Exception for -ja endings (Kaja -> Kai)
+    if (lastTwoChars === 'ja') {
+      return trimmed.slice(0, -1) + 'i';
+    }
+    // Standard -a -> -y (Anna -> Anny, Ola -> Oli)
+    // Soft stem check (after soft consonants like ń, ś, ć, ź, dź, l, j use -i)
+    const beforeA = trimmed.slice(-2, -1).toLowerCase();
+    if (['l', 'j'].includes(beforeA) || trimmed.slice(-2).match(/[śćźń]a/i)) {
+      return trimmed.slice(0, -1) + 'i';
+    }
+    return trimmed.slice(0, -1) + 'y';
+  }
+  
+  // Masculine names ending in consonants
+  // Common patterns:
+  // -ek -> -ka (Marek -> Marka, Jacek -> Jacka)
+  if (lastTwoChars === 'ek') {
+    return trimmed.slice(0, -2) + 'ka';
+  }
+  // -eł -> -ła (Paweł -> Pawła)
+  if (lastTwoChars === 'eł') {
+    return trimmed.slice(0, -2) + 'ła';
+  }
+  // -sz -> -sza (Tomasz -> Tomasza)
+  if (lastTwoChars === 'sz') {
+    return trimmed + 'a';
+  }
+  // -n -> -na (Jan -> Jana, Stefan -> Stefana)
+  if (lastChar === 'n') {
+    return trimmed + 'a';
+  }
+  // -r -> -ra (Piotr -> Piotra)
+  if (lastChar === 'r') {
+    return trimmed + 'a';
+  }
+  // -ł -> -ła (Michał -> Michała)
+  if (lastChar === 'ł') {
+    return trimmed + 'a';
+  }
+  // -f -> -fa (Krzysztof -> Krzysztofa)
+  if (lastChar === 'f') {
+    return trimmed + 'a';
+  }
+  // -d -> -da (Dawid -> Dawida)
+  if (lastChar === 'd') {
+    return trimmed + 'a';
+  }
+  // -k -> -ka (Patryk -> Patryka)
+  if (lastChar === 'k') {
+    return trimmed + 'a';
+  }
+  // -s -> -sa (Mateusz exception handled above, generic: Marcin -> Marcina handled by n)
+  if (lastChar === 's') {
+    return trimmed + 'a';
+  }
+  // -z -> -za (Błażej is -ej)
+  if (lastChar === 'z') {
+    return trimmed + 'a';
+  }
+  // -j -> -ja (Maciej -> Macieja)
+  if (lastChar === 'j') {
+    return trimmed + 'a';
+  }
+  // -t -> -ta (Hubert -> Huberta)
+  if (lastChar === 't') {
+    return trimmed + 'a';
+  }
+  // -m -> -ma (Adam -> Adama)
+  if (lastChar === 'm') {
+    return trimmed + 'a';
+  }
+  // -c -> -ca (Kacper -> special, but -c generic)
+  if (lastChar === 'c') {
+    return trimmed + 'a';
+  }
+  // -w -> -wa (Sław compounds)
+  if (lastChar === 'w') {
+    return trimmed + 'a';
+  }
+  // -p -> -pa (Filip -> Filipa)
+  if (lastChar === 'p') {
+    return trimmed + 'a';
+  }
+  // -b -> -ba (Jakub -> Jakuba)
+  if (lastChar === 'b') {
+    return trimmed + 'a';
+  }
+  // -g -> -ga
+  if (lastChar === 'g') {
+    return trimmed + 'a';
+  }
+  
+  // Default: just add 'a'
+  return trimmed + 'a';
+};
+
 const AVAILABLE_UNITS = ['g', 'ml', 'kg', 'l', 'szt', 'opak'];
 const CATEGORY_OPTIONS = [{
   key: 'pieczywo',
@@ -1107,6 +1236,82 @@ export default function ShoppingList() {
       console.error('Error saving custom items:', err);
     }
   }, [customItems]);
+
+  // State for shared lists received from friends
+  const [sharedLists, setSharedLists] = useState<SharedList[]>([]);
+  const [loadingSharedLists, setLoadingSharedLists] = useState(false);
+
+  // Load shared lists from friends
+  useEffect(() => {
+    if (!isInitialized || !user) return;
+
+    const fetchSharedLists = async () => {
+      setLoadingSharedLists(true);
+      try {
+        const { data: shared, error } = await supabase
+          .from('shared_shopping_lists')
+          .select('*')
+          .eq('shared_with_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (shared && shared.length > 0) {
+          // Get owner profiles
+          const ownerIds = [...new Set(shared.map(s => s.owner_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, display_name')
+            .in('user_id', ownerIds);
+
+          const listsWithNames: SharedList[] = shared.map(s => {
+            const ownerProfile = profiles?.find(p => p.user_id === s.owner_id);
+            return {
+              id: s.id,
+              owner_id: s.owner_id,
+              owner_name: ownerProfile?.display_name || 'Znajomy',
+              items: (s.items as SharedList['items']) || [],
+              date_range_start: s.date_range_start,
+              date_range_end: s.date_range_end,
+              created_at: s.created_at
+            };
+          });
+          setSharedLists(listsWithNames);
+        } else {
+          setSharedLists([]);
+        }
+      } catch (err) {
+        console.error('Error fetching shared lists:', err);
+      } finally {
+        setLoadingSharedLists(false);
+      }
+    };
+
+    fetchSharedLists();
+  }, [user, isInitialized]);
+
+  // Delete a shared list
+  const deleteSharedList = useCallback(async (listId: string) => {
+    try {
+      soundFeedback.buttonClick();
+    } catch {}
+
+    try {
+      const { error } = await supabase
+        .from('shared_shopping_lists')
+        .delete()
+        .eq('id', listId);
+
+      if (error) throw error;
+
+      setSharedLists(prev => prev.filter(l => l.id !== listId));
+      toast.success('Usunięto listę');
+    } catch (err) {
+      console.error('Error deleting shared list:', err);
+      toast.error('Nie udało się usunąć listy');
+    }
+  }, []);
+
   const handleDateClick = useCallback((date: Date) => {
     try {
       soundFeedback.buttonClick();
@@ -1311,42 +1516,37 @@ export default function ShoppingList() {
     try {
       soundFeedback.buttonClick();
     } catch {}
-    let text = '🛒 Lista zakupów FITFLY\n';
-    if (startDate && endDate) {
-      text += `📅 ${format(startDate, 'd MMM', {
-        locale: pl
-      })} - ${format(endDate, 'd MMM yyyy', {
-        locale: pl
-      })}\n\n`;
-    } else {
-      text += '\n';
-    }
-    Object.entries(groupedIngredients).forEach(([category, items]) => {
-      const catConfig = INGREDIENT_CATEGORIES[category];
-      if (!catConfig) return;
-      text += `${catConfig.emoji} ${catConfig.label}:\n`;
-      items.forEach(item => {
-        text += `  • ${item.name} - ${item.displayAmount}\n`;
-      });
-      text += '\n';
-    });
+
+    // Prepare items for sharing
+    const itemsToShare = ingredients.map(item => ({
+      name: item.name,
+      amount: item.amount,
+      unit: item.unit,
+      category: item.category,
+      displayAmount: item.displayAmount
+    }));
+
     try {
-      const {
-        error
-      } = await supabase.from('direct_messages').insert({
-        sender_id: user.id,
-        receiver_id: friendId,
-        content: text,
-        message_type: 'text'
-      });
+      // Insert into shared_shopping_lists table
+      const { error } = await supabase
+        .from('shared_shopping_lists')
+        .insert({
+          owner_id: user.id,
+          shared_with_id: friendId,
+          items: itemsToShare,
+          date_range_start: startDate ? format(startDate, 'yyyy-MM-dd') : null,
+          date_range_end: endDate ? format(endDate, 'yyyy-MM-dd') : null
+        });
+
       if (error) throw error;
-      toast.success('Wysłano listę zakupów! 🛒');
+
+      toast.success('Lista zakupów została udostępniona! 🛒');
       setShowShareDialog(false);
     } catch (error) {
       console.error('Error sharing:', error);
-      toast.error('Nie udało się wysłać listy');
+      toast.error('Nie udało się udostępnić listy');
     }
-  }, [user, groupedIngredients, startDate, endDate]);
+  }, [user, ingredients, startDate, endDate]);
   const checkedCount = ingredients.filter(i => checkedItems.has(i.name.toLowerCase())).length;
   const progress = ingredients.length > 0 ? checkedCount / ingredients.length * 100 : 0;
 
@@ -1453,6 +1653,55 @@ export default function ShoppingList() {
               </p>
             </div>}
         </div>
+
+        {/* Shared Lists from Friends */}
+        {sharedLists.length > 0 && (
+          <div className="bg-card rounded-2xl border-2 border-secondary/30 p-4 shadow-card-playful">
+            <h2 className="font-bold font-display text-foreground mb-3 flex items-center gap-2">
+              <Gift className="w-5 h-5 text-secondary" />
+              Listy od znajomych
+            </h2>
+            <div className="space-y-3">
+              {sharedLists.map(list => (
+                <div key={list.id} className="bg-muted/50 rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-foreground">
+                        Udostępnione przez {declinePolishName(list.owner_name)}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => deleteSharedList(list.id)}
+                      className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {list.date_range_start && list.date_range_end && (
+                    <p className="text-xs text-muted-foreground mb-2">
+                      <Calendar className="w-3 h-3 inline mr-1" />
+                      {format(new Date(list.date_range_start), 'd MMM', { locale: pl })} — {format(new Date(list.date_range_end), 'd MMM', { locale: pl })}
+                    </p>
+                  )}
+                  <div className="space-y-1">
+                    {list.items.slice(0, 5).map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <span className="text-foreground">{item.name}</span>
+                        <span className="text-muted-foreground text-xs">{item.displayAmount}</span>
+                      </div>
+                    ))}
+                    {list.items.length > 5 && (
+                      <p className="text-xs text-muted-foreground text-center pt-1">
+                        +{list.items.length - 5} więcej produktów
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Add Product Button - After Calendar */}
         <Button variant="outline" className="w-full" onClick={() => setShowAddDialog(true)}>

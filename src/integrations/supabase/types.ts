@@ -572,6 +572,36 @@ export type Database = {
           },
         ]
       }
+      shared_shopping_lists: {
+        Row: {
+          created_at: string
+          date_range_end: string | null
+          date_range_start: string | null
+          id: string
+          items: Json
+          owner_id: string
+          shared_with_id: string
+        }
+        Insert: {
+          created_at?: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          id?: string
+          items?: Json
+          owner_id: string
+          shared_with_id: string
+        }
+        Update: {
+          created_at?: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          id?: string
+          items?: Json
+          owner_id?: string
+          shared_with_id?: string
+        }
+        Relationships: []
+      }
       shopping_list_checked: {
         Row: {
           created_at: string
