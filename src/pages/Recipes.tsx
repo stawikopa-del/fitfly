@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { RecipesSection, DetailedRecipe } from '@/components/flyfit/RecipesSection';
 import { CookingMode } from '@/components/flyfit/CookingMode';
+import { MealCalendar } from '@/components/flyfit/MealCalendar';
 import { soundFeedback } from '@/utils/soundFeedback';
 
 export default function Recipes() {
@@ -48,7 +49,11 @@ export default function Recipes() {
       </header>
 
       {/* Główna zawartość */}
-      <main className="px-4 py-6">
+      <main className="px-4 py-6 space-y-6">
+        {/* Kalendarz posiłków */}
+        <MealCalendar onStartCooking={setCookingRecipe} />
+        
+        {/* Sekcja przepisów AI */}
         <RecipesSection onStartCooking={setCookingRecipe} />
       </main>
     </div>
