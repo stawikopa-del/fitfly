@@ -9,8 +9,9 @@ export function useSharing() {
   const operationInProgress = useRef(false);
 
   const generateShareToken = () => {
-    return Math.random().toString(36).substring(2, 15) + 
-           Math.random().toString(36).substring(2, 15);
+    const array = new Uint8Array(16);
+    crypto.getRandomValues(array);
+    return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
   };
 
   const shareRecipeWithFriend = useCallback(async (recipeId: string, friendId: string) => {
