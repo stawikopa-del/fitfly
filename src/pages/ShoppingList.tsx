@@ -7,7 +7,7 @@ import { soundFeedback } from '@/utils/soundFeedback';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { format, addDays, startOfWeek, isSameDay, isWithinInterval, parseISO } from 'date-fns';
+import { format, addDays, startOfWeek, isSameDay, isWithinInterval } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useFriends } from '@/hooks/useFriends';
@@ -23,12 +23,15 @@ interface DietPlan {
   id: string;
   name: string;
   plan_data: {
-    days?: Array<{
-      date: string;
-      meals: Array<{
-        name: string;
-        ingredients?: string[];
-      }>;
+    dailyMeals?: {
+      breakfast: Array<{ name: string; calories: number; description: string }>;
+      lunch: Array<{ name: string; calories: number; description: string }>;
+      dinner: Array<{ name: string; calories: number; description: string }>;
+      snacks: Array<{ name: string; calories: number; description: string }>;
+    };
+    weeklySchedule?: Array<{
+      day: string;
+      meals: string[];
     }>;
   };
 }
@@ -193,36 +196,55 @@ export default function ShoppingList() {
   };
 
   const ingredients = useMemo(() => {
-    if (!dietPlan?.plan_data?.days || !startDate || !endDate) return [];
+    if (!dietPlan?.plan_data || !startDate || !endDate) return [];
     
     const allIngredients: string[] = [];
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
-    dietPlan.plan_data.days.forEach(day => {
-      const dayDate = parseISO(day.date);
-      if (isWithinInterval(dayDate, { start: startDate, end: endDate })) {
-        day.meals.forEach(meal => {
-          if (meal.ingredients) {
-            allIngredients.push(...meal.ingredients);
+    // Extract ingredients from daily meals and weekly schedule
+    if (dietPlan.plan_data.dailyMeals) {
+      const { breakfast, lunch, dinner, snacks } = dietPlan.plan_data.dailyMeals;
+      
+      // For each day in range, add all meals
+      for (let i = 0; i < daysDiff; i++) {
+        // Extract ingredient-like words from meal names and descriptions
+        [...breakfast, ...lunch, ...dinner, ...snacks].forEach(meal => {
+          // Parse meal name for common ingredients
+          const words = meal.name.split(/[,\s]+/).filter(w => w.length > 2);
+          allIngredients.push(...words);
+          
+          // Also parse description
+          if (meal.description) {
+            const descWords = meal.description.split(/[,\s]+/).filter(w => w.length > 3);
+            allIngredients.push(...descWords);
           }
         });
       }
-    });
+    }
+    
+    // Also check weekly schedule for additional meal names
+    if (dietPlan.plan_data.weeklySchedule) {
+      dietPlan.plan_data.weeklySchedule.forEach(day => {
+        day.meals.forEach(mealName => {
+          const words = mealName.split(/[,\s]+/).filter(w => w.length > 2);
+          allIngredients.push(...words);
+        });
+      });
+    }
 
-    const parsed = parseIngredients(allIngredients);
+    // Filter and clean ingredients
+    const cleanedIngredients = allIngredients
+      .map(i => i.toLowerCase().replace(/[^\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, ''))
+      .filter(i => i.length > 2)
+      .filter(i => !['oraz', 'lub', 'dla', 'bez', 'bardzo', 'lekko', 'dużo', 'mało', 'świeże', 'świeży'].includes(i));
+
+    const parsed = parseIngredients([...new Set(cleanedIngredients)]);
     
     // Merge duplicates
     const merged = new Map<string, Ingredient>();
     parsed.forEach(ing => {
       const key = ing.name.toLowerCase();
-      if (merged.has(key)) {
-        const existing = merged.get(key)!;
-        // Try to combine amounts
-        if (existing.amount && ing.amount) {
-          existing.amount = `${existing.amount} + ${ing.amount}`;
-        } else if (ing.amount) {
-          existing.amount = ing.amount;
-        }
-      } else {
+      if (!merged.has(key)) {
         merged.set(key, { ...ing, checked: checkedItems.has(key) });
       }
     });
