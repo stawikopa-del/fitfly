@@ -30,6 +30,16 @@ const bioPlaceholdersFemale = [
   'Tajemnicza jak pogoda w Polsce 🌦️',
   'Zbyt fit na pisanie 🏃‍♀️',
   'Tu miał być opis, ale poszła na trening 💪',
+  'Opis? Może jutro... 😴',
+  'Królowa bez bio 👑',
+  'Biegam szybciej niż piszę opisy 🏃‍♀️💨',
+  'Fitness > pisanie bio 🔥',
+  'Zajęta piciem wody 💧',
+  'Bio schudło razem ze mną 😂',
+  'Na diecie od pisania 📝❌',
+  'Sorry, mam trenować 🏋️‍♀️',
+  'Opis na cheat day 🍕',
+  'Zbyt zmęczona po treningu 😮‍💨',
 ];
 
 const bioPlaceholdersMale = [
@@ -39,6 +49,16 @@ const bioPlaceholdersMale = [
   'Tajemniczy jak WiFi w pociągu 📶',
   'Zbyt fit na pisanie 🏋️',
   'Tu miał być opis, ale poszedł na siłkę 💪',
+  'Opis? Może po serii 🏋️',
+  'Król bez bio 👑',
+  'Podnoszę ciężary, nie piszę opisy 🏋️‍♂️',
+  'Fitness > pisanie bio 🔥',
+  'Zajęty piciem shakea 🥤',
+  'Bio zjadłem na masie 🍗',
+  'Opis jest na następnym splicie 📅',
+  'Sorry, mam leg day 🦵',
+  'Bio? To jest cardio? 🤔',
+  'Zbyt zmęczony po pompkach 😮‍💨',
 ];
 
 const bioPlaceholdersNeutral = [
@@ -47,6 +67,13 @@ const bioPlaceholdersNeutral = [
   'Coming soon... ⏳',
   'Bio loading... 🔄',
   'Ktoś tu zapomniał o opisie 🙈',
+  '404: Bio not found 🔍',
+  'Tu byłby opis, ale... 💤',
+  'Opis na wakacjach 🏖️',
+  'Bio poszło na trening 🏃',
+  'Placeholder tekst 📝',
+  'Insert bio here ➡️',
+  'Work in progress 🔨',
 ];
 
 const getRandomBioPlaceholder = (gender: string | null) => {
