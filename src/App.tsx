@@ -5,64 +5,88 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/flyfit/AppLayout";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/flyfit/SplashScreen";
 import { useTheme } from "@/hooks/useTheme";
-import Home from "./pages/Home";
-import Workouts from "./pages/Workouts";
-import Nutrition from "./pages/Nutrition";
-import Challenges from "./pages/Challenges";
-import Progress from "./pages/Progress";
-import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
-import More from "./pages/More";
-import ChatList from "./pages/ChatList";
-import FitekChat from "./pages/FitekChat";
-import DirectChat from "./pages/DirectChat";
-import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
-import ProfileSetup from "./pages/ProfileSetup";
-import Help from "./pages/Help";
-import About from "./pages/About";
-import Info from "./pages/Info";
-import CalendarPage from "./pages/Calendar";
-import Privacy from "./pages/Privacy";
-import Achievements from "./pages/Achievements";
-import Goals from "./pages/Goals";
-import Friends from "./pages/Friends";
-import FriendProfile from "./pages/FriendProfile";
-import SharedRecipe from "./pages/SharedRecipe";
-import Invite from "./pages/Invite";
-import DietConfig from "./pages/DietConfig";
-import Recipes from "./pages/Recipes";
-import QuickMeal from "./pages/QuickMeal";
-import QuickMealMethod from "./pages/QuickMealMethod";
-import ShoppingList from "./pages/ShoppingList";
-import NotFound from "./pages/NotFound";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-const queryClient = new QueryClient();
+// Lazy load pages for better performance
+const Home = lazy(() => import("./pages/Home"));
+const Workouts = lazy(() => import("./pages/Workouts"));
+const Nutrition = lazy(() => import("./pages/Nutrition"));
+const Challenges = lazy(() => import("./pages/Challenges"));
+const Progress = lazy(() => import("./pages/Progress"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Settings = lazy(() => import("./pages/Settings"));
+const More = lazy(() => import("./pages/More"));
+const ChatList = lazy(() => import("./pages/ChatList"));
+const FitekChat = lazy(() => import("./pages/FitekChat"));
+const DirectChat = lazy(() => import("./pages/DirectChat"));
+const Auth = lazy(() => import("./pages/Auth"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const ProfileSetup = lazy(() => import("./pages/ProfileSetup"));
+const Help = lazy(() => import("./pages/Help"));
+const About = lazy(() => import("./pages/About"));
+const Info = lazy(() => import("./pages/Info"));
+const CalendarPage = lazy(() => import("./pages/Calendar"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Achievements = lazy(() => import("./pages/Achievements"));
+const Goals = lazy(() => import("./pages/Goals"));
+const Friends = lazy(() => import("./pages/Friends"));
+const FriendProfile = lazy(() => import("./pages/FriendProfile"));
+const SharedRecipe = lazy(() => import("./pages/SharedRecipe"));
+const Invite = lazy(() => import("./pages/Invite"));
+const DietConfig = lazy(() => import("./pages/DietConfig"));
+const Recipes = lazy(() => import("./pages/Recipes"));
+const QuickMeal = lazy(() => import("./pages/QuickMeal"));
+const QuickMealMethod = lazy(() => import("./pages/QuickMealMethod"));
+const ShoppingList = lazy(() => import("./pages/ShoppingList"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+});
+
+// Loading spinner component
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isInitialized } = useAuth();
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [checkingProfile, setCheckingProfile] = useState(true);
 
   useEffect(() => {
-    const checkProfile = async () => {
-      if (!user) {
-        setCheckingProfile(false);
-        return;
-      }
+    if (!isInitialized) return;
+    
+    if (!user) {
+      setCheckingProfile(false);
+      return;
+    }
 
+    let mounted = true;
+
+    const checkProfile = async () => {
       try {
         const { data: profile } = await supabase
           .from('profiles')
           .select('gender, age, height, weight, goal')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        // Profile is complete if all required fields are filled
+        if (!mounted) return;
+
         const isComplete = profile && 
           profile.gender && 
           profile.age && 
@@ -72,21 +96,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         
         setProfileComplete(!!isComplete);
       } catch {
-        setProfileComplete(false);
+        if (mounted) setProfileComplete(false);
       } finally {
-        setCheckingProfile(false);
+        if (mounted) setCheckingProfile(false);
       }
     };
 
     checkProfile();
-  }, [user]);
 
-  if (loading || checkingProfile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+    return () => { mounted = false; };
+  }, [user, isInitialized]);
+
+  if (!isInitialized || loading || checkingProfile) {
+    return <LoadingSpinner />;
   }
 
   if (!user) {
@@ -101,252 +123,254 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 const AppRoutes = () => (
-  <Routes>
-    <Route path="/auth" element={<Auth />} />
-    <Route path="/reset-password" element={<ResetPassword />} />
-    <Route path="/profile-setup" element={<ProfileSetup />} />
-    <Route
-      path="/"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Home />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/treningi"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Workouts />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/odzywianie"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Nutrition />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/wyzwania"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Challenges />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/postepy"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Progress />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/profil"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Profile />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/ustawienia"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Settings />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/czat"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <ChatList />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/czat/fitek"
-      element={
-        <ProtectedRoute>
-          <FitekChat />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/czat/:odgerId"
-      element={
-        <ProtectedRoute>
-          <DirectChat />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/inne"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <More />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/pomoc"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Help />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/o-nas"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <About />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/informacje"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Info />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/prywatnosc"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Privacy />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/kalendarz"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <CalendarPage />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/osiagniecia"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Achievements />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/cele"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Goals />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/znajomi"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Friends />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/znajomi/:friendId"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <FriendProfile />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route path="/shared/recipe/:token" element={<SharedRecipe />} />
-    <Route path="/invite/:userId" element={<Invite />} />
-    <Route
-      path="/konfiguracja-diety"
-      element={
-        <ProtectedRoute>
-          <DietConfig />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/przepisy"
-      element={
-        <ProtectedRoute>
-          <Recipes />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/szybki-posilek"
-      element={
-        <ProtectedRoute>
-          <QuickMeal />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/szybki-posilek/:method"
-      element={
-        <ProtectedRoute>
-          <QuickMealMethod />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/lista-zakupow"
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <ShoppingList />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route path="*" element={<NotFound />} />
-  </Routes>
+  <Suspense fallback={<LoadingSpinner />}>
+    <Routes>
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/profile-setup" element={<ProfileSetup />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Home />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/treningi"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Workouts />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/odzywianie"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Nutrition />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/wyzwania"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Challenges />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/postepy"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Progress />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profil"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Profile />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ustawienia"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Settings />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/czat"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ChatList />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/czat/fitek"
+        element={
+          <ProtectedRoute>
+            <FitekChat />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/czat/:odgerId"
+        element={
+          <ProtectedRoute>
+            <DirectChat />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/inne"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <More />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pomoc"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Help />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/o-nas"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <About />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/informacje"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Info />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/prywatnosc"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Privacy />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/kalendarz"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <CalendarPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/osiagniecia"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Achievements />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cele"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Goals />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/znajomi"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Friends />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/znajomi/:friendId"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <FriendProfile />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/shared/recipe/:token" element={<SharedRecipe />} />
+      <Route path="/invite/:userId" element={<Invite />} />
+      <Route
+        path="/konfiguracja-diety"
+        element={
+          <ProtectedRoute>
+            <DietConfig />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/przepisy"
+        element={
+          <ProtectedRoute>
+            <Recipes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/szybki-posilek"
+        element={
+          <ProtectedRoute>
+            <QuickMeal />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/szybki-posilek/:method"
+        element={
+          <ProtectedRoute>
+            <QuickMealMethod />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/lista-zakupow"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ShoppingList />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  </Suspense>
 );
 
 const App = () => {
@@ -357,30 +381,41 @@ const App = () => {
 
   // Check if this is the first visit in this session
   useEffect(() => {
-    const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
-    if (hasSeenSplash) {
+    try {
+      const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
+      if (hasSeenSplash) {
+        setShowSplash(false);
+      }
+    } catch {
+      // sessionStorage might not be available
       setShowSplash(false);
     }
   }, []);
 
   const handleSplashComplete = () => {
-    sessionStorage.setItem('hasSeenSplash', 'true');
+    try {
+      sessionStorage.setItem('hasSeenSplash', 'true');
+    } catch {
+      // Ignore storage errors
+    }
     setShowSplash(false);
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-        <BrowserRouter>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+          <BrowserRouter>
+            <AuthProvider>
+              <AppRoutes />
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

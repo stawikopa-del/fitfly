@@ -572,6 +572,69 @@ export type Database = {
           },
         ]
       }
+      shopping_list_checked: {
+        Row: {
+          created_at: string
+          id: string
+          is_checked: boolean
+          item_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_checked?: boolean
+          item_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_checked?: boolean
+          item_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shopping_list_items: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          id: string
+          is_checked: boolean
+          is_custom: boolean
+          name: string
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          id?: string
+          is_checked?: boolean
+          is_custom?: boolean
+          name: string
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          id?: string
+          is_checked?: boolean
+          is_custom?: boolean
+          name?: string
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           badge_type: Database["public"]["Enums"]["badge_type"]
