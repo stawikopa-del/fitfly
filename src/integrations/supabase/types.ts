@@ -574,6 +574,7 @@ export type Database = {
       }
       shared_shopping_lists: {
         Row: {
+          comments: Json | null
           created_at: string
           date_range_end: string | null
           date_range_start: string | null
@@ -581,9 +582,11 @@ export type Database = {
           items: Json
           notes: string | null
           owner_id: string
+          reactions: Json | null
           shared_with_id: string
         }
         Insert: {
+          comments?: Json | null
           created_at?: string
           date_range_end?: string | null
           date_range_start?: string | null
@@ -591,9 +594,11 @@ export type Database = {
           items?: Json
           notes?: string | null
           owner_id: string
+          reactions?: Json | null
           shared_with_id: string
         }
         Update: {
+          comments?: Json | null
           created_at?: string
           date_range_end?: string | null
           date_range_start?: string | null
@@ -601,6 +606,7 @@ export type Database = {
           items?: Json
           notes?: string | null
           owner_id?: string
+          reactions?: Json | null
           shared_with_id?: string
         }
         Relationships: []

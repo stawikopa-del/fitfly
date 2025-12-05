@@ -23,6 +23,18 @@ interface SharedListItem {
   addedBy?: string;
 }
 
+interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  createdAt: string;
+}
+
+interface Reactions {
+  [emoji: string]: string[]; // emoji -> array of user IDs who reacted
+}
+
 interface SharedList {
   id: string;
   owner_id: string;
@@ -34,7 +46,33 @@ interface SharedList {
   date_range_end: string | null;
   created_at: string;
   notes: string;
+  reactions: Reactions;
+  comments: Comment[];
 }
+
+const REACTION_EMOJIS = [
+  { emoji: '👍', label: 'Super' },
+  { emoji: '❤️', label: 'Kocham' },
+  { emoji: '😂', label: 'Śmieszne' },
+  { emoji: '🙏', label: 'Dzięki' },
+  { emoji: '👀', label: 'Widzę' },
+];
+
+// Format comment time
+const formatCommentTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'teraz';
+  if (diffMins < 60) return `${diffMins} min temu`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} godz. temu`;
+  
+  return format(date, 'd MMM, HH:mm', { locale: pl });
+};
 
 // Polish name declension helper (genitive case - "od kogo?")
 const declinePolishName = (name: string): string => {
@@ -144,6 +182,12 @@ export default function SharedShoppingList() {
   const [notesPlaceholder] = useState(() => 
     NOTES_PLACEHOLDERS[Math.floor(Math.random() * NOTES_PLACEHOLDERS.length)]
   );
+  
+  // Reactions & Comments
+  const [reactions, setReactions] = useState<Reactions>({});
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [showComments, setShowComments] = useState(false);
 
   // Load shared list and its items
   useEffect(() => {
@@ -205,6 +249,9 @@ export default function SharedShoppingList() {
           }
         });
 
+        const parsedReactions = (data as any).reactions || {};
+        const parsedComments = (data as any).comments || [];
+
         setSharedList({
           id: data.id,
           owner_id: data.owner_id,
@@ -216,9 +263,13 @@ export default function SharedShoppingList() {
           date_range_end: data.date_range_end,
           created_at: data.created_at,
           notes: (data as any).notes || '',
+          reactions: parsedReactions,
+          comments: parsedComments,
         });
         setCheckedItems(initialChecked);
         setNotes((data as any).notes || '');
+        setReactions(parsedReactions);
+        setComments(parsedComments);
       } catch (err) {
         console.error('Error:', err);
         toast.error('Wystąpił błąd');
@@ -261,6 +312,8 @@ export default function SharedShoppingList() {
             ...prev,
             items: items,
             notes: newData.notes || '',
+            reactions: newData.reactions || {},
+            comments: newData.comments || [],
           } : null);
           
           setCheckedItems(newChecked);
@@ -269,6 +322,10 @@ export default function SharedShoppingList() {
           if (!editingNotes) {
             setNotes(newData.notes || '');
           }
+          
+          // Update reactions and comments
+          setReactions(newData.reactions || {});
+          setComments(newData.comments || []);
           
           // Show toast for live update (not from self)
           try {
@@ -415,6 +472,101 @@ export default function SharedShoppingList() {
     }, 1000);
   }, [saveNotes]);
 
+  // Toggle reaction
+  const toggleReaction = useCallback(async (emoji: string) => {
+    if (!sharedList || !user) return;
+    
+    try { soundFeedback.buttonClick(); } catch {}
+    
+    const currentReactions = { ...reactions };
+    const userReactions = currentReactions[emoji] || [];
+    const hasReacted = userReactions.includes(user.id);
+    
+    if (hasReacted) {
+      // Remove reaction
+      currentReactions[emoji] = userReactions.filter(id => id !== user.id);
+      if (currentReactions[emoji].length === 0) {
+        delete currentReactions[emoji];
+      }
+    } else {
+      // Add reaction
+      currentReactions[emoji] = [...userReactions, user.id];
+    }
+    
+    setReactions(currentReactions);
+    
+    try {
+      const { error } = await supabase
+        .from('shared_shopping_lists')
+        .update({ reactions: currentReactions })
+        .eq('id', sharedList.id);
+      
+      if (error) {
+        console.error('Error saving reaction:', error);
+      }
+    } catch (err) {
+      console.error('Error:', err);
+    }
+  }, [sharedList, user, reactions]);
+
+  // Add comment
+  const addComment = useCallback(async () => {
+    if (!sharedList || !user || !newComment.trim()) return;
+    
+    try { soundFeedback.success(); } catch {}
+    
+    const isOwner = sharedList.owner_id === user.id;
+    const userName = isOwner ? sharedList.owner_name : sharedList.recipient_name;
+    
+    const comment: Comment = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      userName: userName || 'Ty',
+      text: newComment.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    
+    const updatedComments = [...comments, comment];
+    setComments(updatedComments);
+    setNewComment('');
+    
+    try {
+      const { error } = await supabase
+        .from('shared_shopping_lists')
+        .update({ comments: updatedComments as any })
+        .eq('id', sharedList.id);
+      
+      if (error) {
+        console.error('Error saving comment:', error);
+      }
+    } catch (err) {
+      console.error('Error:', err);
+    }
+  }, [sharedList, user, newComment, comments]);
+
+  // Delete comment
+  const deleteComment = useCallback(async (commentId: string) => {
+    if (!sharedList || !user) return;
+    
+    try { soundFeedback.buttonClick(); } catch {}
+    
+    const updatedComments = comments.filter(c => c.id !== commentId);
+    setComments(updatedComments);
+    
+    try {
+      const { error } = await supabase
+        .from('shared_shopping_lists')
+        .update({ comments: updatedComments as any })
+        .eq('id', sharedList.id);
+      
+      if (error) {
+        console.error('Error deleting comment:', error);
+      }
+    } catch (err) {
+      console.error('Error:', err);
+    }
+  }, [sharedList, user, comments]);
+
   // Delete shared list
   const deleteList = useCallback(async () => {
     if (!sharedList) return;
@@ -540,6 +692,19 @@ export default function SharedShoppingList() {
             <span className="font-medium text-foreground flex-1">
               {notes ? 'Notatka' : 'Dodaj notatkę'}
             </span>
+            {/* Show reaction count badge */}
+            {Object.keys(reactions).length > 0 && (
+              <span className="text-sm mr-2">
+                {Object.entries(reactions).map(([emoji, users]) => 
+                  users.length > 0 ? emoji : null
+                ).filter(Boolean).join('')}
+              </span>
+            )}
+            {comments.length > 0 && (
+              <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full mr-2">
+                {comments.length} 💬
+              </span>
+            )}
             <ChevronDown className={cn(
               "w-4 h-4 text-muted-foreground transition-transform",
               showNotesInput && "rotate-180"
@@ -547,19 +712,141 @@ export default function SharedShoppingList() {
           </button>
           
           {showNotesInput && (
-            <div className="px-4 pb-4 pt-0">
-              <Textarea
-                value={notes}
-                onChange={(e) => handleNotesChange(e.target.value)}
-                placeholder={notesPlaceholder}
-                className="min-h-[80px] resize-none"
-              />
-              {editingNotes && (
-                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                  Zapisywanie...
-                </p>
-              )}
+            <div className="px-4 pb-4 pt-0 space-y-4">
+              {/* Notes textarea */}
+              <div>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => handleNotesChange(e.target.value)}
+                  placeholder={notesPlaceholder}
+                  className="min-h-[80px] resize-none"
+                />
+                {editingNotes && (
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                    Zapisywanie...
+                  </p>
+                )}
+              </div>
+              
+              {/* Reactions */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-muted-foreground">Reakcje:</span>
+                {REACTION_EMOJIS.map(({ emoji, label }) => {
+                  const reactionUsers = reactions[emoji] || [];
+                  const hasReacted = user ? reactionUsers.includes(user.id) : false;
+                  const count = reactionUsers.length;
+                  
+                  return (
+                    <button
+                      key={emoji}
+                      onClick={() => toggleReaction(emoji)}
+                      title={label}
+                      className={cn(
+                        "flex items-center gap-1 px-2 py-1 rounded-full transition-all text-sm",
+                        hasReacted 
+                          ? "bg-primary/20 border-2 border-primary scale-105" 
+                          : "bg-muted hover:bg-muted/80 border-2 border-transparent"
+                      )}
+                    >
+                      <span className="text-base">{emoji}</span>
+                      {count > 0 && (
+                        <span className={cn(
+                          "text-xs font-medium",
+                          hasReacted ? "text-primary" : "text-muted-foreground"
+                        )}>
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {/* Comments Section */}
+              <div className="border-t border-border/50 pt-4">
+                <button
+                  onClick={() => setShowComments(!showComments)}
+                  className="flex items-center gap-2 text-sm font-medium text-foreground w-full"
+                >
+                  <MessageSquare className="w-4 h-4 text-secondary" />
+                  Komentarze ({comments.length})
+                  <ChevronDown className={cn(
+                    "w-4 h-4 text-muted-foreground ml-auto transition-transform",
+                    showComments && "rotate-180"
+                  )} />
+                </button>
+                
+                {showComments && (
+                  <div className="mt-3 space-y-3">
+                    {/* Existing comments */}
+                    {comments.length > 0 ? (
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {comments.map(comment => {
+                          const isOwn = user?.id === comment.userId;
+                          const timeAgo = formatCommentTime(comment.createdAt);
+                          
+                          return (
+                            <div 
+                              key={comment.id} 
+                              className={cn(
+                                "p-3 rounded-xl text-sm",
+                                isOwn ? "bg-primary/10 ml-4" : "bg-muted mr-4"
+                              )}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-medium text-foreground text-xs">
+                                  {isOwn ? 'Ty' : comment.userName}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">{timeAgo}</span>
+                                  {isOwn && (
+                                    <button
+                                      onClick={() => deleteComment(comment.id)}
+                                      className="text-muted-foreground hover:text-destructive"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-foreground">{comment.text}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-2">
+                        Brak komentarzy. Napisz pierwszy!
+                      </p>
+                    )}
+                    
+                    {/* New comment input */}
+                    <div className="flex gap-2">
+                      <Input
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="Napisz komentarz..."
+                        className="flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            addComment();
+                          }
+                        }}
+                      />
+                      <Button
+                        size="icon"
+                        onClick={addComment}
+                        disabled={!newComment.trim()}
+                        className="bg-gradient-to-r from-secondary to-primary"
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
