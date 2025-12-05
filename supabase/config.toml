@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.generate-diet-plan]
 verify_jwt = true
+
+[functions.scan-meal]
+verify_jwt = true

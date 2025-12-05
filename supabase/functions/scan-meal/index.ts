@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const inputSchema = z.object({
-  description: z.string().min(3).max(500)
+  imageBase64: z.string().min(100).max(10000000), // Base64 image data
 });
 
 serve(async (req) => {
@@ -21,64 +21,52 @@ serve(async (req) => {
     const parseResult = inputSchema.safeParse(body);
     if (!parseResult.success) {
       return new Response(JSON.stringify({ 
-        error: "Opis posiłku musi mieć od 3 do 500 znaków" 
+        error: "Nieprawidłowe zdjęcie" 
       }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     
-    const { description } = parseResult.data;
+    const { imageBase64 } = parseResult.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `Jesteś ekspertem od żywienia z wieloletnim doświadczeniem. Na podstawie opisu posiłku BARDZO DOKŁADNIE oszacuj wartości odżywcze.
+    // Remove data URL prefix if present
+    const base64Data = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
 
-ZASADY SZACOWANIA (KRYTYCZNE):
-1. Przeanalizuj każdy składnik osobno
-2. Oszacuj wagę każdego składnika
-3. Użyj dokładnych wartości kalorycznych:
-   - Ryż gotowany: 130 kcal/100g, 2.7g białka, 28g węgli, 0.3g tłuszczu
-   - Makaron gotowany: 131 kcal/100g, 5g białka, 25g węgli, 1g tłuszczu
-   - Pierś kurczaka: 110 kcal/100g, 23g białka, 0g węgli, 1.5g tłuszczu
-   - Jajko całe: 155 kcal/100g (1 jajko ~70 kcal)
-   - Chleb: 250 kcal/100g
-   - Masło: 717 kcal/100g
-   - Ser żółty: 350 kcal/100g
-   - Jabłko: 52 kcal/100g
-   - Banan: 89 kcal/100g
-   - Owsianka (płatki suche): 370 kcal/100g
-   - Mleko 2%: 50 kcal/100ml
-   - Olej/oliwa: 884 kcal/100g
+    const systemPrompt = `Jesteś ekspertem od żywienia i rozpoznawania posiłków ze zdjęć. Twoim zadaniem jest BARDZO DOKŁADNE oszacowanie wartości odżywczych.
 
-4. Uwzględnij sposób przygotowania:
-   - Smażone na oleju: +50-100 kcal na porcję
-   - Z sosem: +50-150 kcal
-   - Z serem: +100-200 kcal
+ZASADY SZACOWANIA:
+1. Dokładnie analizuj wielkość porcji - porównuj z talerzem/miską
+2. Identyfikuj WSZYSTKIE składniki widoczne na zdjęciu
+3. Szacuj wagę każdego składnika osobno
+4. Sumuj kalorie i makroskładniki
+5. Uwzględniaj sposób przygotowania (smażone = więcej tłuszczu)
 
-5. Typowe polskie porcje:
-   - Śniadanie: 300-500 kcal
-   - Obiad: 500-800 kcal
-   - Kolacja: 300-500 kcal
-   - Przekąska: 100-300 kcal
+PRZYKŁADOWE REFERENCJE:
+- Średni talerz = 25cm średnicy
+- Porcja ryżu (ugotowanego) = 150-200g = 180-240 kcal
+- Porcja makaronu = 200g = 260-300 kcal  
+- Pierś kurczaka = 150g = 165 kcal, 31g białka
+- Jajko sadzone = 90 kcal, 6g białka, 7g tłuszczu
+- Łyżka oliwy = 120 kcal, 14g tłuszczu
+- Porcja sałatki = 50g = 10-15 kcal
 
-ODPOWIEDZ TYLKO W FORMACIE JSON bez dodatkowego tekstu:
+ODPOWIEDZ TYLKO W FORMACIE JSON:
 {
-  "name": "krótka polska nazwa posiłku (max 35 znaków)",
+  "name": "krótka nazwa posiłku po polsku (max 35 znaków)",
   "calories": liczba_kalorii (zaokrąglona do 5),
-  "protein": gramy_białka (zaokrąglone),
-  "carbs": gramy_węglowodanów (zaokrąglone),
-  "fat": gramy_tłuszczu (zaokrąglone),
-  "confidence": "low" | "medium" | "high"
-}
-
-Confidence:
-- "high" = znane danie, dokładne proporcje podane
-- "medium" = typowe danie, standardowa porcja
-- "low" = niejasny opis, szerokie szacunki`;
+  "protein": gramy_białka,
+  "carbs": gramy_węglowodanów,
+  "fat": gramy_tłuszczu,
+  "confidence": "low" | "medium" | "high",
+  "ingredients": ["składnik1", "składnik2"],
+  "portion_estimate": "opis wielkości porcji"
+}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -90,7 +78,21 @@ Confidence:
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Oszacuj dokładnie wartości odżywcze dla: ${description}` },
+          { 
+            role: "user", 
+            content: [
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Data}`
+                }
+              },
+              {
+                type: "text",
+                text: "Przeanalizuj to zdjęcie posiłku i oszacuj wartości odżywcze. Bądź dokładny!"
+              }
+            ]
+          },
         ],
       }),
     });
@@ -110,7 +112,7 @@ Confidence:
       }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "Błąd podczas szacowania posiłku" }), {
+      return new Response(JSON.stringify({ error: "Błąd podczas analizy zdjęcia" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -140,7 +142,9 @@ Confidence:
       protein: z.number().min(0).max(500),
       carbs: z.number().min(0).max(500),
       fat: z.number().min(0).max(500),
-      confidence: z.enum(["low", "medium", "high"]).optional()
+      confidence: z.enum(["low", "medium", "high"]).optional(),
+      ingredients: z.array(z.string()).optional(),
+      portion_estimate: z.string().optional()
     });
     
     const validatedMeal = mealSchema.parse(mealData);
@@ -149,9 +153,9 @@ Confidence:
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Estimate meal error:", error);
+    console.error("Scan meal error:", error);
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Błąd podczas przetwarzania" 
+      error: error instanceof Error ? error.message : "Błąd podczas analizy zdjęcia" 
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
