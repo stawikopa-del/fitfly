@@ -1229,18 +1229,28 @@ export default function ShoppingList() {
             <ShoppingCart className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="font-bold text-foreground mb-2">Brak planu diety</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Najpierw skonfiguruj swoją dietę, aby wygenerować listę zakupów
+              Skonfiguruj dietę lub dodaj produkty ręcznie
             </p>
-            <Button onClick={() => navigate('/konfiguracja-diety')}>
-              Skonfiguruj dietę
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => navigate('/konfiguracja-diety')}>
+                Skonfiguruj dietę
+              </Button>
+              <Button onClick={() => setShowAddDialog(true)} variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Dodaj produkt ręcznie
+              </Button>
+            </div>
           </div>
         ) : !startDate || !endDate ? (
           <div className="text-center py-8 px-4">
             <Calendar className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-4">
               Wybierz okres na kalendarzu powyżej, aby zobaczyć listę zakupów
             </p>
+            <Button onClick={() => setShowAddDialog(true)} variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Dodaj produkt ręcznie
+            </Button>
           </div>
         ) : allIngredients.length === 0 && customProducts.length === 0 ? (
           <div className="text-center py-8 px-4">
