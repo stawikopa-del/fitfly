@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Send, ArrowLeft, MoreVertical, BookOpen, Check, CheckCheck, ShoppingCart, X, Reply, Play, Pause } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, BookOpen, Check, CheckCheck, ShoppingCart, X, Reply, Play, Pause, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages, ReplyData } from '@/hooks/useDirectMessages';
-import { ChatAttachmentMenu } from '@/components/flyfit/ChatAttachmentMenu';
+import { ChatAttachmentMenu, PendingAttachmentPreview, type PendingAttachment } from '@/components/flyfit/ChatAttachmentMenu';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { toast } from 'sonner';
 import { format, differenceInMinutes } from 'date-fns';
@@ -44,11 +44,14 @@ export default function DirectChat() {
   const [contextMenuMessage, setContextMenuMessage] = useState<string | null>(null);
   const [friendIsTyping, setFriendIsTyping] = useState(false);
   const [friendIsOnline, setFriendIsOnline] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState<PendingAttachment | null>(null);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(messages.length);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const emojiInputRef = useRef<HTMLInputElement>(null);
 
   // Touch handling refs
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -884,35 +887,119 @@ export default function DirectChat() {
 
       {/* Input */}
       <div className="px-4 py-4 border-t border-border/50 bg-card/80 backdrop-blur-sm">
-        <div className="flex gap-2 items-end">
-          <ChatAttachmentMenu
-            onSendImage={sendImageMessage}
-            onSendVoice={sendVoiceMessage}
-            onSendShoppingList={sendShoppingListMessage}
-            disabled={isSending}
-          />
-          <Input
-            value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              if (e.target.value.trim()) {
-                broadcastTyping();
-              }
-            }}
-            onKeyPress={handleKeyPress}
-            placeholder={replyingTo ? "Napisz odpowiedź..." : "Napisz wiadomość..."}
-            disabled={isSending}
-            className="flex-1 rounded-2xl border-2 h-12"
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!input.trim() || isSending}
-            size="icon"
-            className="w-12 h-12 rounded-2xl"
-          >
-            <Send className="w-5 h-5" />
-          </Button>
-        </div>
+        {pendingAttachment ? (
+          <div className="flex gap-2 items-center">
+            <PendingAttachmentPreview
+              pendingAttachment={pendingAttachment}
+              onClear={() => {
+                if (pendingAttachment.previewUrl) {
+                  URL.revokeObjectURL(pendingAttachment.previewUrl);
+                }
+                setPendingAttachment(null);
+              }}
+              onSend={async () => {
+                setIsUploadingAttachment(true);
+                try {
+                  if (pendingAttachment.type === 'image' && pendingAttachment.file) {
+                    const fileExt = pendingAttachment.file.name.split('.').pop();
+                    const fileName = `${Date.now()}.${fileExt}`;
+                    const filePath = `${user?.id}/${fileName}`;
+                    
+                    const { error: uploadError } = await supabase.storage
+                      .from('chat-media')
+                      .upload(filePath, pendingAttachment.file);
+                    
+                    if (uploadError) throw uploadError;
+                    
+                    const { data } = supabase.storage
+                      .from('chat-media')
+                      .getPublicUrl(filePath);
+                    
+                    await sendImageMessage(data.publicUrl);
+                    toast.success('Zdjęcie wysłane');
+                  } else if (pendingAttachment.type === 'voice' && pendingAttachment.blob) {
+                    const fileName = `${Date.now()}.webm`;
+                    const filePath = `${user?.id}/${fileName}`;
+                    
+                    const { error: uploadError } = await supabase.storage
+                      .from('chat-media')
+                      .upload(filePath, pendingAttachment.blob);
+                    
+                    if (uploadError) throw uploadError;
+                    
+                    const { data } = supabase.storage
+                      .from('chat-media')
+                      .getPublicUrl(filePath);
+                    
+                    await sendVoiceMessage(data.publicUrl, pendingAttachment.duration || 0);
+                    toast.success('Wiadomość głosowa wysłana');
+                  }
+                  
+                  if (pendingAttachment.previewUrl) {
+                    URL.revokeObjectURL(pendingAttachment.previewUrl);
+                  }
+                  setPendingAttachment(null);
+                } catch (error) {
+                  console.error('Error sending attachment:', error);
+                  toast.error('Nie udało się wysłać załącznika');
+                } finally {
+                  setIsUploadingAttachment(false);
+                }
+              }}
+              isUploading={isUploadingAttachment}
+            />
+          </div>
+        ) : (
+          <div className="flex gap-2 items-center">
+            {/* Emoji button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                try { soundFeedback.buttonClick(); } catch {}
+                emojiInputRef.current?.focus();
+                emojiInputRef.current?.click();
+              }}
+              className="w-10 h-10 rounded-full hover:bg-muted shrink-0"
+            >
+              <Smile className="w-5 h-5 text-muted-foreground" />
+            </Button>
+            
+            <Input
+              ref={emojiInputRef}
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                if (e.target.value.trim()) {
+                  broadcastTyping();
+                }
+              }}
+              onKeyPress={handleKeyPress}
+              placeholder={replyingTo ? "Napisz odpowiedź..." : "Napisz wiadomość..."}
+              disabled={isSending}
+              className="flex-1 rounded-2xl border-2 h-12"
+              inputMode="text"
+            />
+            
+            <ChatAttachmentMenu
+              onSendImage={sendImageMessage}
+              onSendVoice={sendVoiceMessage}
+              onSendShoppingList={sendShoppingListMessage}
+              disabled={isSending}
+              pendingAttachment={pendingAttachment}
+              setPendingAttachment={setPendingAttachment}
+            />
+            
+            <Button
+              onClick={handleSend}
+              disabled={!input.trim() || isSending}
+              size="icon"
+              className="w-12 h-12 rounded-2xl shrink-0"
+            >
+              <Send className="w-5 h-5" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
