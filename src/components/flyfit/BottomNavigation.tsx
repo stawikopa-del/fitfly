@@ -19,7 +19,7 @@ export function BottomNavigation() {
 
   const isRouteActive = (to: string) => {
     if (to === '/inne') {
-      return inneSubRoutes.includes(location.pathname);
+      return inneSubRoutes.includes(location.pathname) || location.pathname.startsWith('/znajomi');
     }
     if (to === '/czat') {
       return location.pathname.startsWith('/czat');
