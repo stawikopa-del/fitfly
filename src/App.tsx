@@ -351,7 +351,7 @@ const AppRoutes = () => (
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
-  
+
   // Initialize theme on app load
   useTheme();
 
