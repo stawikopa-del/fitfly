@@ -29,10 +29,10 @@ interface DietPlan {
   name: string;
   plan_data: {
     dailyMeals?: {
-      breakfast: Array<{ name: string; calories: number; description: string }>;
-      lunch: Array<{ name: string; calories: number; description: string }>;
-      dinner: Array<{ name: string; calories: number; description: string }>;
-      snacks: Array<{ name: string; calories: number; description: string }>;
+      breakfast: Array<{ name: string; calories: number; description: string; ingredients?: Array<{ name: string; amount: number; unit: string }> }>;
+      lunch: Array<{ name: string; calories: number; description: string; ingredients?: Array<{ name: string; amount: number; unit: string }> }>;
+      dinner: Array<{ name: string; calories: number; description: string; ingredients?: Array<{ name: string; amount: number; unit: string }> }>;
+      snacks: Array<{ name: string; calories: number; description: string; ingredients?: Array<{ name: string; amount: number; unit: string }> }>;
     };
     weeklySchedule?: Array<{
       day: string;
@@ -88,7 +88,7 @@ const POLISH_NORMALIZATION: Record<string, string> = {
   'grejpfrutem': 'grejpfrut', 'grejpfruta': 'grejpfrut',
   'borówkami': 'borówka', 'borówek': 'borówka', 'borówki': 'borówka',
   
-  // Mięso
+  // Mięso - z pełnymi nazwami
   'kurczakiem': 'kurczak', 'kurczaka': 'kurczak',
   'wołowiną': 'wołowina', 'wołowiny': 'wołowina',
   'wieprzowiną': 'wieprzowina', 'wieprzowiny': 'wieprzowina',
@@ -99,18 +99,18 @@ const POLISH_NORMALIZATION: Record<string, string> = {
   'indykiem': 'indyk', 'indyka': 'indyk',
   'łososiem': 'łosoś', 'łososia': 'łosoś',
   'tuńczykiem': 'tuńczyk', 'tuńczyka': 'tuńczyk',
-  'krewetkami': 'krewetka', 'krewetkę': 'krewetka', 'krewetek': 'krewetka',
+  'krewetkami': 'krewetki', 'krewetkę': 'krewetki', 'krewetek': 'krewetki', 'krewetka': 'krewetki',
   'rybą': 'ryba', 'ryby': 'ryba', 'ryb': 'ryba',
-  'piersią': 'pierś', 'piersi': 'pierś',
-  'filetem': 'filet', 'fileta': 'filet',
+  'piersią': 'pierś z kurczaka', 'piersi': 'pierś z kurczaka', 'piers': 'pierś z kurczaka', 'pierś': 'pierś z kurczaka',
+  'filetem': 'filet z kurczaka', 'fileta': 'filet z kurczaka', 'filet': 'filet z kurczaka',
   
   // Zboża i makarony
   'ryżem': 'ryż', 'ryżu': 'ryż',
   'makaronem': 'makaron', 'makaronu': 'makaron',
   'kaszą': 'kasza', 'kaszy': 'kasza',
-  'płatkami': 'płatki', 'płatków': 'płatki',
+  'płatkami': 'płatki owsiane', 'płatków': 'płatki owsiane',
   'mąką': 'mąka', 'mąki': 'mąka',
-  'owsianymi': 'owsiane', 'owsianych': 'owsiane', 'owsiane': 'płatki owsiane',
+  'owsianymi': 'płatki owsiane', 'owsianych': 'płatki owsiane', 'owsiane': 'płatki owsiane', 'owsiany': 'płatki owsiane',
   'chlebem': 'chleb', 'chleba': 'chleb',
   'bułką': 'bułka', 'bułki': 'bułka', 'bułek': 'bułka',
   'toastem': 'toast', 'tosta': 'toast', 'tosty': 'toast',
@@ -140,34 +140,53 @@ const POLISH_NORMALIZATION: Record<string, string> = {
   'dżemem': 'dżem', 'dżemu': 'dżem',
   'masłem orzechowym': 'masło orzechowe',
   'czekoladą': 'czekolada', 'czekolady': 'czekolada',
+  
+  // Nasiona
+  'nasionami': 'nasiona', 'nasion': 'nasiona',
+  'siemieniem': 'siemię lniane', 'siemienia': 'siemię lniane',
+  'lnianej': 'siemię lniane', 'lniane': 'siemię lniane', 'lnianym': 'siemię lniane',
+  'sezamem': 'sezam', 'sezamu': 'sezam',
+  'chia': 'nasiona chia',
 };
 
 // Standard package sizes for products
 const PACKAGE_SIZES: Record<string, { size: number; unit: string; packageName: string }> = {
   // Nabiał - ml
   'mleko': { size: 1000, unit: 'ml', packageName: 'karton' },
-  'jogurt': { size: 150, unit: 'g', packageName: 'kubek' },
+  'jogurt': { size: 400, unit: 'g', packageName: 'opakowanie' }, // większe opakowanie
+  'jogurt naturalny': { size: 400, unit: 'g', packageName: 'opakowanie' },
+  'jogurt grecki': { size: 400, unit: 'g', packageName: 'opakowanie' },
   'śmietana': { size: 200, unit: 'ml', packageName: 'kubek' },
   'kefir': { size: 400, unit: 'ml', packageName: 'butelka' },
   'maślanka': { size: 500, unit: 'ml', packageName: 'butelka' },
   'ser': { size: 150, unit: 'g', packageName: 'opakowanie' },
+  'ser żółty': { size: 250, unit: 'g', packageName: 'opakowanie' },
+  'ser biały': { size: 200, unit: 'g', packageName: 'opakowanie' },
   'twaróg': { size: 200, unit: 'g', packageName: 'opakowanie' },
   'masło': { size: 200, unit: 'g', packageName: 'kostka' },
   'jajko': { size: 10, unit: 'szt', packageName: 'opakowanie' },
+  'jajka': { size: 10, unit: 'szt', packageName: 'opakowanie' },
   
-  // Mięso/ryby - g
+  // Mięso/ryby - g - PEŁNE NAZWY
   'kurczak': { size: 500, unit: 'g', packageName: 'opakowanie' },
-  'pierś': { size: 400, unit: 'g', packageName: 'opakowanie' },
+  'pierś z kurczaka': { size: 500, unit: 'g', packageName: 'opakowanie' },
+  'filet z kurczaka': { size: 500, unit: 'g', packageName: 'opakowanie' },
+  'pierś z indyka': { size: 400, unit: 'g', packageName: 'opakowanie' },
+  'filet z indyka': { size: 400, unit: 'g', packageName: 'opakowanie' },
+  'pierś': { size: 500, unit: 'g', packageName: 'opakowanie' },
   'filet': { size: 400, unit: 'g', packageName: 'opakowanie' },
   'indyk': { size: 400, unit: 'g', packageName: 'opakowanie' },
   'wołowina': { size: 500, unit: 'g', packageName: 'opakowanie' },
+  'mięso mielone': { size: 500, unit: 'g', packageName: 'opakowanie' },
   'wieprzowina': { size: 500, unit: 'g', packageName: 'opakowanie' },
-  'łosoś': { size: 200, unit: 'g', packageName: 'porcja' },
+  'łosoś': { size: 300, unit: 'g', packageName: 'opakowanie' },
+  'filet z łososia': { size: 300, unit: 'g', packageName: 'opakowanie' },
   'tuńczyk': { size: 170, unit: 'g', packageName: 'puszka' },
-  'szynka': { size: 100, unit: 'g', packageName: 'plasterek' },
+  'tuńczyk w puszce': { size: 170, unit: 'g', packageName: 'puszka' },
+  'szynka': { size: 150, unit: 'g', packageName: 'opakowanie' },
   'boczek': { size: 150, unit: 'g', packageName: 'opakowanie' },
   'kiełbasa': { size: 300, unit: 'g', packageName: 'sztuka' },
-  'krewetka': { size: 200, unit: 'g', packageName: 'opakowanie' },
+  'krewetki': { size: 250, unit: 'g', packageName: 'opakowanie' },
   
   // Warzywa - g/szt
   'marchew': { size: 1, unit: 'szt', packageName: 'sztuka' },
@@ -356,15 +375,69 @@ const extractAmountAndUnit = (text: string): { amount: number; unit: string } | 
   return null;
 };
 
-// Filter out non-ingredient words
+// Filter out non-ingredient words - ROZSZERZONA LISTA
 const EXCLUDED_WORDS = [
-  'oraz', 'lub', 'dla', 'bez', 'bardzo', 'lekko', 'dużo', 'mało', 'świeże', 'świeży',
-  'pokrojony', 'pokrojona', 'posiekany', 'posiekana', 'mały', 'mała', 'duży', 'duża',
-  'ugotowany', 'ugotowana', 'smażony', 'smażona', 'pieczony', 'pieczona',
-  'ciepły', 'ciepła', 'zimny', 'zimna', 'świeżo', 'delikatny', 'delikatna',
-  'podany', 'podana', 'przygotowany', 'przygotowana', 'gotowy', 'gotowa',
+  // Spójniki i przyimki
+  'oraz', 'lub', 'dla', 'bez', 'bardzo', 'lekko', 'dużo', 'mało', 'trochę', 'więcej',
+  'nad', 'pod', 'przed', 'przy', 'obok', 'między',
+  // Przymiotniki opisowe - formy przygotowania
+  'świeże', 'świeży', 'świeża', 'świeżych', 'świeżego', 'świeżą',
+  'pokrojony', 'pokrojona', 'pokrojone', 'pokrojonego', 'pokrojonej', 'pokrojonych',
+  'posiekany', 'posiekana', 'posiekane', 'posekanego', 'posekanej',
+  'mały', 'mała', 'małe', 'małego', 'małej', 'małych',
+  'duży', 'duża', 'duże', 'dużego', 'dużej', 'dużych',
+  'ugotowany', 'ugotowana', 'ugotowane', 'ugotowanego', 'ugotowanej', 'ugotowanych', 'gotowanych', 'gotowanego', 'gotowanej',
+  'smażony', 'smażona', 'smażone', 'smażonego', 'smażonej', 'smażonych',
+  'pieczony', 'pieczona', 'pieczone', 'pieczonego', 'pieczonej', 'pieczonych',
+  'grillowany', 'grillowana', 'grillowane', 'grillowanego', 'grillowanej', 'grillowanych',
+  'duszony', 'duszona', 'duszone', 'duszonego', 'duszonej', 'duszonych',
+  'blanszowany', 'blanszowana', 'blanszowane',
+  'marynowany', 'marynowana', 'marynowane', 'marynowanego', 'marynowanej',
+  'ciepły', 'ciepła', 'ciepłe', 'ciepłego', 'ciepłej',
+  'zimny', 'zimna', 'zimne', 'zimnego', 'zimnej',
+  'świeżo', 'delikatny', 'delikatna', 'delikatne',
+  'podany', 'podana', 'podane', 'podanego', 'podanej',
+  'przygotowany', 'przygotowana', 'przygotowane',
+  'gotowy', 'gotowa', 'gotowe',
+  // Formy - surowy, kruchy itp
+  'surowy', 'surowa', 'surowe', 'surowego', 'surowej',
+  'kruchy', 'krucha', 'kruche', 'kruchego', 'kruchej',
+  'miękki', 'miękka', 'miękkie', 'miękkiego', 'miękkiej',
+  'twardy', 'twarda', 'twarde', 'twardego', 'twardej',
+  // Słowa związane z dietą
   'kalorie', 'kcal', 'białko', 'węglowodany', 'tłuszcze', 'porcja', 'porcji',
-  'śniadanie', 'obiad', 'kolacja', 'przekąska', 'posiłek'
+  'śniadanie', 'obiad', 'kolacja', 'przekąska', 'posiłek', 'lunch',
+  'dieta', 'diety', 'diecie', 'dietą',
+  // Inne
+  'opcjonalnie', 'dodatkowo', 'ewentualnie', 'około', 'mniej', 'szczypta', 'garść',
+  'łyżka', 'łyżki', 'łyżek', 'szklanka', 'szklanki', 'szklankę',
+  'plaster', 'plastra', 'plastry', 'plasterka', 'plasterki',
+  // Kolory i inne przymiotniki
+  'biały', 'biała', 'białe', 'białego', 'białej',
+  'czerwony', 'czerwona', 'czerwone', 'czerwonego', 'czerwonej',
+  'zielony', 'zielona', 'zielone', 'zielonego', 'zielonej',
+  'żółty', 'żółta', 'żółte', 'żółtego', 'żółtej',
+  // Formy zdrowy itp
+  'zdrowy', 'zdrowa', 'zdrowe', 'zdrowszego', 'zdrowszej',
+  'pełnoziarnisty', 'pełnoziarnista', 'pełnoziarniste', 'pełnoziarnistego', 'pełnoziarnistej',
+  'naturalny', 'naturalna', 'naturalne', 'naturalnego', 'naturalnej',
+  'ekologiczny', 'ekologiczna', 'ekologiczne',
+  'organiczny', 'organiczna', 'organiczne',
+  // Wartości odżywcze
+  'protein', 'carbs', 'fats', 'fiber', 'błonnik',
+  // Przymiotniki smakowości
+  'słodki', 'słodka', 'słodkie', 'słodkiego', 'słodkiej',
+  'kwaśny', 'kwaśna', 'kwaśne', 'kwaśnego', 'kwaśnej',
+  'słony', 'słona', 'słone', 'słonego', 'słonej',
+  'gorzki', 'gorzka', 'gorzkie', 'gorzkiego', 'gorzkiej',
+  'ostry', 'ostra', 'ostre', 'ostrego', 'ostrej',
+  'pikantny', 'pikantna', 'pikantne',
+  // Metody przygotowania
+  'gotowanie', 'smażenie', 'pieczenie', 'grillowanie', 'duszenie',
+  // Rodzaje
+  'rodzaj', 'rodzaju', 'rodzaje', 'typ', 'typu', 'gatunek', 'gatunku',
+  // Jednostki i ilości opisowo
+  'porcja', 'porcje', 'sztuka', 'sztuki', 'sztuk', 'kawałek', 'kawałki',
 ];
 
 const isIngredient = (word: string): boolean => {
@@ -373,6 +446,12 @@ const isIngredient = (word: string): boolean => {
   if (word.length < 3) return false;
   if (/^\d+$/.test(word)) return false; // Just a number
   if (/^\d+[,.]?\d*\s*[gmlk]/.test(word)) return false; // Just measurement
+  // Wykluczaj słowa kończące się na typowe końcówki przymiotników
+  if (/^[a-ząćęłńóśźż]+(owy|owa|owe|owego|owej|anych|anym|anej|onym|owej|ego|ej|ych|ym|ą)$/i.test(lower)) {
+    // Ale nie wykluczaj prawdziwych składników
+    const realIngredients = ['awokado', 'tofu', 'hummus', 'quinoa', 'tahini'];
+    if (!realIngredients.includes(lower)) return false;
+  }
   return true;
 };
 
@@ -429,60 +508,152 @@ const getPackageInfo = (name: string, totalAmount: number, unit: string): { coun
   };
 };
 
-// Parse ingredients from meal data
+// Parse ingredients from meal data - ULEPSZONA WERSJA
 const parseIngredientsFromMeals = (
-  meals: Array<{ name: string; description: string }>,
+  meals: Array<{ name: string; description: string; ingredients?: Array<{ name: string; amount: number; unit: string }> }>,
   dayMultiplier: number
 ): Map<string, { amount: number; unit: string; count: number }> => {
   const ingredients = new Map<string, { amount: number; unit: string; count: number }>();
   
+  // Helper do normalizacji i dodawania składnika
+  const addIngredient = (rawName: string, amount: number, unit: string) => {
+    // Normalizuj nazwę - usuń przymiotniki opisowe
+    let normalizedName = rawName.toLowerCase().trim();
+    
+    // Usuń słowa opisowe z początku/końca
+    const descriptiveWords = [
+      'świeży', 'świeża', 'świeże', 'gotowany', 'gotowana', 'gotowane',
+      'smażony', 'smażona', 'pieczony', 'pieczona', 'grillowany', 'grillowana',
+      'marynowany', 'marynowana', 'surowy', 'surowa', 'mrożony', 'mrożona',
+      'drobno', 'grubo', 'pokrojony', 'pokrojona', 'posiekany', 'posiekana',
+      'naturalny', 'naturalna', 'naturalne', 'pełnoziarnisty', 'pełnoziarnista'
+    ];
+    
+    descriptiveWords.forEach(word => {
+      normalizedName = normalizedName.replace(new RegExp(`\\b${word}\\b`, 'gi'), '').trim();
+    });
+    
+    // Sprawdź słownik normalizacji
+    if (POLISH_NORMALIZATION[normalizedName]) {
+      normalizedName = POLISH_NORMALIZATION[normalizedName];
+    }
+    
+    // Sprawdź czy którykolwiek klucz jest częścią nazwy
+    for (const [declined, base] of Object.entries(POLISH_NORMALIZATION)) {
+      if (normalizedName.includes(declined) || declined === normalizedName) {
+        normalizedName = base;
+        break;
+      }
+    }
+    
+    // Usuń zbędne spacje i znaki
+    normalizedName = normalizedName.replace(/\s+/g, ' ').trim();
+    
+    if (!normalizedName || normalizedName.length < 2) return;
+    
+    // Kapitalizuj pierwszą literę
+    const finalName = normalizedName.charAt(0).toUpperCase() + normalizedName.slice(1);
+    
+    const existing = ingredients.get(finalName);
+    const adjustedAmount = amount * dayMultiplier;
+    
+    if (existing) {
+      ingredients.set(finalName, {
+        amount: existing.amount + adjustedAmount,
+        unit: existing.unit || unit,
+        count: existing.count + dayMultiplier,
+      });
+    } else {
+      ingredients.set(finalName, { amount: adjustedAmount, unit, count: dayMultiplier });
+    }
+  };
+  
   meals.forEach(meal => {
-    const text = `${meal.name} ${meal.description || ''}`;
-    
-    // Split by common separators
-    const parts = text.split(/[,;:\(\)\[\]]+/);
-    
-    parts.forEach(part => {
-      const trimmed = part.trim();
-      if (!trimmed) return;
-      
-      // Extract amount if present
-      const amountInfo = extractAmountAndUnit(trimmed);
-      
-      // Remove amount patterns from text to get ingredient name
-      const nameOnly = trimmed
-        .replace(/\d+[,.]?\d*\s*(kg|g|ml|l|szt|sztuk|łyżk|szklan|kostek|kostki)?/gi, '')
-        .replace(/\d+\/\d+/g, '')
-        .trim();
-      
-      // Split by spaces and process words
-      const words = nameOnly.split(/\s+/);
-      
-      words.forEach(word => {
-        const cleanWord = word.replace(/[^\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ-]/g, '');
-        if (!isIngredient(cleanWord)) return;
-        
-        const normalizedName = normalizeIngredientName(cleanWord);
-        if (!normalizedName || normalizedName.length < 3) return;
-        
-        const existing = ingredients.get(normalizedName);
-        const amount = (amountInfo?.amount || 100) * dayMultiplier;
-        const unit = amountInfo?.unit || 'g';
-        
-        if (existing) {
-          ingredients.set(normalizedName, {
-            amount: existing.amount + amount,
-            unit: existing.unit || unit,
-            count: existing.count + dayMultiplier,
-          });
-        } else {
-          ingredients.set(normalizedName, { amount, unit, count: dayMultiplier });
+    // Priorytet 1: Użyj pola "ingredients" jeśli dostępne (nowy format AI)
+    if (meal.ingredients && Array.isArray(meal.ingredients)) {
+      meal.ingredients.forEach(ing => {
+        if (ing.name && ing.amount) {
+          addIngredient(ing.name, ing.amount, ing.unit || 'g');
         }
       });
-    });
+      return; // Nie parsuj tekstu jeśli mamy strukturalne dane
+    }
+    
+    // Priorytet 2: Parsuj z description - szukaj wzorców "Xg nazwa" lub "nazwa Xg"
+    const description = meal.description || '';
+    
+    // Wzorzec: "200g piersi z kurczaka" lub "pierś z kurczaka 200g"
+    const ingredientPatterns = [
+      /(\d+)\s*(g|kg|ml|l|szt)\s+([a-ząćęłńóśźżĄĆĘŁŃÓŚŹŻ\s]+?)(?=[,;.]|$|\d)/gi,
+      /([a-ząćęłńóśźżĄĆĘŁŃÓŚŹŻ\s]+?)\s+(\d+)\s*(g|kg|ml|l|szt)(?=[,;.]|$)/gi,
+    ];
+    
+    // Parsuj wzorzec 1: "200g piersi z kurczaka"
+    let match;
+    const pattern1 = /(\d+)\s*(g|kg|ml|l|szt)\s+([a-ząćęłńóśźżĄĆĘŁŃÓŚŹŻ\s]+?)(?=[,;.]|$|\d)/gi;
+    while ((match = pattern1.exec(description)) !== null) {
+      let amount = parseFloat(match[1]);
+      const unit = match[2].toLowerCase();
+      const name = match[3].trim();
+      
+      if (unit === 'kg') amount *= 1000;
+      if (unit === 'l') amount *= 1000;
+      
+      if (name.length >= 2) {
+        addIngredient(name, amount, unit === 'kg' ? 'g' : unit === 'l' ? 'ml' : unit);
+      }
+    }
+    
+    // Parsuj wzorzec 2: "pierś z kurczaka 200g"
+    const pattern2 = /([a-ząćęłńóśźżĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźżĄĆĘŁŃÓŚŹŻ\s]+?)\s+(\d+)\s*(g|kg|ml|l|szt)(?=[,;.]|$)/gi;
+    while ((match = pattern2.exec(description)) !== null) {
+      const name = match[1].trim();
+      let amount = parseFloat(match[2]);
+      const unit = match[3].toLowerCase();
+      
+      if (unit === 'kg') amount *= 1000;
+      if (unit === 'l') amount *= 1000;
+      
+      if (name.length >= 2) {
+        addIngredient(name, amount, unit === 'kg' ? 'g' : unit === 'l' ? 'ml' : unit);
+      }
+    }
   });
   
-  return ingredients;
+  // Połącz podobne składniki (np. "Pierś z kurczaka" i "Kurczak")
+  const mergeMap: Record<string, string> = {
+    'kurczak': 'pierś z kurczaka',
+    'indyk': 'pierś z indyka',
+    'łosoś': 'filet z łososia',
+  };
+  
+  const finalIngredients = new Map<string, { amount: number; unit: string; count: number }>();
+  
+  ingredients.forEach((data, name) => {
+    const lowerName = name.toLowerCase();
+    let finalName = name;
+    
+    // Sprawdź czy to krótka nazwa, która powinna być zmergowana
+    for (const [short, full] of Object.entries(mergeMap)) {
+      if (lowerName === short) {
+        finalName = full.charAt(0).toUpperCase() + full.slice(1);
+        break;
+      }
+    }
+    
+    const existing = finalIngredients.get(finalName);
+    if (existing) {
+      finalIngredients.set(finalName, {
+        amount: existing.amount + data.amount,
+        unit: existing.unit || data.unit,
+        count: existing.count + data.count,
+      });
+    } else {
+      finalIngredients.set(finalName, data);
+    }
+  });
+  
+  return finalIngredients;
 };
 
 export default function ShoppingList() {
@@ -600,13 +771,17 @@ export default function ShoppingList() {
     
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
-    // Collect all meals
-    const allMeals: Array<{ name: string; description: string }> = [];
+    // Collect all meals with ingredients data
+    const allMeals: Array<{ name: string; description: string; ingredients?: Array<{ name: string; amount: number; unit: string }> }> = [];
     
     if (dietPlan.plan_data.dailyMeals) {
       const { breakfast, lunch, dinner, snacks } = dietPlan.plan_data.dailyMeals;
       [...(breakfast || []), ...(lunch || []), ...(dinner || []), ...(snacks || [])].forEach(meal => {
-        allMeals.push({ name: meal.name, description: meal.description || '' });
+        allMeals.push({ 
+          name: meal.name, 
+          description: meal.description || '',
+          ingredients: meal.ingredients 
+        });
       });
     }
     
