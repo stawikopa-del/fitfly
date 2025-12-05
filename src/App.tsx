@@ -38,6 +38,7 @@ import DietConfig from "./pages/DietConfig";
 import Recipes from "./pages/Recipes";
 import QuickMeal from "./pages/QuickMeal";
 import QuickMealMethod from "./pages/QuickMealMethod";
+import ShoppingList from "./pages/ShoppingList";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -331,6 +332,16 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <QuickMealMethod />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/lista-zakupow"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <ShoppingList />
+          </AppLayout>
         </ProtectedRoute>
       }
     />
