@@ -155,17 +155,15 @@ export function useFriends() {
     if (!user || !query.trim()) return [];
 
     try {
-      // Use searchable_profiles view for safe user discovery (only exposes non-sensitive data)
+      // Use secure RPC function for user discovery (requires authentication)
       const { data, error } = await supabase
-        .from('searchable_profiles')
-        .select('user_id, username, display_name, avatar_url')
-        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
-        .neq('user_id', user.id)
-        .limit(10);
+        .rpc('search_profiles', { search_term: query });
 
       if (error) throw error;
 
-      return data || [];
+      // Filter out current user from results
+      const filtered = (data || []).filter((p: { user_id: string }) => p.user_id !== user.id);
+      return filtered.slice(0, 10);
     } catch (error) {
       console.error('Error searching users:', error);
       return [];

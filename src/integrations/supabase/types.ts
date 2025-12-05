@@ -658,27 +658,7 @@ export type Database = {
       }
     }
     Views: {
-      searchable_profiles: {
-        Row: {
-          avatar_url: string | null
-          display_name: string | null
-          user_id: string | null
-          username: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          display_name?: string | null
-          user_id?: string | null
-          username?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          display_name?: string | null
-          user_id?: string | null
-          username?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_user_subscription_tier: {
@@ -688,6 +668,15 @@ export type Database = {
       is_friend_with: {
         Args: { user1_id: string; user2_id: string }
         Returns: boolean
+      }
+      search_profiles: {
+        Args: { search_term: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          user_id: string
+          username: string
+        }[]
       }
     }
     Enums: {
