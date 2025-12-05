@@ -203,50 +203,254 @@ const NAME_EXPANSIONS: Record<string, string> = {
   'ocet': 'ocet winny biały',
 };
 
-// Słowa do usunięcia (miary, opisy, literówki)
-const EXCLUDED_TOKENS = new Set([
-  // Jednostki miar przepisowych (nie produkty)
-  'kubek', 'kubki', 'kubków',
-  'łyżka', 'łyżki', 'łyżek', 'łyżeczka', 'łyżeczki',
-  'szklanka', 'szklanki', 'szklanek',
-  'garść', 'garści',
-  'szczypta', 'szczypt',
-  'plasterek', 'plasterki', 'plasterków',
-  'kawałek', 'kawałki', 'kawałków',
-  'porcja', 'porcji', 'porcje',
-  // Opisy gotowania
-  'gotowany', 'gotowana', 'gotowanych', 'ugotowany', 'ugotowana',
-  'smażony', 'smażona', 'smażonych', 'usmażony', 'usmażona',
-  'pieczony', 'pieczona', 'pieczonych', 'upieczony', 'upieczona',
-  'grillowany', 'grillowana', 'grillowanych',
-  'pokrojony', 'pokrojona', 'pokrojonych',
-  'posiekany', 'posiekana', 'posiekanych',
-  'mielony', 'mielona', 'mielonych',
-  'świeży', 'świeża', 'świeże', 'świeżych',
-  'ciepły', 'ciepła', 'ciepłe',
-  'zimny', 'zimna', 'zimne',
-  'surowy', 'surowa', 'surowe',
-  'drobno', 'grubo',
-  // Ogólne słowa nieprzydatne
-  'oraz', 'lub', 'albo', 'dla', 'bez', 'do',
-  'bardzo', 'lekko', 'trochę', 'dużo', 'mało',
-  'smaku', 'potrzeby', 'życzeniu',
-  'opcjonalnie', 'ewentualnie',
-  'dekoracji', 'podania', 'posypania',
-  'itp', 'itd', 'etc',
-  // Literówki i fragmenty
-  'mielontm', 'kalorie', 'kcal', 'białko', 'węglowodany', 'tłuszcze',
-  'śniadanie', 'obiad', 'kolacja', 'przekąska', 'posiłek',
-  // Akcesoria kuchenne
-  'miska', 'garnek', 'patelnia', 'blender', 'mikser',
-  'deska', 'nóż', 'widelec', 'talerz',
+// =====================================================
+// SŁOWNIK PRAWDZIWYCH PRODUKTÓW SPOŻYWCZYCH
+// Tylko te słowa mogą być dodane do listy zakupów
+// =====================================================
+
+const VALID_FOOD_PRODUCTS = new Set([
+  // === NABIAŁ ===
+  'jajko', 'jajka', 'mleko', 'masło', 'ser', 'ser żółty', 'ser biały', 'ser feta', 'ser mozzarella',
+  'ser parmezan', 'ser ricotta', 'ser mascarpone', 'ser gorgonzola', 'ser camembert', 'ser brie',
+  'twaróg', 'twaróg chudy', 'twaróg półtłusty', 'jogurt', 'jogurt naturalny', 'jogurt grecki',
+  'śmietana', 'śmietanka', 'kefir', 'maślanka', 'serek wiejski', 'serek homogenizowany',
+  
+  // === MIĘSO ===
+  'kurczak', 'pierś z kurczaka', 'udko z kurczaka', 'skrzydełka', 'podudzie',
+  'indyk', 'pierś z indyka', 'wołowina', 'antrykot', 'rostbef', 'befsztyk',
+  'wieprzowina', 'schab', 'karkówka', 'boczek', 'żeberka', 'golonka',
+  'mięso mielone', 'mięso mielone wołowe', 'mięso mielone wieprzowe', 'mięso mielone drobiowe',
+  'szynka', 'kiełbasa', 'parówki', 'kabanosy', 'salami', 'mortadela',
+  'wędlina', 'polędwica', 'baleron',
+  
+  // === RYBY I OWOCE MORZA ===
+  'łosoś', 'filet z łososia', 'dorsz', 'filet z dorsza', 'tuńczyk', 'makrela', 'śledź',
+  'pstrąg', 'tilapia', 'morszczuk', 'halibut', 'sandacz', 'karp', 'szczupak',
+  'krewetki', 'małże', 'ośmiornica', 'kalmary', 'przegrzebki',
+  
+  // === WARZYWA ===
+  'marchew', 'marchewka', 'cebula', 'czosnek', 'pomidor', 'pomidory', 'ogórek', 'ogórki',
+  'ogórek kiszony', 'ogórki kiszone', 'papryka', 'brokuł', 'brokuły', 'kalafior',
+  'szpinak', 'sałata', 'kapusta', 'kapusta pekińska', 'kapusta kiszona',
+  'ziemniaki', 'ziemniak', 'bataty', 'cukinia', 'bakłażan', 'dynia',
+  'por', 'seler', 'seler naciowy', 'burak', 'buraki', 'rzodkiewka',
+  'pietruszka', 'szczypiorek', 'koperek', 'rukola', 'roszponka',
+  'awokado', 'kukurydza', 'groszek', 'fasola', 'fasola szparagowa',
+  'szparagi', 'karczoch', 'fenkuł', 'jarmuż', 'botwina',
+  'pomidory koktajlowe', 'pomidory suszone', 'koncentrat pomidorowy', 'passata',
+  
+  // === OWOCE ===
+  'jabłko', 'jabłka', 'banan', 'banany', 'pomarańcza', 'pomarańcze',
+  'cytryna', 'cytryny', 'limonka', 'grejpfrut', 'mandarynka',
+  'kiwi', 'mango', 'ananas', 'arbuz', 'melon', 'gruszka',
+  'śliwka', 'brzoskwinia', 'nektarynka', 'morela', 'wiśnia', 'czereśnia',
+  'truskawki', 'maliny', 'borówki', 'jagody', 'jeżyny', 'porzeczki',
+  'winogrona', 'figi', 'daktyle', 'rodzynki', 'żurawina', 'granat',
+  
+  // === PIECZYWO ===
+  'chleb', 'chleb pszenny', 'chleb żytni', 'chleb razowy', 'chleb graham',
+  'bułka', 'bułki', 'bagietka', 'rogal', 'croissant', 'toast', 'tosty',
+  'tortilla', 'pita', 'bułka tarta', 'chałka',
+  
+  // === ZBOŻA I MAKARONY ===
+  'ryż', 'ryż biały', 'ryż brązowy', 'ryż basmati', 'ryż jaśminowy',
+  'makaron', 'makaron spaghetti', 'makaron penne', 'makaron fusilli', 'makaron tagliatelle',
+  'kasza', 'kasza gryczana', 'kasza jaglana', 'kasza jęczmienna', 'kasza kuskus',
+  'mąka', 'mąka pszenna', 'mąka żytnia', 'mąka orkiszowa',
+  'płatki owsiane', 'płatki', 'owsianka', 'musli', 'granola',
+  'quinoa', 'bulgur', 'amarantus', 'kuskus',
+  
+  // === PRZYPRAWY I ZIOŁA ===
+  'sól', 'pieprz', 'papryka słodka', 'papryka ostra', 'kurkuma', 'curry', 'chili',
+  'oregano', 'bazylia', 'tymianek', 'rozmaryn', 'majeranek', 'lubczyk', 'estragon',
+  'cynamon', 'gałka muszkatołowa', 'imbir', 'goździki', 'anyż', 'kardamon',
+  'kminek', 'kolendra', 'koperek', 'natka pietruszki',
+  'liść laurowy', 'ziele angielskie',
+  
+  // === OLEJE I TŁUSZCZE ===
+  'oliwa', 'oliwa z oliwek', 'olej', 'olej rzepakowy', 'olej słonecznikowy', 'olej kokosowy',
+  'olej lniany', 'smalec', 'masło klarowane',
+  
+  // === OCTY I SOSY ===
+  'ocet', 'ocet balsamiczny', 'ocet jabłkowy', 'ocet winny',
+  'sos sojowy', 'sos worcester', 'sos teriyaki', 'sos sriracha', 'sos tabasco',
+  'ketchup', 'musztarda', 'majonez', 'sos tatarski',
+  
+  // === SŁODYCZE I PRZEKĄSKI ===
+  'cukier', 'cukier puder', 'cukier trzcinowy', 'miód', 'syrop klonowy',
+  'dżem', 'marmolada', 'nutella', 'krem czekoladowy',
+  'czekolada', 'czekolada gorzka', 'czekolada mleczna', 'czekolada biała',
+  'kakao', 'kawa', 'herbata',
+  
+  // === ORZECHY I NASIONA ===
+  'orzechy', 'orzechy włoskie', 'orzechy laskowe', 'orzechy nerkowca', 'migdały',
+  'orzechy ziemne', 'orzeszki ziemne', 'pistacje', 'orzechy pekan', 'orzechy brazylijskie',
+  'masło orzechowe', 'tahini', 'sezam', 'siemię lniane', 'nasiona chia',
+  'pestki dyni', 'pestki słonecznika', 'kokos', 'wiórki kokosowe',
+  
+  // === ROŚLINY STRĄCZKOWE ===
+  'ciecierzyca', 'soczewica', 'soczewica czerwona', 'fasola biała', 'fasola czerwona',
+  'fasola czarna', 'groch', 'bób', 'edamame',
+  
+  // === PRODUKTY GOTOWE ===
+  'tofu', 'tempeh', 'hummus', 'pesto', 'bulion', 'rosół', 'kostka rosołowa',
+  'mleko kokosowe', 'śmietanka kokosowa', 'pasta curry',
+  
+  // === PRZETWORY ===
+  'pomidory w puszce', 'groszek w puszce', 'kukurydza w puszce',
+  'tuńczyk w puszce', 'sardynki', 'szprotki',
+  
+  // === NAPOJE ===
+  'woda', 'sok', 'sok pomarańczowy', 'sok jabłkowy', 'kompot',
+  
+  // === PRODUKTY DO PIECZENIA ===
+  'proszek do pieczenia', 'soda oczyszczona', 'drożdże', 'drożdże suche',
+  'żelatyna', 'wanilia', 'ekstrakt waniliowy', 'aromat',
+  'skrobia', 'skrobia ziemniaczana', 'budyń',
 ]);
 
-// Normalizacja polskich form gramatycznych
+// Słowa CAŁKOWICIE wykluczane (nie produkty)
+const EXCLUDED_TOKENS = new Set([
+  // === JEDNOSTKI MIAR (NIE PRODUKTY) ===
+  'kubek', 'kubki', 'kubków', 'kubka',
+  'łyżka', 'łyżki', 'łyżek', 'łyżką', 'łyżeczka', 'łyżeczki', 'łyżeczek',
+  'szklanka', 'szklanki', 'szklanek', 'szklanką',
+  'garść', 'garści', 'garścią',
+  'szczypta', 'szczypt', 'szczyptą',
+  'plasterek', 'plasterki', 'plasterków', 'plasterkami',
+  'kawałek', 'kawałki', 'kawałków', 'kawałkami',
+  'porcja', 'porcji', 'porcje', 'porcją',
+  'kromka', 'kromki', 'kromek', 'kromką', 'kromkami',
+  'kostka', 'kostki', 'kostek', 'kostką',
+  
+  // === LICZEBNIKI I ILOŚCI ===
+  'dwie', 'dwóch', 'dwoma', 'dwa', 'trzy', 'trzech', 'trzema', 'cztery', 'pięć',
+  'jeden', 'jedna', 'jedno', 'jedną', 'jednego',
+  'kilka', 'kilku', 'wiele', 'wielu', 'parę', 'paru',
+  'ilość', 'ilości', 'ilością',
+  'połowa', 'połowy', 'połówka', 'ćwierć',
+  
+  // === PRZYMIOTNIKI I PRZYSŁÓWKI ===
+  'świeży', 'świeża', 'świeże', 'świeżych', 'świeżo',
+  'ciepły', 'ciepła', 'ciepłe', 'ciepłych',
+  'zimny', 'zimna', 'zimne', 'zimnych',
+  'gorący', 'gorąca', 'gorące',
+  'surowy', 'surowa', 'surowe',
+  'drobno', 'grubo', 'cienko', 'grubą',
+  'duży', 'duża', 'duże', 'dużych', 'duży',
+  'mały', 'mała', 'małe', 'małych',
+  'średni', 'średnia', 'średnie',
+  'biały', 'biała', 'białe', 'białym', 'białego',
+  'czarny', 'czarna', 'czarne', 'czarnym',
+  'żółty', 'żółta', 'żółte', 'żółtym',
+  'zielony', 'zielona', 'zielone', 'zielonym',
+  'czerwony', 'czerwona', 'czerwone', 'czerwonym',
+  'chudy', 'chuda', 'chude', 'chudym', 'chudego',
+  'tłusty', 'tłusta', 'tłuste', 'tłustym',
+  'klasyczny', 'klasyczna', 'klasyczne', 'klasycznym',
+  'domowy', 'domowa', 'domowe', 'domowym',
+  'naturalny', 'naturalna', 'naturalne', 'naturalnym',
+  
+  // === CZASOWNIKI I FORMY ODCZASOWNIKOWE ===
+  'gotowany', 'gotowana', 'gotowanych', 'gotowanym', 'ugotowany', 'ugotowana',
+  'smażony', 'smażona', 'smażonych', 'smażonym', 'usmażony', 'usmażona',
+  'pieczony', 'pieczona', 'pieczonych', 'pieczonym', 'upieczony', 'upieczona',
+  'grillowany', 'grillowana', 'grillowanych', 'grillowanym',
+  'duszony', 'duszona', 'duszonych', 'duszoną', 'duszonym',
+  'pokrojony', 'pokrojona', 'pokrojonych', 'pokrojoną',
+  'posiekany', 'posiekana', 'posiekanych', 'posiekaną',
+  'starty', 'starta', 'startych', 'startym', 'starty',
+  'mielony', 'mielona', 'mielonych', 'mielonego', 'mielonym',
+  'podany', 'podana', 'podanych', 'podaną',
+  'przygotowany', 'przygotowana', 'przygotowanych',
+  'marynowany', 'marynowana', 'marynowanych',
+  'blanszowany', 'blanszowana',
+  'wędzony', 'wędzona', 'wędzonych', 'wędzoną',
+  
+  // === PRZYIMKI I SPÓJNIKI ===
+  'na', 'do', 'z', 'ze', 'w', 'we', 'po', 'od', 'dla', 'bez', 'przy', 'za', 'pod', 'nad',
+  'oraz', 'lub', 'albo', 'i', 'a', 'też', 'także', 'również',
+  
+  // === SŁOWA OPISOWE ===
+  'smaku', 'smak', 'smakiem',
+  'potrzeby', 'potrzeba', 'potrzebny',
+  'życzeniu', 'życzenie',
+  'opcjonalnie', 'ewentualnie', 'dodatkowo',
+  'dekoracji', 'dekoracja', 'posypania', 'polania',
+  'podania', 'podanie',
+  'sposób', 'sposobe', 'sposobem',
+  'bazie', 'baza', 'bazą', 'podstawie',
+  'dodatek', 'dodatkiem', 'dodatku',
+  'itp', 'itd', 'etc', 'np',
+  
+  // === NAZWY POTRAW (NIE PRODUKTY) ===
+  'kanapka', 'kanapki', 'kanapek', 'kanapką',
+  'zupa', 'zupy', 'zupą',
+  'sałatka', 'sałatki', 'sałatkę', 'sałatką',
+  'danie', 'dania', 'dań',
+  'potrawa', 'potrawy', 'potrawą',
+  'śniadanie', 'obiad', 'kolacja', 'przekąska', 'posiłek',
+  'deser', 'desery',
+  
+  // === LITERÓWKI I BŁĘDY ===
+  'mielontm', 'kalorie', 'kcal', 'białko', 'węglowodany', 'tłuszcze',
+  'gram', 'gramy', 'gramów', 'litr', 'litry', 'litrów',
+  
+  // === AKCESORIA KUCHENNE ===
+  'miska', 'garnek', 'patelnia', 'blender', 'mikser',
+  'deska', 'nóż', 'widelec', 'talerz', 'rondel',
+  'piekarnik', 'kuchenka', 'lodówka',
+  
+  // === INNE NIEDOZWOLONE ===
+  'wodzie', 'wody', 'wodą',  // "na wodzie" - nie produkt
+  'ogniu', 'ognia',
+  'parze', 'pary', 'parą',
+  'minute', 'minut', 'minuty', 'minutę',
+  'godziny', 'godzin', 'godzinę',
+]);
+
+// Złożone wyrażenia produktowe (przymiotnik + rzeczownik = pełny produkt)
+const COMPOUND_PRODUCTS: Record<string, string> = {
+  'ogórki kiszone': 'ogórki kiszone',
+  'ogórek kiszony': 'ogórek kiszony',
+  'kiszone ogórki': 'ogórki kiszone',
+  'kapusta kiszona': 'kapusta kiszona',
+  'kiszona kapusta': 'kapusta kiszona',
+  'twaróg chudy': 'twaróg chudy',
+  'chudy twaróg': 'twaróg chudy',
+  'pierś drobiowa': 'pierś z kurczaka',
+  'drobiowa pierś': 'pierś z kurczaka',
+  'pierś kurczaka': 'pierś z kurczaka',
+  'mięso mielone': 'mięso mielone',
+  'mielone mięso': 'mięso mielone',
+  'ser żółty': 'ser żółty',
+  'żółty ser': 'ser żółty',
+  'ser biały': 'ser biały',
+  'biały ser': 'ser biały',
+  'masło orzechowe': 'masło orzechowe',
+  'orzechowe masło': 'masło orzechowe',
+  'płatki owsiane': 'płatki owsiane',
+  'owsiane płatki': 'płatki owsiane',
+  'oliwa oliwek': 'oliwa z oliwek',
+  'pomidory suszone': 'pomidory suszone',
+  'suszone pomidory': 'pomidory suszone',
+  'mleko kokosowe': 'mleko kokosowe',
+  'kokosowe mleko': 'mleko kokosowe',
+  'czekolada gorzka': 'czekolada gorzka',
+  'gorzka czekolada': 'czekolada gorzka',
+  'ryż brązowy': 'ryż brązowy',
+  'brązowy ryż': 'ryż brązowy',
+  'kasza gryczana': 'kasza gryczana',
+  'gryczana kasza': 'kasza gryczana',
+  'fasola szparagowa': 'fasola szparagowa',
+  'szparagowa fasola': 'fasola szparagowa',
+};
+
+// Formy gramatyczne -> forma podstawowa produktu
 const POLISH_LEMMAS: Record<string, string> = {
   // Jajka
-  'jajkiem': 'jajko', 'jajka': 'jajko', 'jajek': 'jajko', 
-  'jajkami': 'jajko', 'jaj': 'jajko', 'jajo': 'jajko',
+  'jajkiem': 'jajko', 'jajka': 'jajka', 'jajek': 'jajka', 
+  'jajkami': 'jajka', 'jaj': 'jajka', 'jajo': 'jajko',
   
   // Nabiał
   'mlekiem': 'mleko', 'mleka': 'mleko', 'mleku': 'mleko',
@@ -260,7 +464,7 @@ const POLISH_LEMMAS: Record<string, string> = {
   
   // Mięso
   'kurczakiem': 'kurczak', 'kurczaka': 'kurczak',
-  'piersią': 'pierś', 'piersi': 'pierś',
+  'piersią': 'pierś z kurczaka', 'piersi': 'pierś z kurczaka',
   'filetem': 'filet', 'fileta': 'filet', 'filety': 'filet',
   'indykiem': 'indyk', 'indyka': 'indyk',
   'wołowiną': 'wołowina', 'wołowiny': 'wołowina',
@@ -271,35 +475,37 @@ const POLISH_LEMMAS: Record<string, string> = {
   'szynką': 'szynka', 'szynki': 'szynka',
   'boczkiem': 'boczek', 'boczku': 'boczek',
   'kiełbasą': 'kiełbasa', 'kiełbasy': 'kiełbasa',
+  'mięsem': 'mięso', 'mięsa': 'mięso',
+  'mielonego': 'mięso mielone', 'mielonym': 'mięso mielone',
   
   // Warzywa
   'marchewką': 'marchew', 'marchwi': 'marchew', 'marchewki': 'marchew',
   'cebulą': 'cebula', 'cebuli': 'cebula', 'cebulę': 'cebula',
-  'czosnkiem': 'czosnek', 'czosnku': 'czosnek', 'ząbki': 'ząbek czosnku',
-  'pomidorem': 'pomidor', 'pomidora': 'pomidor', 'pomidory': 'pomidor', 'pomidorów': 'pomidor',
-  'ogórkiem': 'ogórek', 'ogórka': 'ogórek', 'ogórki': 'ogórek', 'ogórków': 'ogórek',
+  'czosnkiem': 'czosnek', 'czosnku': 'czosnek', 'ząbki': 'czosnek', 'ząbek': 'czosnek',
+  'pomidorem': 'pomidor', 'pomidora': 'pomidor', 'pomidorów': 'pomidory',
+  'ogórkiem': 'ogórek', 'ogórka': 'ogórek', 'ogórków': 'ogórki',
   'papryką': 'papryka', 'papryki': 'papryka', 'papryce': 'papryka',
-  'brokułem': 'brokuł', 'brokułami': 'brokuł', 'brokuły': 'brokuł',
+  'brokułem': 'brokuł', 'brokułami': 'brokuły', 'brokułów': 'brokuły',
   'szpinakiem': 'szpinak', 'szpinaku': 'szpinak',
   'sałatą': 'sałata', 'sałaty': 'sałata', 'sałacie': 'sałata',
   'kapustą': 'kapusta', 'kapusty': 'kapusta', 'kapuście': 'kapusta',
-  'ziemniakami': 'ziemniaki', 'ziemniaków': 'ziemniaki', 'ziemniak': 'ziemniaki',
+  'ziemniakami': 'ziemniaki', 'ziemniaków': 'ziemniaki',
   'cukinią': 'cukinia', 'cukinii': 'cukinia',
   'bakłażanem': 'bakłażan', 'bakłażana': 'bakłażan',
   'kalafiorem': 'kalafior', 'kalafiora': 'kalafior',
   'porem': 'por', 'pora': 'por',
   'selerem': 'seler', 'selera': 'seler',
-  'burakiem': 'burak', 'buraka': 'burak', 'buraki': 'burak', 'burakami': 'burak',
+  'burakiem': 'burak', 'buraka': 'burak', 'burakami': 'buraki',
   'awokado': 'awokado',
   'pietruszkę': 'pietruszka', 'pietruszki': 'pietruszka', 'pietruszką': 'pietruszka',
   'szczypiorkiem': 'szczypiorek', 'szczypiorku': 'szczypiorek',
   'rukolą': 'rukola', 'rukoli': 'rukola',
   
   // Owoce
-  'jabłkiem': 'jabłko', 'jabłka': 'jabłko', 'jabłek': 'jabłko',
-  'bananem': 'banan', 'banana': 'banan', 'banany': 'banan', 'bananów': 'banan',
-  'pomarańczą': 'pomarańcza', 'pomarańczy': 'pomarańcza',
-  'cytryną': 'cytryna', 'cytryny': 'cytryna',
+  'jabłkiem': 'jabłko', 'jabłka': 'jabłka', 'jabłek': 'jabłka',
+  'bananem': 'banan', 'banana': 'banan', 'bananów': 'banany',
+  'pomarańczą': 'pomarańcza', 'pomarańczy': 'pomarańcze',
+  'cytryną': 'cytryna', 'cytryny': 'cytryny',
   'truskawkami': 'truskawki', 'truskawek': 'truskawki',
   'malinami': 'maliny', 'malin': 'maliny',
   'jagodami': 'jagody', 'jagód': 'jagody',
@@ -313,7 +519,7 @@ const POLISH_LEMMAS: Record<string, string> = {
   'mąką': 'mąka', 'mąki': 'mąka',
   'płatkami': 'płatki owsiane', 'płatków': 'płatki owsiane',
   'chlebem': 'chleb', 'chleba': 'chleb',
-  'bułką': 'bułka', 'bułki': 'bułka', 'bułek': 'bułka',
+  'bułką': 'bułka', 'bułki': 'bułki', 'bułek': 'bułki',
   
   // Przyprawy
   'solą': 'sól', 'soli': 'sól',
@@ -325,7 +531,7 @@ const POLISH_LEMMAS: Record<string, string> = {
   'curry': 'curry',
   'cynamonem': 'cynamon', 'cynamonu': 'cynamon',
   'imbirem': 'imbir', 'imbiru': 'imbir',
-  'oliwą': 'oliwa', 'oliwy': 'oliwa',
+  'oliwą': 'oliwa z oliwek', 'oliwy': 'oliwa z oliwek',
   'olejem': 'olej', 'oleju': 'olej',
   'octem': 'ocet', 'octu': 'ocet',
   'miodem': 'miód', 'miodu': 'miód',
@@ -338,7 +544,7 @@ const POLISH_LEMMAS: Record<string, string> = {
   'dżemem': 'dżem', 'dżemu': 'dżem',
   'hummusem': 'hummus', 'hummusu': 'hummus',
   'tofu': 'tofu',
-  'sosem': 'sos', 'sosu': 'sos',
+  'sosem': 'sos sojowy', 'sosu': 'sos sojowy',
   'pastą': 'pasta', 'pasty': 'pasta',
 };
 
@@ -459,24 +665,54 @@ interface RawIngredient {
   unit: 'g' | 'ml' | 'szt';
 }
 
+// =====================================================
+// WALIDACJA CZY SŁOWO JEST PRAWDZIWYM PRODUKTEM
+// =====================================================
+
+function isValidFoodProduct(word: string): boolean {
+  const lower = word.toLowerCase();
+  
+  // Sprawdź bezpośrednio w słowniku produktów
+  if (VALID_FOOD_PRODUCTS.has(lower)) return true;
+  
+  // Sprawdź czy po lematyzacji jest w słowniku
+  const lemma = POLISH_LEMMAS[lower];
+  if (lemma && VALID_FOOD_PRODUCTS.has(lemma.toLowerCase())) return true;
+  
+  // Sprawdź częściowe dopasowanie do znanych produktów
+  for (const product of VALID_FOOD_PRODUCTS) {
+    if (product.includes(lower) && lower.length >= 4) return true;
+    if (lower.includes(product) && product.length >= 4) return true;
+  }
+  
+  return false;
+}
+
 function normalizeIngredientName(raw: string): string | null {
   let cleaned = raw.toLowerCase().trim();
   
   // Usuń znaki specjalne z początku/końca
   cleaned = cleaned.replace(/^[^\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+|[^\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+$/g, '');
   
-  // Sprawdź czy to wykluczony token
+  // BEZWZGLĘDNIE odrzuć jeśli to wykluczony token
   if (EXCLUDED_TOKENS.has(cleaned)) return null;
-  if (cleaned.length < 2) return null;
   
-  // Lematyzacja
+  // Odrzuć za krótkie słowa
+  if (cleaned.length < 3) return null;
+  
+  // Lematyzacja - zamiana formy gramatycznej na podstawową
   if (POLISH_LEMMAS[cleaned]) {
     cleaned = POLISH_LEMMAS[cleaned];
   }
   
-  // Rozwinięcie do pełnej nazwy
+  // Rozwinięcie do pełnej nazwy (np. "pierś" -> "pierś z kurczaka")
   if (NAME_EXPANSIONS[cleaned]) {
     cleaned = NAME_EXPANSIONS[cleaned];
+  }
+  
+  // KLUCZOWA WALIDACJA: Sprawdź czy to jest prawdziwy produkt spożywczy
+  if (!isValidFoodProduct(cleaned)) {
+    return null;
   }
   
   // Kapitalizacja pierwszej litery
@@ -485,6 +721,21 @@ function normalizeIngredientName(raw: string): string | null {
 
 function extractIngredientsFromText(text: string): RawIngredient[] {
   const results: RawIngredient[] = [];
+  
+  // Najpierw sprawdź złożone produkty (2-3 słowa)
+  const textLower = text.toLowerCase();
+  for (const [compound, normalized] of Object.entries(COMPOUND_PRODUCTS)) {
+    if (textLower.includes(compound)) {
+      const quantity = parseQuantity(text);
+      results.push({
+        name: normalized.charAt(0).toUpperCase() + normalized.slice(1),
+        amount: quantity?.amount || 100,
+        unit: quantity?.unit || 'g',
+      });
+      // Oznacz te słowa jako przetworzone, żeby nie dodawać ich osobno
+      text = text.replace(new RegExp(compound, 'gi'), ' ');
+    }
+  }
   
   // Podziel tekst na części
   const parts = text.split(/[,;:\(\)\[\]•\-–—]+/);
@@ -504,33 +755,25 @@ function extractIngredientsFromText(text: string): RawIngredient[] {
       .replace(/\s+/g, ' ')
       .trim();
     
-    // Podziel na słowa i przetwórz
+    // Podziel na słowa i przetwórz - TYLKO PRAWIDŁOWE PRODUKTY
     const words = nameOnly.split(/\s+/);
-    const validWords: string[] = [];
     
     for (const word of words) {
-      const normalized = normalizeIngredientName(word);
-      if (normalized && normalized.length >= 2) {
-        validWords.push(normalized);
-      }
-    }
-    
-    // Połącz słowa w jeden składnik lub dodaj osobno
-    if (validWords.length >= 1) {
-      // Spróbuj złączyć przymiotnik + rzeczownik (np. "ser żółty")
-      if (validWords.length === 2) {
-        const combined = `${validWords[0]} ${validWords[1]}`.toLowerCase();
-        const expandedCombined = NAME_EXPANSIONS[combined] || combined;
-        results.push({
-          name: expandedCombined.charAt(0).toUpperCase() + expandedCombined.slice(1),
-          amount: quantity?.amount || 100,
-          unit: quantity?.unit || 'g',
-        });
-      } else {
-        // Dodaj każde słowo osobno (później agregacja połączy)
-        for (const word of validWords) {
+      const cleanWord = word.replace(/[^\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, '');
+      if (!cleanWord || cleanWord.length < 3) continue;
+      
+      const normalized = normalizeIngredientName(cleanWord);
+      // normalizeIngredientName już sprawdza czy to prawdziwy produkt
+      if (normalized) {
+        // Sprawdź czy ten produkt już nie został dodany jako część złożonego produktu
+        const alreadyAdded = results.some(r => 
+          r.name.toLowerCase() === normalized.toLowerCase() ||
+          r.name.toLowerCase().includes(normalized.toLowerCase())
+        );
+        
+        if (!alreadyAdded) {
           results.push({
-            name: word,
+            name: normalized,
             amount: quantity?.amount || 100,
             unit: quantity?.unit || 'g',
           });
@@ -539,7 +782,19 @@ function extractIngredientsFromText(text: string): RawIngredient[] {
     }
   }
   
-  return results;
+  // Usuń duplikaty
+  const uniqueResults: RawIngredient[] = [];
+  const seen = new Set<string>();
+  
+  for (const ing of results) {
+    const key = ing.name.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueResults.push(ing);
+    }
+  }
+  
+  return uniqueResults;
 }
 
 // =====================================================
