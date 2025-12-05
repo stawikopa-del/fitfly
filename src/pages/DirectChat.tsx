@@ -189,16 +189,46 @@ export default function DirectChat() {
     );
   };
 
-  const ShoppingListMessage = ({ shoppingListId }: { shoppingListId: string }) => {
+  const ShoppingListMessage = ({ shoppingListId, activityData, isSender }: { 
+    shoppingListId: string; 
+    activityData?: any;
+    isSender: boolean;
+  }) => {
     const handleClick = (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       try {
         soundFeedback.buttonClick();
       } catch {}
-      // Navigate to the specific shared shopping list
       navigate(`/lista-zakupow/${shoppingListId}`);
     };
+
+    // Determine activity type message for self-sent
+    const getSelfMessage = () => {
+      if (!activityData || !isSender) return null;
+      
+      const gender = activityData.senderGender;
+      
+      switch (activityData.activityType) {
+        case 'reaction': {
+          const verb = gender === 'female' ? 'Zareagowałaś' : 'Zareagowałeś';
+          return `${verb} ${activityData.emoji} na listę zakupów`;
+        }
+        case 'comment': {
+          const verb = gender === 'female' ? 'Skomentowałaś' : 'Skomentowałeś';
+          const shortComment = activityData.commentText?.slice(0, 25) || '';
+          return `${verb} listę: "${shortComment}${activityData.commentText?.length > 25 ? '...' : ''}"`;
+        }
+        case 'note': {
+          const verb = gender === 'female' ? 'Dodałaś' : 'Dodałeś';
+          return `${verb} notatkę do listy zakupów`;
+        }
+        default:
+          return null;
+      }
+    };
+
+    const selfMessage = getSelfMessage();
 
     return (
       <Card className="bg-card/50 border-border/50 mt-2">
@@ -207,12 +237,15 @@ export default function DirectChat() {
             <ShoppingCart className="h-4 w-4 text-secondary" />
             <span className="font-semibold text-sm">Lista zakupów</span>
           </div>
+          {selfMessage && (
+            <p className="text-xs text-muted-foreground mb-2">{selfMessage}</p>
+          )}
           <Button 
             size="sm" 
-            className="w-full mt-2"
+            className="w-full mt-1"
             onClick={handleClick}
           >
-            Zobacz listę zakupów
+            Wyświetl
           </Button>
         </CardContent>
       </Card>
@@ -355,8 +388,12 @@ export default function DirectChat() {
                     <RecipeMessage recipeData={message.recipeData} />
                   )}
                   
-                  {message.messageType === 'shopping_list' && (
-                    <ShoppingListMessage shoppingListId={message.shoppingListId || ''} />
+                  {(message.messageType === 'shopping_list' || message.messageType === 'shopping_list_activity') && (
+                    <ShoppingListMessage 
+                      shoppingListId={message.shoppingListId || (message.recipeData as any)?.shoppingListId || ''} 
+                      activityData={message.recipeData}
+                      isSender={isOwn}
+                    />
                   )}
                 </div>
                 

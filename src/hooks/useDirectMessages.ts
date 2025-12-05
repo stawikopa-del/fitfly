@@ -7,7 +7,7 @@ export interface DirectMessage {
   senderId: string;
   receiverId: string;
   content: string;
-  messageType: 'text' | 'recipe' | 'shopping_list';
+  messageType: 'text' | 'recipe' | 'shopping_list' | 'shopping_list_activity';
   recipeData?: any;
   shoppingListId?: string;
   createdAt: string;
@@ -94,6 +94,8 @@ export function useDirectMessages(friendId?: string) {
             ? '📖 Udostępniono przepis' 
             : latestMsg.message_type === 'shopping_list'
             ? '🛒 Udostępniono listę zakupów'
+            : latestMsg.message_type === 'shopping_list_activity'
+            ? latestMsg.content || '🛒 Aktywność na liście zakupów'
             : latestMsg.content || '',
           lastMessageTime: latestMsg.created_at,
           unreadCount,
@@ -135,7 +137,7 @@ export function useDirectMessages(friendId?: string) {
           senderId: m.sender_id,
           receiverId: m.receiver_id,
           content: m.content || '',
-          messageType: (m.message_type || 'text') as 'text' | 'recipe' | 'shopping_list',
+          messageType: (m.message_type || 'text') as 'text' | 'recipe' | 'shopping_list' | 'shopping_list_activity',
           recipeData: m.recipe_data,
           shoppingListId: (m.recipe_data as any)?.shoppingListId,
           createdAt: m.created_at,
