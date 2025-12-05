@@ -13,6 +13,41 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
+const bioPlaceholdersFemale = [
+  'Zgrywa niedostępną 🙄',
+  'Za zajęta na opis 💅',
+  'Opis? Nie znam tej pani 🤷‍♀️',
+  'Tajemnicza jak pogoda w Polsce 🌦️',
+  'Zbyt fit na pisanie 🏃‍♀️',
+  'Tu miał być opis, ale poszła na trening 💪',
+];
+
+const bioPlaceholdersMale = [
+  'Zgrywa niedostępnego 🙄',
+  'Za zajęty na opis 😎',
+  'Opis? Nie znam tego pana 🤷‍♂️',
+  'Tajemniczy jak WiFi w pociągu 📶',
+  'Zbyt fit na pisanie 🏋️',
+  'Tu miał być opis, ale poszedł na siłkę 💪',
+];
+
+const bioPlaceholdersNeutral = [
+  'Jeszcze nic tu nie ma... 🤷',
+  'Opis w budowie 🚧',
+  'Coming soon... ⏳',
+  'Bio loading... 🔄',
+  'Ktoś tu zapomniał o opisie 🙈',
+];
+
+const getRandomBioPlaceholder = (gender: string | null) => {
+  const placeholders = gender === 'female' 
+    ? bioPlaceholdersFemale 
+    : gender === 'male' 
+      ? bioPlaceholdersMale 
+      : bioPlaceholdersNeutral;
+  return placeholders[Math.floor(Math.random() * placeholders.length)];
+};
+
 interface ProfileData {
   display_name: string | null;
   username: string | null;
@@ -224,11 +259,7 @@ export default function Profile() {
             <p className="text-sm text-foreground">
               {profile?.bio || (
                 <span className="text-muted-foreground italic">
-                  {profile?.gender === 'female' 
-                    ? 'Zgrywa niedostępną 🙄' 
-                    : profile?.gender === 'male'
-                      ? 'Zgrywa niedostępnego 🙄'
-                      : 'Jeszcze nic tu nie ma... 🤷'}
+                  {getRandomBioPlaceholder(profile?.gender)}
                 </span>
               )}
             </p>
