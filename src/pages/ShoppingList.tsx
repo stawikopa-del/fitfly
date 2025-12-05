@@ -1812,40 +1812,75 @@ export default function ShoppingList() {
               <Share2 className="w-5 h-5 text-primary" />
               Wysłane listy zakupów
             </h2>
-            <div className="space-y-2">
-              {sentLists.map(list => (
-                <div key={list.id} className="bg-muted/50 rounded-xl p-3 flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      Wysłano do: {list.owner_name}
-                    </p>
-                    {list.date_range_start && list.date_range_end && (
-                      <p className="text-xs text-muted-foreground">
-                        <Calendar className="w-3 h-3 inline mr-1" />
-                        {format(new Date(list.date_range_start), 'd MMM', { locale: pl })} — {format(new Date(list.date_range_end), 'd MMM', { locale: pl })}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {list.items.length} produktów
-                    </p>
+            <div className="space-y-3">
+              {sentLists.map(list => {
+                const totalCount = list.items.length;
+                const checkedCount = list.items.filter(item => item.checked).length;
+                const progressPercent = totalCount > 0 ? (checkedCount / totalCount) * 100 : 0;
+                
+                return (
+                  <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
+                    <div className="p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            Wysłano do: {list.owner_name}
+                          </p>
+                          {list.date_range_start && list.date_range_end && (
+                            <p className="text-xs text-muted-foreground">
+                              <Calendar className="w-3 h-3 inline mr-1" />
+                              {format(new Date(list.date_range_start), 'd MMM', { locale: pl })} — {format(new Date(list.date_range_end), 'd MMM', { locale: pl })}
+                            </p>
+                          )}
+                        </div>
+                        <button 
+                          onClick={async () => {
+                            try { soundFeedback.buttonClick(); } catch {}
+                            try {
+                              await supabase.from('shared_shopping_lists').delete().eq('id', list.id);
+                              setSentLists(prev => prev.filter(l => l.id !== list.id));
+                              toast.success('Usunięto udostępnioną listę');
+                            } catch (err) {
+                              toast.error('Nie udało się usunąć');
+                            }
+                          }}
+                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      
+                      {/* Progress bar */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-muted-foreground">Postęp zakupów</span>
+                          <span className="text-xs font-medium text-primary">{checkedCount}/{totalCount}</span>
+                        </div>
+                        <div className="h-2 bg-background rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" 
+                            style={{ width: `${progressPercent}%` }} 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Open list button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          try { soundFeedback.buttonClick(); } catch {}
+                          navigate(`/lista-zakupow/${list.id}`);
+                        }}
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        Otwórz listę ({totalCount} produktów)
+                      </Button>
+                    </div>
                   </div>
-                  <button 
-                    onClick={async () => {
-                      try { soundFeedback.buttonClick(); } catch {}
-                      try {
-                        await supabase.from('shared_shopping_lists').delete().eq('id', list.id);
-                        setSentLists(prev => prev.filter(l => l.id !== list.id));
-                        toast.success('Usunięto udostępnioną listę');
-                      } catch (err) {
-                        toast.error('Nie udało się usunąć');
-                      }
-                    }}
-                    className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

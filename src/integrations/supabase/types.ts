@@ -579,6 +579,7 @@ export type Database = {
           date_range_start: string | null
           id: string
           items: Json
+          notes: string | null
           owner_id: string
           shared_with_id: string
         }
@@ -588,6 +589,7 @@ export type Database = {
           date_range_start?: string | null
           id?: string
           items?: Json
+          notes?: string | null
           owner_id: string
           shared_with_id: string
         }
@@ -597,6 +599,7 @@ export type Database = {
           date_range_start?: string | null
           id?: string
           items?: Json
+          notes?: string | null
           owner_id?: string
           shared_with_id?: string
         }
