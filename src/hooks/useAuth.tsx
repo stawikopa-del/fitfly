@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { User, Session, AuthError } from '@supabase/supabase-js';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ProfileData {
@@ -23,104 +23,48 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
-  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Retry helper for network errors
-const withRetry = async <T,>(
-  fn: () => Promise<T>,
-  maxRetries: number = 3,
-  delay: number = 1000
-): Promise<T> => {
-  let lastError: Error | null = null;
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error as Error;
-      if (i < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
-      }
-    }
-  }
-  throw lastError;
-};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
-
-  // Refresh session manually
-  const refreshSession = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) {
-        console.error('Session refresh error:', error);
-        // If refresh fails, sign out
-        if (error.message.includes('refresh_token_not_found') || 
-            error.message.includes('invalid_grant')) {
-          await supabase.auth.signOut();
-        }
-      } else if (data.session) {
-        setSession(data.session);
-        setUser(data.session.user);
-      }
-    } catch (error) {
-      console.error('Session refresh error:', error);
-    }
-  }, []);
+  const initRef = useRef(false);
 
   useEffect(() => {
+    // Prevent double initialization
+    if (initRef.current) return;
+    initRef.current = true;
+
     let mounted = true;
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, currentSession) => {
         if (!mounted) return;
         
-        console.log('Auth state changed:', event);
-        
-        setSession(session);
-        setUser(session?.user ?? null);
+        // Synchronous state updates only
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         setLoading(false);
         setIsInitialized(true);
-
-        // Handle token refresh errors
-        if (event === 'TOKEN_REFRESHED' && !session) {
-          console.warn('Token refresh failed');
-        }
-
-        // Handle sign out
-        if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setSession(null);
-        }
       }
     );
 
-    // THEN check for existing session with retry
+    // THEN check for existing session
     const initSession = async () => {
       try {
-        const { data: { session }, error } = await withRetry(
-          () => supabase.auth.getSession(),
-          3,
-          500
-        );
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
         
         if (!mounted) return;
         
-        if (error) {
-          console.error('Session init error:', error);
-        }
-        
-        setSession(session);
-        setUser(session?.user ?? null);
+        setSession(existingSession);
+        setUser(existingSession?.user ?? null);
       } catch (error) {
-        console.error('Failed to initialize session:', error);
+        console.error('Session init error:', error);
       } finally {
         if (mounted) {
           setLoading(false);
@@ -131,44 +75,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initSession();
 
-    // Set up periodic session refresh (every 10 minutes)
-    const refreshInterval = setInterval(() => {
-      if (session) {
-        refreshSession();
-      }
-    }, 10 * 60 * 1000);
-
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      clearInterval(refreshInterval);
     };
-  }, [refreshSession]);
+  }, []);
 
   const signUp = useCallback(async (email: string, password: string, profileData?: ProfileData) => {
     const redirectUrl = `${window.location.origin}/`;
     
     try {
-      const { error } = await withRetry(() => 
-        supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              display_name: profileData?.displayName,
-              gender: profileData?.gender,
-              age: profileData?.age,
-              height: profileData?.height,
-              weight: profileData?.weight,
-              goal_weight: profileData?.goalWeight,
-              goal: profileData?.goal,
-              daily_calories: profileData?.dailyCalories,
-              daily_water: profileData?.dailyWater,
-            },
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            display_name: profileData?.displayName,
+            gender: profileData?.gender,
+            age: profileData?.age,
+            height: profileData?.height,
+            weight: profileData?.weight,
+            goal_weight: profileData?.goalWeight,
+            goal: profileData?.goal,
+            daily_calories: profileData?.dailyCalories,
+            daily_water: profileData?.dailyWater,
           },
-        })
-      );
+        },
+      });
       return { error };
     } catch (error) {
       return { error: error as Error };
@@ -177,12 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     try {
-      const { error } = await withRetry(() =>
-        supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-      );
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       return { error };
     } catch (error) {
       return { error: error as Error };
@@ -192,11 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
-      setUser(null);
-      setSession(null);
     } catch (error) {
       console.error('Sign out error:', error);
-      // Force clear state even if signOut fails
+    } finally {
+      // Always clear state
       setUser(null);
       setSession(null);
     }
@@ -206,11 +134,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const redirectUrl = `${window.location.origin}/reset-password`;
     
     try {
-      const { error } = await withRetry(() =>
-        supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: redirectUrl,
-        })
-      );
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
       return { error };
     } catch (error) {
       return { error: error as Error };
@@ -227,7 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn, 
       signOut, 
       resetPassword,
-      refreshSession 
     }}>
       {children}
     </AuthContext.Provider>

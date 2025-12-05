@@ -25,11 +25,14 @@ interface StoredCredential {
 }
 
 export function useWebAuthn() {
-  const [isSupported, setIsSupported] = useState(
-    typeof window !== 'undefined' && 
-    !!window.PublicKeyCredential &&
-    typeof window.PublicKeyCredential === 'function'
-  );
+  const [isSupported] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return !!window.PublicKeyCredential && typeof window.PublicKeyCredential === 'function';
+    } catch {
+      return false;
+    }
+  });
   const [isRegistering, setIsRegistering] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
