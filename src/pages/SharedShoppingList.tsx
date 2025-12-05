@@ -77,6 +77,39 @@ const INGREDIENT_CATEGORIES: Record<string, { label: string; emoji: string }> = 
   'inne': { label: 'Inne', emoji: '📦' },
 };
 
+const NOTES_PLACEHOLDERS = [
+  "Kup na promocji, bo lubię oszczędzać 😉",
+  "Nie zapomnij sprawdzić daty ważności! 🕵️",
+  "Może wpadnij też po czekoladę? 🍫",
+  "Pamiętaj o torbie wielorazowej! 🌍",
+  "Jak zobaczysz coś fajnego - bierz! 🛒",
+  "Sprawdź ceny w Biedronce i Lidlu 🔍",
+  "Nie daj się skusić słodyczom... chyba że są w promocji 😏",
+  "Pamiętaj: głodny nie idzie na zakupy! 🍕",
+  "Może jakieś przekąski na wieczór? 🎬",
+  "Sprawdź czy mamy jeszcze sól! 🧂",
+  "Weź paragon, przyda się do reklamacji 🧾",
+  "Jeśli jest kolejka - idź do kasy samoobsługowej 🤖",
+  "Pamiętaj o owocach dla zdrowia! 🍎",
+  "Kup coś smacznego dla nas obojga 💕",
+  "Nie zapomnij o wodzie mineralnej! 💧",
+  "Może jakieś świeże pieczywo? 🥖",
+  "Sprawdź promocje na mięso 🥩",
+  "Weź dodatkową torbę na warzywa 🥬",
+  "Pamiętaj: kupujemy tylko to co na liście! ...prawie 😅",
+  "Jak będzie tłoczno - wróć później 🏃",
+  "Sprawdź czy jajka nie są potłuczone! 🥚",
+  "Może jakieś lody na deser? 🍦",
+  "Kup coś do picia na weekend 🥤",
+  "Pamiętaj o karcie lojalnościowej! 💳",
+  "Weź mi coś słodkiego, proszę! 🍬",
+  "Sprawdź czy masło nie jest za drogie 🧈",
+  "Może jakaś pizza mrożona? 🍕",
+  "Pamiętaj: jesteś moim ulubionym zakupowiczem! ⭐",
+  "Kup coś zdrowego... i coś niezdrowego 😇😈",
+  "Nie zapomnij o kawie! Bez niej nie przeżyję ☕",
+];
+
 const CATEGORY_OPTIONS = Object.entries(INGREDIENT_CATEGORIES).map(([key, value]) => ({
   key,
   label: value.label,
@@ -108,6 +141,9 @@ export default function SharedShoppingList() {
   const [showNotesInput, setShowNotesInput] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [notesPlaceholder] = useState(() => 
+    NOTES_PLACEHOLDERS[Math.floor(Math.random() * NOTES_PLACEHOLDERS.length)]
+  );
 
   // Load shared list and its items
   useEffect(() => {
@@ -515,7 +551,7 @@ export default function SharedShoppingList() {
               <Textarea
                 value={notes}
                 onChange={(e) => handleNotesChange(e.target.value)}
-                placeholder="Napisz notatkę... (np. 'Kupić na promocji', 'Sprawdzić ceny w Biedronce')"
+                placeholder={notesPlaceholder}
                 className="min-h-[80px] resize-none"
               />
               {editingNotes && (
