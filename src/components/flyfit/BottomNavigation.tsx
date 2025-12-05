@@ -11,20 +11,44 @@ const navItems = [
   { to: '/inne', icon: Menu, label: 'Inne' },
 ];
 
-// Sub-routes that belong to "Inne" section
-const inneSubRoutes = ['/inne', '/profil', '/postepy', '/wyzwania', '/ustawienia', '/o-nas', '/pomoc', '/informacje', '/prywatnosc', '/osiagniecia', '/cele', '/znajomi'];
+// Sub-routes that belong to each main category
+const inneSubRoutes = [
+  '/inne', '/profil', '/postepy', '/wyzwania', '/ustawienia', '/o-nas', '/pomoc', 
+  '/informacje', '/prywatnosc', '/osiagniecia', '/cele', '/znajomi', '/lista-zakupow',
+  '/zaproszenie'
+];
+
+const dietaSubRoutes = [
+  '/odzywianie', '/przepisy', '/konfiguracja-diety', '/szybki-posilek'
+];
+
+const treningiSubRoutes = [
+  '/treningi', '/trening'
+];
+
+const chatySubRoutes = [
+  '/czat', '/wiadomosci', '/chat'
+];
 
 export function BottomNavigation() {
   const location = useLocation();
 
   const isRouteActive = (to: string) => {
+    const pathname = location.pathname;
+    
     if (to === '/inne') {
-      return inneSubRoutes.includes(location.pathname) || location.pathname.startsWith('/znajomi');
+      return inneSubRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
+    }
+    if (to === '/odzywianie') {
+      return dietaSubRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
+    }
+    if (to === '/treningi') {
+      return treningiSubRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
     }
     if (to === '/czat') {
-      return location.pathname.startsWith('/czat');
+      return chatySubRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
     }
-    return location.pathname === to;
+    return pathname === to;
   };
 
   return (
