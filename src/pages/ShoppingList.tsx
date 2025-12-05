@@ -30,7 +30,24 @@ interface CustomItem {
   id: string;
   name: string;
   category: string;
+  amount: number;
+  unit: string;
 }
+
+const AVAILABLE_UNITS = ['g', 'ml', 'kg', 'l', 'szt', 'opak'];
+
+const CATEGORY_OPTIONS = [
+  { key: 'pieczywo', label: 'Pieczywo', emoji: '🍞' },
+  { key: 'nabial', label: 'Nabiał', emoji: '🥛' },
+  { key: 'mieso', label: 'Mięso i ryby', emoji: '🥩' },
+  { key: 'warzywa', label: 'Warzywa', emoji: '🥬' },
+  { key: 'owoce', label: 'Owoce', emoji: '🍎' },
+  { key: 'przyprawy', label: 'Przyprawy i oleje', emoji: '🧂' },
+  { key: 'zboza', label: 'Zboża i makarony', emoji: '🍝' },
+  { key: 'napoje', label: 'Napoje', emoji: '🥤' },
+  { key: 'slodycze', label: 'Słodycze i przekąski', emoji: '🍫' },
+  { key: 'inne', label: 'Inne', emoji: '📦' },
+];
 
 interface DietPlan {
   id: string;
@@ -534,6 +551,9 @@ export default function ShoppingList() {
   const [customItems, setCustomItems] = useState<CustomItem[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newItemName, setNewItemName] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState('inne');
+  const [newItemAmount, setNewItemAmount] = useState('1');
+  const [newItemUnit, setNewItemUnit] = useState('szt');
   
   // Date range selection
   const [weekOffset, setWeekOffset] = useState(0);
@@ -649,16 +669,17 @@ export default function ShoppingList() {
     
     // Add custom items first (always visible, no date selection needed)
     customItems.forEach(item => {
+      const displayAmount = `${item.amount} ${item.unit}`;
       result.push({
         name: item.name,
-        amount: 0,
-        unit: 'szt',
+        amount: item.amount,
+        unit: item.unit,
         category: item.category,
         checked: checkedItems.has(item.name.toLowerCase()),
         packageCount: 1,
-        packageSize: 0,
-        packageUnit: 'szt',
-        displayAmount: '1 szt',
+        packageSize: item.amount,
+        packageUnit: item.unit,
+        displayAmount,
         isCustom: true,
       });
     });
@@ -774,24 +795,34 @@ export default function ShoppingList() {
       return;
     }
     
+    const parsedAmount = parseFloat(newItemAmount) || 1;
+    if (parsedAmount <= 0) {
+      toast.error('Ilość musi być większa od zera');
+      return;
+    }
+    
     // Check for duplicates
     if (customItems.some(ci => ci.name.toLowerCase() === trimmedName.toLowerCase())) {
       toast.error('Ten produkt już jest na liście');
       return;
     }
     
-    const category = categorizeIngredient(trimmedName);
     const newItem: CustomItem = {
       id: Date.now().toString(),
       name: trimmedName.charAt(0).toUpperCase() + trimmedName.slice(1),
-      category,
+      category: newItemCategory,
+      amount: parsedAmount,
+      unit: newItemUnit,
     };
     
     setCustomItems(prev => [...prev, newItem]);
     setNewItemName('');
+    setNewItemCategory('inne');
+    setNewItemAmount('1');
+    setNewItemUnit('szt');
     setShowAddDialog(false);
     toast.success('Dodano produkt');
-  }, [newItemName, customItems]);
+  }, [newItemName, customItems, newItemCategory, newItemAmount, newItemUnit]);
 
   const removeCustomItem = useCallback((itemId: string) => {
     setCustomItems(prev => prev.filter(item => item.id !== itemId));
@@ -1194,23 +1225,89 @@ export default function ShoppingList() {
           </DialogHeader>
           
           <div className="space-y-4">
-            <Input
-              placeholder="Nazwa produktu..."
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  addCustomItem();
-                }
-              }}
-              autoFocus
-            />
+            {/* Name Input */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Nazwa produktu</label>
+              <Input
+                placeholder="np. Masło, Chleb..."
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    addCustomItem();
+                  }
+                }}
+                autoFocus
+              />
+            </div>
             
-            <div className="flex gap-2">
+            {/* Category Selector */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Kategoria</label>
+              <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                {CATEGORY_OPTIONS.map(cat => (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => setNewItemCategory(cat.key)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all border",
+                      newItemCategory === cat.key
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-foreground border-border hover:border-primary/50"
+                    )}
+                  >
+                    <span>{cat.emoji}</span>
+                    <span className="truncate">{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Amount and Unit */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Ilość</label>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="1"
+                  value={newItemAmount}
+                  onChange={(e) => setNewItemAmount(e.target.value)}
+                  min="0.1"
+                  step="0.1"
+                  className="flex-1"
+                />
+                <div className="flex rounded-xl border border-border overflow-hidden">
+                  {AVAILABLE_UNITS.map(unit => (
+                    <button
+                      key={unit}
+                      type="button"
+                      onClick={() => setNewItemUnit(unit)}
+                      className={cn(
+                        "px-3 py-2 text-sm font-medium transition-all",
+                        newItemUnit === unit
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card text-muted-foreground hover:bg-muted"
+                      )}
+                    >
+                      {unit}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => setShowAddDialog(false)}
+                onClick={() => {
+                  setShowAddDialog(false);
+                  setNewItemName('');
+                  setNewItemCategory('inne');
+                  setNewItemAmount('1');
+                  setNewItemUnit('szt');
+                }}
               >
                 Anuluj
               </Button>
