@@ -28,6 +28,8 @@ import CalendarPage from "./pages/Calendar";
 import Privacy from "./pages/Privacy";
 import Achievements from "./pages/Achievements";
 import Goals from "./pages/Goals";
+import Friends from "./pages/Friends";
+import SharedRecipe from "./pages/SharedRecipe";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -254,6 +256,17 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
+    <Route
+      path="/znajomi"
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Friends />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route path="/shared/recipe/:token" element={<SharedRecipe />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

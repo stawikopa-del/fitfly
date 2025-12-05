@@ -191,6 +191,33 @@ export type Database = {
         }
         Relationships: []
       }
+      friendships: {
+        Row: {
+          created_at: string
+          id: string
+          receiver_id: string
+          sender_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          receiver_id: string
+          sender_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       habit_logs: {
         Row: {
           completed_value: number | null
@@ -362,6 +389,7 @@ export type Database = {
           id: string
           updated_at: string | null
           user_id: string
+          username: string | null
           weight: number | null
         }
         Insert: {
@@ -379,6 +407,7 @@ export type Database = {
           id?: string
           updated_at?: string | null
           user_id: string
+          username?: string | null
           weight?: number | null
         }
         Update: {
@@ -396,9 +425,80 @@ export type Database = {
           id?: string
           updated_at?: string | null
           user_id?: string
+          username?: string | null
           weight?: number | null
         }
         Relationships: []
+      }
+      shared_challenges: {
+        Row: {
+          challenge_id: string | null
+          created_at: string
+          id: string
+          owner_id: string
+          shared_with_id: string
+        }
+        Insert: {
+          challenge_id?: string | null
+          created_at?: string
+          id?: string
+          owner_id: string
+          shared_with_id: string
+        }
+        Update: {
+          challenge_id?: string | null
+          created_at?: string
+          id?: string
+          owner_id?: string
+          shared_with_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_challenges_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_recipes: {
+        Row: {
+          created_at: string
+          id: string
+          is_public: boolean | null
+          owner_id: string
+          recipe_id: string | null
+          share_token: string | null
+          shared_with_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_public?: boolean | null
+          owner_id: string
+          recipe_id?: string | null
+          share_token?: string | null
+          shared_with_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_public?: boolean | null
+          owner_id?: string
+          recipe_id?: string | null
+          share_token?: string | null
+          shared_with_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_recipes_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "favorite_recipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_badges: {
         Row: {

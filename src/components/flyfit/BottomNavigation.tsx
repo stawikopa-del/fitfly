@@ -13,7 +13,7 @@ const navItems = [
 ];
 
 // Sub-routes that belong to "Inne" section
-const inneSubRoutes = ['/inne', '/profil', '/postepy', '/wyzwania', '/ustawienia', '/o-nas', '/pomoc', '/informacje', '/prywatnosc'];
+const inneSubRoutes = ['/inne', '/profil', '/postepy', '/wyzwania', '/ustawienia', '/o-nas', '/pomoc', '/informacje', '/prywatnosc', '/osiagniecia', '/cele', '/znajomi'];
 
 export function BottomNavigation() {
   const location = useLocation();
