@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface ProfileData {
   display_name: string | null;
   username: string | null;
+  bio: string | null;
   gender: string | null;
   age: number | null;
   height: number | null;
@@ -74,6 +75,7 @@ export default function Profile() {
       .update({
         display_name: editedProfile.display_name,
         username: editedProfile.username,
+        bio: editedProfile.bio,
         goal_weight: editedProfile.goal_weight,
         daily_steps_goal: editedProfile.daily_steps_goal,
         daily_water: editedProfile.daily_water,
@@ -206,6 +208,32 @@ export default function Profile() {
         )}
         
       </header>
+
+        {/* Bio */}
+        <div className="bg-card rounded-2xl p-4 border border-border/50 relative z-10">
+          <Label className="text-sm text-muted-foreground font-medium mb-2 block">O mnie</Label>
+          {isEditing ? (
+            <textarea
+              value={editedProfile.bio ?? profile?.bio ?? ''}
+              onChange={(e) => setEditedProfile({...editedProfile, bio: e.target.value})}
+              placeholder="Napisz coś o sobie... 📝"
+              className="w-full min-h-[80px] p-3 bg-background border border-border/50 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+              maxLength={200}
+            />
+          ) : (
+            <p className="text-sm text-foreground">
+              {profile?.bio || (
+                <span className="text-muted-foreground italic">
+                  {profile?.gender === 'female' 
+                    ? 'Zgrywa niedostępną 🙄' 
+                    : profile?.gender === 'male'
+                      ? 'Zgrywa niedostępnego 🙄'
+                      : 'Jeszcze nic tu nie ma... 🤷'}
+                </span>
+              )}
+            </p>
+          )}
+        </div>
 
       {/* Dzienne cele */}
       <div className="grid grid-cols-2 gap-3 relative z-10">
