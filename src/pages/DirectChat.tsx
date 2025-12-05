@@ -26,16 +26,19 @@ interface FriendProfile {
   avatarUrl: string | null;
 }
 
+const MESSAGE_REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢'];
+
 export default function DirectChat() {
   const { odgerId } = useParams<{ odgerId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { messages, isLoading, isSending, sendMessage } = useDirectMessages(odgerId);
+  const { messages, isLoading, isSending, sendMessage, toggleReaction } = useDirectMessages(odgerId);
   
   const [input, setInput] = useState('');
   const [friendProfile, setFriendProfile] = useState<FriendProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [optimisticMessages, setOptimisticMessages] = useState<any[]>([]);
+  const [activeReactionMessageId, setActiveReactionMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(messages.length);
 
@@ -373,13 +376,17 @@ export default function DirectChat() {
               )}
               
               <div className={cn('max-w-[75%]', isOwn && 'text-right')}>
+                {/* Message bubble */}
                 <div
                   className={cn(
-                    'px-4 py-3 rounded-3xl inline-block',
+                    'px-4 py-3 rounded-3xl inline-block relative group',
                     isOwn
                       ? 'bg-primary text-primary-foreground rounded-br-lg'
                       : 'bg-card border-2 border-border/50 text-foreground rounded-bl-lg',
                     isOptimistic && 'opacity-70'
+                  )}
+                  onDoubleClick={() => !isOptimistic && setActiveReactionMessageId(
+                    activeReactionMessageId === message.id ? null : message.id
                   )}
                 >
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -394,6 +401,62 @@ export default function DirectChat() {
                       activityData={message.recipeData}
                       isSender={isOwn}
                     />
+                  )}
+                  
+                  {/* Existing reactions display */}
+                  {message.reactions && Object.keys(message.reactions).length > 0 && (
+                    <div className={cn(
+                      'flex items-center gap-1 mt-2 flex-wrap',
+                      isOwn ? 'justify-end' : 'justify-start'
+                    )}>
+                      {Object.entries(message.reactions).map(([emoji, usersRaw]) => {
+                        const users = usersRaw as Array<{ odgerId: string; name: string }>;
+                        if (!users || users.length === 0) return null;
+                        const hasReacted = users.some(u => u.odgerId === user?.id);
+                        const names = users.map(u => u.name).join(', ');
+                        return (
+                          <button
+                            key={emoji}
+                            onClick={() => {
+                              try { soundFeedback.buttonClick(); } catch {}
+                              toggleReaction(message.id, emoji, user?.id === odgerId ? friendProfile?.displayName || 'Ty' : 'Ty');
+                            }}
+                            title={names}
+                            className={cn(
+                              'text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5 transition-all',
+                              hasReacted 
+                                ? 'bg-primary/30 border border-primary' 
+                                : 'bg-muted/50 border border-transparent hover:bg-muted'
+                            )}
+                          >
+                            <span>{emoji}</span>
+                            <span className="text-[10px]">{users.length}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* Reaction picker */}
+                  {activeReactionMessageId === message.id && !isOptimistic && (
+                    <div className={cn(
+                      'absolute -bottom-8 bg-card rounded-full shadow-lg border border-border/50 px-2 py-1 flex items-center gap-1 z-20',
+                      isOwn ? 'right-0' : 'left-0'
+                    )}>
+                      {MESSAGE_REACTION_EMOJIS.map(emoji => (
+                        <button
+                          key={emoji}
+                          onClick={() => {
+                            try { soundFeedback.buttonClick(); } catch {}
+                            toggleReaction(message.id, emoji, 'Ty');
+                            setActiveReactionMessageId(null);
+                          }}
+                          className="text-lg hover:scale-125 transition-transform p-0.5"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
                 

@@ -2,6 +2,15 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
+export interface MessageReaction {
+  odgerId: string;
+  name: string;
+}
+
+export interface MessageReactions {
+  [emoji: string]: MessageReaction[];
+}
+
 export interface DirectMessage {
   id: string;
   senderId: string;
@@ -12,6 +21,7 @@ export interface DirectMessage {
   shoppingListId?: string;
   createdAt: string;
   readAt: string | null;
+  reactions?: MessageReactions;
 }
 
 export interface ChatPreview {
@@ -142,6 +152,7 @@ export function useDirectMessages(friendId?: string) {
           shoppingListId: (m.recipe_data as any)?.shoppingListId,
           createdAt: m.created_at,
           readAt: m.read_at,
+          reactions: (m as any).reactions || {},
         }))
       );
 
@@ -185,6 +196,62 @@ export function useDirectMessages(friendId?: string) {
       setIsSending(false);
     }
   }, [user, friendId]);
+
+  // Toggle reaction on a message
+  const toggleReaction = useCallback(async (messageId: string, emoji: string, userName: string) => {
+    if (!user) return false;
+
+    try {
+      // Get current message
+      const { data: msgData, error: fetchError } = await supabase
+        .from('direct_messages')
+        .select('reactions')
+        .eq('id', messageId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const currentReactions: MessageReactions = (msgData as any)?.reactions || {};
+      const emojiReactions = currentReactions[emoji] || [];
+      const hasReacted = emojiReactions.some(r => r.odgerId === user.id);
+
+      let newReactions: MessageReactions;
+      if (hasReacted) {
+        // Remove reaction
+        newReactions = {
+          ...currentReactions,
+          [emoji]: emojiReactions.filter(r => r.odgerId !== user.id)
+        };
+        if (newReactions[emoji].length === 0) {
+          delete newReactions[emoji];
+        }
+      } else {
+        // Add reaction
+        newReactions = {
+          ...currentReactions,
+          [emoji]: [...emojiReactions, { odgerId: user.id, name: userName }]
+        };
+      }
+
+      // Use raw SQL-style update to bypass type checking for new column
+      const { error } = await supabase
+        .from('direct_messages')
+        .update({ reactions: newReactions } as any)
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(prev => prev.map(m => 
+        m.id === messageId ? { ...m, reactions: newReactions } : m
+      ));
+
+      return true;
+    } catch (error) {
+      console.error('Error toggling reaction:', error);
+      return false;
+    }
+  }, [user]);
 
   // Subscribe to realtime updates
   useEffect(() => {
@@ -254,6 +321,7 @@ export function useDirectMessages(friendId?: string) {
     isLoading,
     isSending,
     sendMessage,
+    toggleReaction,
     refreshMessages: fetchMessages,
     refreshPreviews: fetchChatPreviews,
   };
