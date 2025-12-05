@@ -21,16 +21,16 @@ interface FavoriteRecipe {
 
 export default function QuickMealMethod() {
   const navigate = useNavigate();
-  const { method } = useParams<{ method: string }>();
+  const { method: rawMethod } = useParams<{ method: string }>();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+
+  // Extract clean method name (remove any query params that might be attached)
+  const method = rawMethod?.split('?')[0] || '';
 
   // Determine if this is ingredients or scan method
   const isIngredientsMethod = method === 'ingredients';
   const isScanMethod = method === 'scan';
-
-  // Debug logging
-  console.log('QuickMealMethod - method:', method, 'isIngredients:', isIngredientsMethod, 'isScan:', isScanMethod);
 
   // Get preferences from URL
   const preferences = {
