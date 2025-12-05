@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Send, ArrowLeft, MoreVertical, BookOpen, Check, CheckCheck, ShoppingCart, X, Reply, Play, Pause, Smile } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, BookOpen, Check, CheckCheck, ShoppingCart, X, Reply, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -353,7 +353,9 @@ export default function DirectChat() {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [actualDuration, setActualDuration] = useState<number | undefined>(duration);
+    const [isDragging, setIsDragging] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const progressBarRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
       // Cleanup audio on unmount
@@ -366,48 +368,53 @@ export default function DirectChat() {
       };
     }, []);
 
+    const initAudio = () => {
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+        audioRef.current.crossOrigin = 'anonymous';
+        audioRef.current.preload = 'metadata';
+        
+        audioRef.current.onloadedmetadata = () => {
+          if (audioRef.current && audioRef.current.duration && isFinite(audioRef.current.duration)) {
+            setActualDuration(audioRef.current.duration);
+          }
+        };
+        
+        audioRef.current.onended = () => {
+          setIsPlaying(false);
+          setProgress(0);
+        };
+        
+        audioRef.current.ontimeupdate = () => {
+          if (audioRef.current && audioRef.current.duration && isFinite(audioRef.current.duration) && !isDragging) {
+            setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
+          }
+        };
+        
+        audioRef.current.onerror = (error) => {
+          console.error('Audio playback error:', error);
+          setIsPlaying(false);
+          toast.error('Nie udało się odtworzyć wiadomości głosowej');
+        };
+        
+        audioRef.current.src = audioUrl;
+      }
+      return audioRef.current;
+    };
+
     const togglePlay = async (e: React.MouseEvent | React.TouchEvent) => {
       e.preventDefault();
       e.stopPropagation();
       
       try {
-        if (!audioRef.current) {
-          audioRef.current = new Audio();
-          audioRef.current.crossOrigin = 'anonymous';
-          audioRef.current.preload = 'metadata';
-          
-          audioRef.current.onloadedmetadata = () => {
-            if (audioRef.current && audioRef.current.duration && isFinite(audioRef.current.duration)) {
-              setActualDuration(audioRef.current.duration);
-            }
-          };
-          
-          audioRef.current.onended = () => {
-            setIsPlaying(false);
-            setProgress(0);
-          };
-          
-          audioRef.current.ontimeupdate = () => {
-            if (audioRef.current && audioRef.current.duration && isFinite(audioRef.current.duration)) {
-              setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
-            }
-          };
-          
-          audioRef.current.onerror = (error) => {
-            console.error('Audio playback error:', error);
-            setIsPlaying(false);
-            toast.error('Nie udało się odtworzyć wiadomości głosowej');
-          };
-          
-          audioRef.current.src = audioUrl;
-        }
+        const audio = initAudio();
 
         if (isPlaying) {
-          audioRef.current.pause();
+          audio.pause();
           setIsPlaying(false);
         } else {
           try {
-            await audioRef.current.play();
+            await audio.play();
             setIsPlaying(true);
           } catch (playError) {
             console.error('Play error:', playError);
@@ -418,6 +425,63 @@ export default function DirectChat() {
         console.error('Voice message error:', error);
       }
     };
+
+    const handleSeek = (clientX: number) => {
+      if (!progressBarRef.current || !audioRef.current) return;
+      
+      const rect = progressBarRef.current.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+      
+      setProgress(percentage);
+      
+      if (audioRef.current.duration && isFinite(audioRef.current.duration)) {
+        audioRef.current.currentTime = (percentage / 100) * audioRef.current.duration;
+      }
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      initAudio();
+      setIsDragging(true);
+      handleSeek(e.clientX);
+    };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+      e.stopPropagation();
+      initAudio();
+      setIsDragging(true);
+      handleSeek(e.touches[0].clientX);
+    };
+
+    useEffect(() => {
+      if (!isDragging) return;
+
+      const handleMouseMove = (e: MouseEvent) => {
+        handleSeek(e.clientX);
+      };
+
+      const handleTouchMove = (e: TouchEvent) => {
+        handleSeek(e.touches[0].clientX);
+      };
+
+      const handleEnd = () => {
+        setIsDragging(false);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleEnd);
+      document.addEventListener('touchmove', handleTouchMove);
+      document.addEventListener('touchend', handleEnd);
+
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleEnd);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleEnd);
+      };
+    }, [isDragging]);
 
     const formatDuration = (seconds?: number) => {
       if (!seconds || !isFinite(seconds)) return '0:00';
@@ -453,14 +517,32 @@ export default function DirectChat() {
             <Play className={cn("h-5 w-5", isOwn ? "text-primary-foreground" : "text-primary")} />
           )}
         </Button>
-        <div className="flex-1">
-          <div className={cn(
-            "h-1 rounded-full overflow-hidden",
-            isOwn ? "bg-primary-foreground/30" : "bg-muted"
-          )}>
+        <div className="flex-1 min-w-[80px]">
+          <div 
+            ref={progressBarRef}
+            className={cn(
+              "h-2 rounded-full overflow-hidden cursor-pointer relative",
+              isOwn ? "bg-primary-foreground/30" : "bg-muted"
+            )}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+          >
             <div 
-              className={cn("h-full transition-all", isOwn ? "bg-primary-foreground" : "bg-primary")}
+              className={cn(
+                "h-full transition-all pointer-events-none",
+                isOwn ? "bg-primary-foreground" : "bg-primary",
+                isDragging ? "transition-none" : "transition-all"
+              )}
               style={{ width: `${progress}%` }}
+            />
+            {/* Seek handle */}
+            <div 
+              className={cn(
+                "absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-md pointer-events-none transition-transform",
+                isOwn ? "bg-primary-foreground" : "bg-primary",
+                isDragging ? "scale-125" : "scale-100"
+              )}
+              style={{ left: `calc(${progress}% - 8px)` }}
             />
           </div>
           <span className={cn(
@@ -1002,20 +1084,6 @@ export default function DirectChat() {
           </div>
         ) : (
           <div className="flex gap-2 items-center">
-            {/* Emoji button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                try { soundFeedback.buttonClick(); } catch {}
-                emojiInputRef.current?.focus();
-                emojiInputRef.current?.click();
-              }}
-              className="w-10 h-10 rounded-full hover:bg-muted shrink-0"
-            >
-              <Smile className="w-5 h-5 text-muted-foreground" />
-            </Button>
-            
             <Input
               ref={emojiInputRef}
               value={input}
@@ -1029,7 +1097,6 @@ export default function DirectChat() {
               placeholder={replyingTo ? "Napisz odpowiedź..." : "Napisz wiadomość..."}
               disabled={isSending}
               className="flex-1 rounded-2xl border-2 h-12"
-              inputMode="text"
             />
             
             <ChatAttachmentMenu
