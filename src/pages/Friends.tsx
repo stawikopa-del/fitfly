@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import { AppLayout } from '@/components/flyfit/AppLayout';
 import { PageHeader } from '@/components/flyfit/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,13 +24,8 @@ import {
 import { useFriends, Friend, FriendRequest } from '@/hooks/useFriends';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 export default function Friends() {
-  const [searchParams] = useSearchParams();
-  const inviteUserId = searchParams.get('invite');
-  
   const { 
     friends, 
     pendingRequests, 
@@ -44,33 +38,6 @@ export default function Friends() {
     removeFriend,
     shareInviteLink
   } = useFriends();
-
-  // Auto-send friend request if coming from invite link
-  useEffect(() => {
-    const handleInvite = async () => {
-      if (inviteUserId && !isLoading) {
-        const isFriend = friends.some(f => f.userId === inviteUserId);
-        const alreadySent = sentRequests.includes(inviteUserId);
-        
-        if (!isFriend && !alreadySent) {
-          // Fetch the inviter's profile to show their name
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name, username')
-            .eq('user_id', inviteUserId)
-            .single();
-          
-          if (profile) {
-            const name = profile.display_name || profile.username || 'Użytkownik';
-            toast.info(`Wysyłanie zaproszenia do ${name}...`);
-            await sendFriendRequest(inviteUserId);
-          }
-        }
-      }
-    };
-    
-    handleInvite();
-  }, [inviteUserId, isLoading, friends, sentRequests, sendFriendRequest]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);

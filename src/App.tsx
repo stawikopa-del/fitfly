@@ -30,6 +30,7 @@ import Achievements from "./pages/Achievements";
 import Goals from "./pages/Goals";
 import Friends from "./pages/Friends";
 import SharedRecipe from "./pages/SharedRecipe";
+import Invite from "./pages/Invite";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -267,6 +268,7 @@ const AppRoutes = () => (
       }
     />
     <Route path="/shared/recipe/:token" element={<SharedRecipe />} />
+    <Route path="/invite/:userId" element={<Invite />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

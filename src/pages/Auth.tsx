@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { Mail, Lock, User, Sparkles, ArrowLeft, ArrowRight, Check, Target, Activity, Scale, Ruler, Calendar, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -112,7 +112,11 @@ const calculateCalories = (weight: number, height: number, age: number, gender: 
 const calculateWater = (weight: number) => Math.round(weight * 35);
 
 export default function Auth() {
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
+  const initialMode = searchParams.get('mode') === 'signup' ? 'register' : 'login';
+  
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [registerStep, setRegisterStep] = useState(1);
   const [regData, setRegData] = useState<RegistrationData>(initialRegistrationData);
   const [isLoading, setIsLoading] = useState(false);
@@ -155,9 +159,9 @@ export default function Auth() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/');
+      navigate(redirectTo);
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, redirectTo]);
 
   const triggerShake = () => {
     setShakeFields(true);
@@ -227,7 +231,7 @@ export default function Auth() {
           localStorage.removeItem('fitfly_remembered_email');
         }
         toast.success('Zalogowano! 🎉');
-        navigate('/');
+        navigate(redirectTo);
       }
     } finally {
       setIsLoading(false);
@@ -240,7 +244,7 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}${redirectTo}`,
         },
       });
       if (error) {
@@ -264,7 +268,7 @@ export default function Auth() {
             const { data, error } = await supabase.auth.refreshSession({ refresh_token: token });
             if (!error && data.session) {
               toast.success('Zalogowano przez Face ID! 🎉');
-              navigate('/');
+              navigate(redirectTo);
               return;
             }
           }
@@ -342,7 +346,7 @@ export default function Auth() {
         }
       } else {
         toast.success('Konto utworzone! 🎉');
-        navigate('/');
+        navigate(redirectTo);
       }
     } finally {
       setIsLoading(false);

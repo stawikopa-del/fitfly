@@ -321,7 +321,7 @@ export function useFriends() {
   }, [user, fetchFriends, fetchPendingRequests]);
 
   const getInviteLink = useCallback(() => {
-    return `${window.location.origin}/znajomi?invite=${encodeURIComponent(user?.id || '')}`;
+    return `${window.location.origin}/invite/${user?.id || ''}`;
   }, [user]);
 
   const shareInviteLink = useCallback(async () => {
