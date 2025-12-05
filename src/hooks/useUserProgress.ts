@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { DailyProgress, MascotState, MascotEmotion } from '@/types/flyfit';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useGamification } from './useGamification';
 import { toast } from 'sonner';
 
 const defaultProgress: DailyProgress = {
@@ -69,21 +68,20 @@ const motivationalMessages: Record<MascotEmotion, string[]> = {
   ],
 };
 
-// Debounce helper to prevent rapid consecutive saves
-function debounce<T extends (...args: any[]) => any>(
-  fn: T,
+// Debounce helper
+function debounce(
+  fn: (updates: Partial<{ water: number; steps: number; activeMinutes: number }>) => void,
   delay: number
-): (...args: Parameters<T>) => void {
+): (updates: Partial<{ water: number; steps: number; activeMinutes: number }>) => void {
   let timeoutId: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
+  return (updates) => {
     clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn(...args), delay);
+    timeoutId = setTimeout(() => fn(updates), delay);
   };
 }
 
 export function useUserProgress() {
   const { user, isInitialized } = useAuth();
-  const { onWaterGoalReached } = useGamification();
   const [progress, setProgress] = useState<DailyProgress>(defaultProgress);
   const [mascotState, setMascotState] = useState<MascotState>({
     emotion: 'neutral',
@@ -98,7 +96,7 @@ export function useUserProgress() {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Fetch user data with proper error handling
+  // Fetch user data
   useEffect(() => {
     if (!isInitialized) return;
     if (!user) {
@@ -114,7 +112,6 @@ export function useUserProgress() {
         setLoading(true);
         setError(null);
 
-        // Fetch profile and daily progress in parallel
         const [profileResult, dailyResult] = await Promise.all([
           supabase
             .from('profiles')
@@ -176,13 +173,12 @@ export function useUserProgress() {
     };
   }, [user, isInitialized, today]);
 
-  // Save progress to database with retry and conflict handling
+  // Save progress to database
   const saveProgressToDb = useCallback(async (
     newProgress: Partial<{ water: number; steps: number; activeMinutes: number }>
   ) => {
     if (!user) return;
 
-    // Prevent concurrent saves
     if (saveInProgressRef.current) {
       pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...newProgress };
       return;
@@ -203,7 +199,6 @@ export function useUserProgress() {
       }
 
       if (existing) {
-        // Update existing record
         const { error: updateError } = await supabase
           .from('daily_progress')
           .update({
@@ -213,11 +208,10 @@ export function useUserProgress() {
             updated_at: new Date().toISOString(),
           })
           .eq('id', existing.id)
-          .eq('user_id', user.id); // Extra safety check
+          .eq('user_id', user.id);
 
         if (updateError) throw updateError;
       } else {
-        // Insert new record
         const { error: insertError } = await supabase
           .from('daily_progress')
           .insert({
@@ -236,7 +230,6 @@ export function useUserProgress() {
     } finally {
       saveInProgressRef.current = false;
 
-      // Process any pending updates
       if (pendingUpdatesRef.current) {
         const pending = pendingUpdatesRef.current;
         pendingUpdatesRef.current = null;
@@ -280,18 +273,16 @@ export function useUserProgress() {
       const emotion = getMascotEmotion(newProgress);
       updateMascotState(emotion);
       
-      // Debounced save
       debouncedSave({ water: newWater, steps: prev.steps, activeMinutes: prev.activeMinutes });
       
-      // Award XP when water goal is reached (only once per day)
+      // Mark water goal as reached for XP (handled by useGamification separately)
       if (newWater >= prev.waterGoal && prev.water < prev.waterGoal && !waterGoalRewardedRef.current) {
         waterGoalRewardedRef.current = true;
-        onWaterGoalReached();
       }
       
       return newProgress;
     });
-  }, [getMascotEmotion, updateMascotState, debouncedSave, onWaterGoalReached]);
+  }, [getMascotEmotion, updateMascotState, debouncedSave]);
 
   const addSteps = useCallback((steps: number) => {
     setProgress(prev => {
