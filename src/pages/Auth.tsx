@@ -258,25 +258,8 @@ export default function Auth() {
   const handleBiometricLogin = async () => {
     const result = await authenticateWithBiometric();
     if (result.success && result.email) {
-      // Get stored password from secure storage
-      const storedAuth = localStorage.getItem('fitfly_biometric_auth');
-      if (storedAuth) {
-        try {
-          const { email, token } = JSON.parse(storedAuth);
-          if (email === result.email) {
-            // Refresh the session using stored refresh token
-            const { data, error } = await supabase.auth.refreshSession({ refresh_token: token });
-            if (!error && data.session) {
-              toast.success('Zalogowano przez Face ID! 🎉');
-              navigate(redirectTo);
-              return;
-            }
-          }
-        } catch (e) {
-          console.error('Biometric auth error:', e);
-        }
-      }
-      // Fallback: fill email and ask for password
+      // Biometric verified identity - pre-fill email and ask for password
+      // (No token storage for security - Supabase handles session persistence)
       setLoginEmail(result.email);
       toast.info('Wpisz hasło, aby się zalogować');
     } else if (result.error) {

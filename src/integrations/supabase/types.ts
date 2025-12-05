@@ -682,6 +682,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: Database["public"]["Enums"]["subscription_tier"]
       }
+      is_friend_with: {
+        Args: { user1_id: string; user2_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       badge_type:
