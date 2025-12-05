@@ -7,8 +7,9 @@ export interface DirectMessage {
   senderId: string;
   receiverId: string;
   content: string;
-  messageType: 'text' | 'recipe';
+  messageType: 'text' | 'recipe' | 'shopping_list';
   recipeData?: any;
+  shoppingListId?: string;
   createdAt: string;
   readAt: string | null;
 }
@@ -91,6 +92,8 @@ export function useDirectMessages(friendId?: string) {
           avatarUrl: profile?.avatar_url || null,
           lastMessage: latestMsg.message_type === 'recipe' 
             ? '📖 Udostępniono przepis' 
+            : latestMsg.message_type === 'shopping_list'
+            ? '🛒 Udostępniono listę zakupów'
             : latestMsg.content || '',
           lastMessageTime: latestMsg.created_at,
           unreadCount,
@@ -132,8 +135,9 @@ export function useDirectMessages(friendId?: string) {
           senderId: m.sender_id,
           receiverId: m.receiver_id,
           content: m.content || '',
-          messageType: (m.message_type || 'text') as 'text' | 'recipe',
+          messageType: (m.message_type || 'text') as 'text' | 'recipe' | 'shopping_list',
           recipeData: m.recipe_data,
+          shoppingListId: (m.recipe_data as any)?.shoppingListId,
           createdAt: m.created_at,
           readAt: m.read_at,
         }))
@@ -155,7 +159,7 @@ export function useDirectMessages(friendId?: string) {
     }
   }, [user, friendId]);
 
-  const sendMessage = useCallback(async (content: string, type: 'text' | 'recipe' = 'text', recipeData?: any) => {
+  const sendMessage = useCallback(async (content: string, type: 'text' | 'recipe' | 'shopping_list' = 'text', recipeData?: any) => {
     if (!user || !friendId || !content.trim()) return false;
 
     setIsSending(true);

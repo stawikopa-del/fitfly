@@ -1240,6 +1240,8 @@ export default function ShoppingList() {
   // State for shared lists received from friends
   const [sharedLists, setSharedLists] = useState<SharedList[]>([]);
   const [loadingSharedLists, setLoadingSharedLists] = useState(false);
+  const [expandedSharedListId, setExpandedSharedListId] = useState<string | null>(null);
+  const [checkedSharedItems, setCheckedSharedItems] = useState<Record<string, Set<string>>>({}); // listId -> Set of checked item names
 
   // Load shared lists from friends
   useEffect(() => {
@@ -1528,7 +1530,7 @@ export default function ShoppingList() {
 
     try {
       // Insert into shared_shopping_lists table
-      const { error } = await supabase
+      const { data: sharedList, error } = await supabase
         .from('shared_shopping_lists')
         .insert({
           owner_id: user.id,
@@ -1536,9 +1538,22 @@ export default function ShoppingList() {
           items: itemsToShare,
           date_range_start: startDate ? format(startDate, 'yyyy-MM-dd') : null,
           date_range_end: endDate ? format(endDate, 'yyyy-MM-dd') : null
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      // Send a message in chat with shopping list notification
+      await supabase
+        .from('direct_messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: friendId,
+          content: '🛒 Udostępniono Ci listę zakupów!',
+          message_type: 'shopping_list',
+          recipe_data: { shoppingListId: sharedList.id }
+        });
 
       toast.success('Lista zakupów została udostępniona! 🛒');
       setShowShareDialog(false);
@@ -1659,46 +1674,136 @@ export default function ShoppingList() {
           <div className="bg-card rounded-2xl border-2 border-secondary/30 p-4 shadow-card-playful">
             <h2 className="font-bold font-display text-foreground mb-3 flex items-center gap-2">
               <Gift className="w-5 h-5 text-secondary" />
-              Listy od znajomych
+              Udostępnione listy zakupów
             </h2>
             <div className="space-y-3">
-              {sharedLists.map(list => (
-                <div key={list.id} className="bg-muted/50 rounded-xl p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium text-foreground">
-                        Udostępnione przez {declinePolishName(list.owner_name)}
-                      </span>
-                    </div>
-                    <button 
-                      onClick={() => deleteSharedList(list.id)}
-                      className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {list.date_range_start && list.date_range_end && (
-                    <p className="text-xs text-muted-foreground mb-2">
-                      <Calendar className="w-3 h-3 inline mr-1" />
-                      {format(new Date(list.date_range_start), 'd MMM', { locale: pl })} — {format(new Date(list.date_range_end), 'd MMM', { locale: pl })}
-                    </p>
-                  )}
-                  <div className="space-y-1">
-                    {list.items.slice(0, 5).map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-sm">
-                        <span className="text-foreground">{item.name}</span>
-                        <span className="text-muted-foreground text-xs">{item.displayAmount}</span>
+              {sharedLists.map(list => {
+                const isExpanded = expandedSharedListId === list.id;
+                const listCheckedItems = checkedSharedItems[list.id] || new Set<string>();
+                const checkedCount = listCheckedItems.size;
+                const totalCount = list.items.length;
+                const progressPercent = totalCount > 0 ? (checkedCount / totalCount) * 100 : 0;
+
+                const toggleSharedItem = (itemName: string) => {
+                  try { soundFeedback.buttonClick(); } catch {}
+                  setCheckedSharedItems(prev => {
+                    const newMap = { ...prev };
+                    const currentSet = new Set(newMap[list.id] || []);
+                    if (currentSet.has(itemName.toLowerCase())) {
+                      currentSet.delete(itemName.toLowerCase());
+                    } else {
+                      currentSet.add(itemName.toLowerCase());
+                    }
+                    newMap[list.id] = currentSet;
+                    return newMap;
+                  });
+                };
+
+                return (
+                  <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
+                    {/* Header - always visible */}
+                    <div className="p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <User className="w-4 h-4 text-primary flex-shrink-0" />
+                          <span className="text-sm font-medium text-foreground truncate">
+                            Udostępnione przez {declinePolishName(list.owner_name)}
+                          </span>
+                        </div>
+                        <button 
+                          onClick={() => deleteSharedList(list.id)}
+                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                    ))}
-                    {list.items.length > 5 && (
-                      <p className="text-xs text-muted-foreground text-center pt-1">
-                        +{list.items.length - 5} więcej produktów
-                      </p>
+                      {list.date_range_start && list.date_range_end && (
+                        <p className="text-xs text-muted-foreground mb-2">
+                          <Calendar className="w-3 h-3 inline mr-1" />
+                          {format(new Date(list.date_range_start), 'd MMM', { locale: pl })} — {format(new Date(list.date_range_end), 'd MMM', { locale: pl })}
+                        </p>
+                      )}
+                      
+                      {/* Progress bar */}
+                      {isExpanded && (
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">Postęp zakupów</span>
+                            <span className="text-xs font-medium text-primary">{checkedCount}/{totalCount}</span>
+                          </div>
+                          <div className="h-2 bg-background rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" 
+                              style={{ width: `${progressPercent}%` }} 
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Expand/Collapse button */}
+                      <Button
+                        variant={isExpanded ? "secondary" : "outline"}
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          try { soundFeedback.buttonClick(); } catch {}
+                          setExpandedSharedListId(isExpanded ? null : list.id);
+                        }}
+                      >
+                        {isExpanded ? (
+                          <>
+                            <ChevronDown className="w-4 h-4 mr-2 rotate-180" />
+                            Zwiń listę
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingCart className="w-4 h-4 mr-2" />
+                            Zobacz listę ({totalCount} produktów)
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Expanded items list */}
+                    {isExpanded && (
+                      <div className="border-t border-border/30 p-3 space-y-2">
+                        {list.items.map((item, idx) => {
+                          const isChecked = listCheckedItems.has(item.name.toLowerCase());
+                          return (
+                            <button 
+                              key={idx} 
+                              onClick={() => toggleSharedItem(item.name)}
+                              className={cn(
+                                "w-full flex items-center gap-3 p-2 rounded-lg transition-all text-left",
+                                isChecked ? "bg-primary/5" : "hover:bg-muted"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0",
+                                isChecked ? "bg-primary border-primary" : "border-border"
+                              )}>
+                                {isChecked && <Check className="w-3 h-3 text-primary-foreground" />}
+                              </div>
+                              <span className={cn(
+                                "flex-1 text-sm transition-all",
+                                isChecked ? "text-muted-foreground line-through" : "text-foreground"
+                              )}>
+                                {item.name}
+                              </span>
+                              <span className={cn(
+                                "text-xs flex-shrink-0",
+                                isChecked ? "text-muted-foreground/50" : "text-muted-foreground"
+                              )}>
+                                {item.displayAmount}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
