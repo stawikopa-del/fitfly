@@ -22,6 +22,11 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-8px); }
+}
+
 /* FITFLY Design System - Przyjazny styl maskotki FitFly */
 
 @layer base {
