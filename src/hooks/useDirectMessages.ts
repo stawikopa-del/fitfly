@@ -22,7 +22,7 @@ export interface DirectMessage {
   senderId: string;
   receiverId: string;
   content: string;
-  messageType: 'text' | 'recipe' | 'shopping_list' | 'shopping_list_activity';
+  messageType: 'text' | 'recipe' | 'shopping_list' | 'shopping_list_activity' | 'image' | 'voice';
   recipeData?: any;
   shoppingListId?: string;
   createdAt: string;
@@ -191,7 +191,7 @@ export function useDirectMessages(friendId?: string) {
 
   const sendMessage = useCallback(async (
     content: string, 
-    type: 'text' | 'recipe' | 'shopping_list' = 'text', 
+    type: 'text' | 'recipe' | 'shopping_list' | 'image' | 'voice' = 'text', 
     recipeData?: any,
     replyToId?: string | null
   ) => {
@@ -224,6 +224,21 @@ export function useDirectMessages(friendId?: string) {
       setIsSending(false);
     }
   }, [user, friendId]);
+
+  // Send image message
+  const sendImageMessage = useCallback(async (imageUrl: string) => {
+    return sendMessage(imageUrl, 'image');
+  }, [sendMessage]);
+
+  // Send voice message
+  const sendVoiceMessage = useCallback(async (audioUrl: string, duration: number) => {
+    return sendMessage(audioUrl, 'voice', { duration });
+  }, [sendMessage]);
+
+  // Send shopping list
+  const sendShoppingListMessage = useCallback(async (listId: string) => {
+    return sendMessage('🛒 Udostępniono Ci listę zakupów!', 'shopping_list', { shoppingListId: listId });
+  }, [sendMessage]);
 
   // Delete a message
   const deleteMessage = useCallback(async (messageId: string) => {
@@ -370,6 +385,9 @@ export function useDirectMessages(friendId?: string) {
     isLoading,
     isSending,
     sendMessage,
+    sendImageMessage,
+    sendVoiceMessage,
+    sendShoppingListMessage,
     deleteMessage,
     toggleReaction,
     refreshMessages: fetchMessages,
