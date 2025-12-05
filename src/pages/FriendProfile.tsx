@@ -15,7 +15,8 @@ import {
   Loader2,
   TrendingUp,
   Trophy,
-  Calendar
+  Calendar,
+  Quote
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,6 +28,8 @@ interface FriendData {
   username: string | null;
   displayName: string | null;
   avatarUrl: string | null;
+  bio: string | null;
+  gender: string | null;
 }
 
 interface FriendProgress {
@@ -60,17 +63,22 @@ export default function FriendProfile() {
         // Fetch friend profile
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('user_id, username, display_name, avatar_url')
+          .select('user_id, username, display_name, avatar_url, bio, gender')
           .eq('user_id', friendId)
-          .single();
+          .maybeSingle();
 
-        if (profileError) throw profileError;
+        if (profileError || !profile) {
+          setIsLoading(false);
+          return;
+        }
 
         setFriend({
           userId: profile.user_id,
           username: profile.username,
           displayName: profile.display_name,
-          avatarUrl: profile.avatar_url
+          avatarUrl: profile.avatar_url,
+          bio: profile.bio,
+          gender: profile.gender
         });
 
         // Fetch today's progress
@@ -189,6 +197,21 @@ export default function FriendProfile() {
               {friend.username && (
                 <p className="text-muted-foreground">@{friend.username}</p>
               )}
+
+              {/* Bio */}
+              <div className="mt-4 p-3 bg-muted/50 rounded-xl border border-border/30 max-w-xs mx-auto">
+                <p className="text-sm text-foreground">
+                  {friend.bio || (
+                    <span className="text-muted-foreground italic">
+                      {friend.gender === 'female' 
+                        ? 'Zgrywa niedostępną 🙄' 
+                        : friend.gender === 'male'
+                          ? 'Zgrywa niedostępnego 🙄'
+                          : 'Jeszcze nic tu nie ma... 🤷'}
+                    </span>
+                  )}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
