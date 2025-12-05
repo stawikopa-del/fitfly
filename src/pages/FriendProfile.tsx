@@ -122,18 +122,17 @@ export default function FriendProfile() {
       if (!friendId || !user) return;
 
       try {
-        // Fetch friend profile
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('user_id, username, display_name, avatar_url, bio, gender')
-          .eq('user_id', friendId)
-          .maybeSingle();
+        // Use secure RPC function to get friend profile (only non-sensitive data)
+        const { data: profileData, error: profileError } = await supabase
+          .rpc('get_friend_profile', { friend_user_id: friendId });
 
-        if (profileError || !profile) {
+        if (profileError || !profileData || profileData.length === 0) {
+          console.error('Profile error:', profileError);
           setIsLoading(false);
           return;
         }
 
+        const profile = profileData[0];
         setFriend({
           userId: profile.user_id,
           username: profile.username,
@@ -143,14 +142,28 @@ export default function FriendProfile() {
           gender: profile.gender
         });
 
-        // Fetch today's progress
+        // Use secure RPC function to get friend activity stats
+        const { data: activityData } = await supabase
+          .rpc('get_friend_activity_stats', { friend_user_id: friendId });
+
+        if (activityData && activityData.length > 0) {
+          const stats = activityData[0];
+          setWeeklyStats({
+            totalSteps: Number(stats.total_steps) || 0,
+            totalWater: Number(stats.total_water) || 0,
+            totalActiveMinutes: Number(stats.total_active_minutes) || 0,
+            activeDays: Number(stats.days_tracked) || 0
+          });
+        }
+
+        // Fetch today's progress using daily_progress table (still allowed via RLS for friends)
         const today = new Date().toISOString().split('T')[0];
         const { data: todayData } = await supabase
           .from('daily_progress')
           .select('steps, water, active_minutes, progress_date')
           .eq('user_id', friendId)
           .eq('progress_date', today)
-          .single();
+          .maybeSingle();
 
         if (todayData) {
           setTodayProgress({
@@ -158,27 +171,6 @@ export default function FriendProfile() {
             water: todayData.water,
             activeMinutes: todayData.active_minutes,
             date: todayData.progress_date
-          });
-        }
-
-        // Fetch weekly stats (last 7 days)
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        const weekAgoStr = weekAgo.toISOString().split('T')[0];
-
-        const { data: weekData } = await supabase
-          .from('daily_progress')
-          .select('steps, water, active_minutes')
-          .eq('user_id', friendId)
-          .gte('progress_date', weekAgoStr)
-          .lte('progress_date', today);
-
-        if (weekData && weekData.length > 0) {
-          setWeeklyStats({
-            totalSteps: weekData.reduce((sum, d) => sum + d.steps, 0),
-            totalWater: weekData.reduce((sum, d) => sum + d.water, 0),
-            totalActiveMinutes: weekData.reduce((sum, d) => sum + d.active_minutes, 0),
-            activeDays: weekData.length
           });
         }
 
