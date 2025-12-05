@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Check, Share2, Calendar, ChevronLeft, ChevronRight, Trash2, Copy, Users, Plus, X } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Check, Share2, Calendar, ChevronLeft, ChevronRight, ChevronDown, Trash2, Copy, Users, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -554,6 +554,7 @@ export default function ShoppingList() {
   const [newItemCategory, setNewItemCategory] = useState('inne');
   const [newItemAmount, setNewItemAmount] = useState('1');
   const [newItemUnit, setNewItemUnit] = useState('szt');
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   
   // Date range selection
   const [weekOffset, setWeekOffset] = useState(0);
@@ -1131,19 +1132,52 @@ export default function ShoppingList() {
                 if (!catConfig) return null;
                 
                 const categoryChecked = items.filter(i => checkedItems.has(i.name.toLowerCase())).length;
+                const isCollapsed = collapsedCategories.has(category);
+                const allChecked = categoryChecked === items.length;
 
                 return (
                   <div key={category} className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-card-playful">
-                    <div className="px-4 py-3 bg-muted/50 flex items-center justify-between">
-                      <span className="font-bold text-foreground flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        try { soundFeedback.buttonClick(); } catch {}
+                        setCollapsedCategories(prev => {
+                          const newSet = new Set(prev);
+                          if (newSet.has(category)) {
+                            newSet.delete(category);
+                          } else {
+                            newSet.add(category);
+                          }
+                          return newSet;
+                        });
+                      }}
+                      className="w-full px-4 py-3 bg-muted/50 flex items-center justify-between hover:bg-muted/70 transition-colors"
+                    >
+                      <span className={cn(
+                        "font-bold flex items-center gap-2 transition-colors",
+                        allChecked ? "text-muted-foreground" : "text-foreground"
+                      )}>
                         <span className="text-xl">{catConfig.emoji}</span>
                         {catConfig.label}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {categoryChecked}/{items.length}
-                      </span>
-                    </div>
-                    <div className="divide-y divide-border/30">
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "text-xs px-2 py-0.5 rounded-full",
+                          allChecked 
+                            ? "bg-primary/20 text-primary" 
+                            : "bg-muted text-muted-foreground"
+                        )}>
+                          {categoryChecked}/{items.length}
+                        </span>
+                        <ChevronDown className={cn(
+                          "w-5 h-5 text-muted-foreground transition-transform duration-200",
+                          isCollapsed && "-rotate-90"
+                        )} />
+                      </div>
+                    </button>
+                    <div className={cn(
+                      "divide-y divide-border/30 transition-all duration-200 overflow-hidden",
+                      isCollapsed ? "max-h-0" : "max-h-[2000px]"
+                    )}>
                       {items.map((item, idx) => {
                         const isChecked = checkedItems.has(item.name.toLowerCase());
                         return (
