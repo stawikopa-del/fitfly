@@ -196,7 +196,8 @@ export default function DirectChat() {
       try {
         soundFeedback.buttonClick();
       } catch {}
-      navigate('/lista-zakupow');
+      // Navigate to the specific shared shopping list
+      navigate(`/lista-zakupow/${shoppingListId}`);
     };
 
     return (
