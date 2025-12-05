@@ -137,15 +137,21 @@ export default function Auth() {
 
   // Load saved email on mount
   useEffect(() => {
-    const savedEmail = localStorage.getItem('fitfly_remembered_email');
-    if (savedEmail) {
-      setLoginEmail(savedEmail);
-      setRememberMe(true);
+    try {
+      const savedEmail = localStorage.getItem('fitfly_remembered_email');
+      if (savedEmail) {
+        setLoginEmail(savedEmail);
+        setRememberMe(true);
+      }
+    } catch (err) {
+      // localStorage may be unavailable
+      console.warn('localStorage unavailable:', err);
     }
   }, []);
 
   // Handle session cleanup when rememberMe is false
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     if (!rememberMe && user) {
       const handleBeforeUnload = () => {
         // Clear session on browser close if not remembered

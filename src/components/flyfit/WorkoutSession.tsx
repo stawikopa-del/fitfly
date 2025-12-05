@@ -32,17 +32,20 @@ export function WorkoutSession({
   onComplete
 }: WorkoutSessionProps) {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(workout.exercises[0]?.duration || 30);
+  const [timeLeft, setTimeLeft] = useState(() => workout.exercises[0]?.duration || 30);
   const [isRunning, setIsRunning] = useState(false);
-  const [motivationMessage, setMotivationMessage] = useState(motivationalMessages[0]);
+  const [motivationMessage, setMotivationMessage] = useState(motivationalMessages[0] || '');
   const [showInstructions, setShowInstructions] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionKey, setTransitionKey] = useState(0);
+  
   const currentExercise = workout.exercises[currentExerciseIndex];
   const totalExercises = workout.exercises.length;
-  const progressPercent = (currentExerciseIndex + (isBreak ? 0.5 : 0)) / totalExercises * 100;
+  const progressPercent = totalExercises > 0 
+    ? (currentExerciseIndex + (isBreak ? 0.5 : 0)) / totalExercises * 100 
+    : 0;
 
   // Trigger transition animation
   const triggerTransition = useCallback(() => {
@@ -177,6 +180,15 @@ export function WorkoutSession({
     onComplete();
     onClose();
   };
+  // Guard against missing exercise data
+  if (!workout.exercises || workout.exercises.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+        <p className="text-muted-foreground">Brak ćwiczeń w tym treningu</p>
+      </div>
+    );
+  }
+  
   if (!currentExercise && !isCompleted) return null;
 
   // Completion Screen

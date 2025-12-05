@@ -35,28 +35,42 @@ export default function FitekChat() {
 
   // Pobierz historię czatu przy starcie
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setIsLoadingHistory(false);
+      return;
+    }
+    
+    let mounted = true;
     
     const fetchMessages = async () => {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
-      
-      if (error) {
-        console.error('Error fetching messages:', error);
-      } else if (data) {
-        setMessages(data.map(m => ({
-          id: m.id,
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        })));
+      try {
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
+        
+        if (!mounted) return;
+        
+        if (error) {
+          console.error('Error fetching messages:', error);
+        } else if (data) {
+          setMessages(data.map(m => ({
+            id: m.id,
+            role: m.role as 'user' | 'assistant',
+            content: m.content || '',
+          })));
+        }
+      } catch (err) {
+        console.error('Error fetching chat history:', err);
+      } finally {
+        if (mounted) setIsLoadingHistory(false);
       }
-      setIsLoadingHistory(false);
     };
     
     fetchMessages();
+    
+    return () => { mounted = false; };
   }, [user]);
 
   useEffect(() => {
@@ -67,16 +81,21 @@ export default function FitekChat() {
   const saveMessage = async (message: Message) => {
     if (!user) return null;
     
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .insert({ role: message.role, content: message.content, user_id: user.id })
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error saving message:', error);
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert({ role: message.role, content: message.content, user_id: user.id })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error saving message:', error);
+      }
+      return data;
+    } catch (err) {
+      console.error('Error saving message:', err);
+      return null;
     }
-    return data;
   };
 
   const streamChat = async (userMessages: Message[]) => {
@@ -179,17 +198,22 @@ export default function FitekChat() {
   const clearHistory = async () => {
     if (!user) return;
     
-    const { error } = await supabase
-      .from('chat_messages')
-      .delete()
-      .eq('user_id', user.id);
-    
-    if (error) {
-      console.error('Error clearing history:', error);
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('user_id', user.id);
+      
+      if (error) {
+        console.error('Error clearing history:', error);
+        toast.error('Nie udało się wyczyścić historii');
+      } else {
+        setMessages([]);
+        toast.success('Historia wyczyszczona');
+      }
+    } catch (err) {
+      console.error('Error clearing history:', err);
       toast.error('Nie udało się wyczyścić historii');
-    } else {
-      setMessages([]);
-      toast.success('Historia wyczyszczona');
     }
   };
 

@@ -58,19 +58,24 @@ export default function Settings() {
     if (!user) return;
     
     try {
-      // Delete user data from profiles table
-      await supabase.from('profiles').delete().eq('user_id', user.id);
-      await supabase.from('daily_progress').delete().eq('user_id', user.id);
-      await supabase.from('meals').delete().eq('user_id', user.id);
-      await supabase.from('chat_messages').delete().eq('user_id', user.id);
-      await supabase.from('calendar_events').delete().eq('user_id', user.id);
-      await supabase.from('favorite_recipes').delete().eq('user_id', user.id);
+      // Delete user data from profiles table - wrap each in try/catch
+      const deleteOps = [
+        supabase.from('profiles').delete().eq('user_id', user.id),
+        supabase.from('daily_progress').delete().eq('user_id', user.id),
+        supabase.from('meals').delete().eq('user_id', user.id),
+        supabase.from('chat_messages').delete().eq('user_id', user.id),
+        supabase.from('calendar_events').delete().eq('user_id', user.id),
+        supabase.from('favorite_recipes').delete().eq('user_id', user.id),
+      ];
+      
+      await Promise.allSettled(deleteOps);
       
       // Sign out the user
       await signOut();
       toast.success('Konto zostało usunięte');
       navigate('/auth');
     } catch (error) {
+      console.error('Error deleting account:', error);
       toast.error('Nie udało się usunąć konta');
     }
   };

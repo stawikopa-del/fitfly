@@ -43,15 +43,19 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
 
   // Timer logic
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (timerRunning && timerSeconds > 0) {
       interval = setInterval(() => {
         setTimerSeconds((prev) => {
           if (prev <= 1) {
             setTimerRunning(false);
-            // Vibrate when timer ends
-            if (navigator.vibrate) {
-              navigator.vibrate([200, 100, 200, 100, 200]);
+            // Vibrate when timer ends - with safety check
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              try {
+                navigator.vibrate([200, 100, 200, 100, 200]);
+              } catch (e) {
+                // Vibration not supported
+              }
             }
             return 0;
           }
