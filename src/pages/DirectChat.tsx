@@ -41,8 +41,11 @@ export default function DirectChat() {
   const [activeReactionMessageId, setActiveReactionMessageId] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<ReplyData | null>(null);
   const [contextMenuMessage, setContextMenuMessage] = useState<string | null>(null);
+  const [friendIsTyping, setFriendIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(messages.length);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Touch handling refs
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -102,6 +105,50 @@ export default function DirectChat() {
     return () => { mounted = false; };
   }, [odgerId]);
 
+  // Typing indicator realtime channel
+  useEffect(() => {
+    if (!user?.id || !odgerId) return;
+
+    const channelName = [user.id, odgerId].sort().join('-');
+    const channel = supabase.channel(`typing:${channelName}`);
+    
+    channel
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        if (payload.payload?.userId === odgerId) {
+          setFriendIsTyping(true);
+          // Clear previous timeout
+          if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+          }
+          // Hide typing after 3 seconds
+          typingTimeoutRef.current = setTimeout(() => {
+            setFriendIsTyping(false);
+          }, 3000);
+        }
+      })
+      .subscribe();
+
+    typingChannelRef.current = channel;
+
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, odgerId]);
+
+  // Broadcast typing status
+  const broadcastTyping = () => {
+    if (typingChannelRef.current && user?.id) {
+      typingChannelRef.current.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { userId: user.id },
+      });
+    }
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -120,6 +167,9 @@ export default function DirectChat() {
     
     // Clear optimistic messages when real ones arrive
     setOptimisticMessages([]);
+    
+    // Stop typing indicator when message arrives
+    setFriendIsTyping(false);
   }, [messages, user?.id]);
 
   const handleSend = async () => {
@@ -645,6 +695,32 @@ export default function DirectChat() {
         </div>
       )}
 
+      {/* Typing indicator */}
+      {friendIsTyping && (
+        <div className="px-4 py-2 flex items-center gap-3">
+          <Avatar className="h-8 w-8 shrink-0">
+            <AvatarImage src={friendProfile?.avatarUrl || undefined} />
+            <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
+              {(friendProfile?.displayName?.[0] || 'U').toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="bg-card border-2 border-border/50 rounded-3xl rounded-bl-lg px-4 py-3 flex items-center gap-1">
+            <span 
+              className="w-2 h-2 bg-muted-foreground rounded-full"
+              style={{ animation: 'typing-bounce 1s ease-in-out infinite', animationDelay: '0ms' }}
+            />
+            <span 
+              className="w-2 h-2 bg-muted-foreground rounded-full"
+              style={{ animation: 'typing-bounce 1s ease-in-out infinite', animationDelay: '150ms' }}
+            />
+            <span 
+              className="w-2 h-2 bg-muted-foreground rounded-full"
+              style={{ animation: 'typing-bounce 1s ease-in-out infinite', animationDelay: '300ms' }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Reply indicator */}
       {replyingTo && (
         <div className="px-4 py-2 bg-muted/50 border-t border-border/50 flex items-center gap-3 animate-slide-up-fade">
@@ -669,7 +745,12 @@ export default function DirectChat() {
         <div className="flex gap-3">
           <Input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              if (e.target.value.trim()) {
+                broadcastTyping();
+              }
+            }}
             onKeyPress={handleKeyPress}
             placeholder={replyingTo ? "Napisz odpowiedź..." : "Napisz wiadomość..."}
             disabled={isSending}
