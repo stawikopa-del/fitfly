@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Check, Share2, Calendar, ChevronLeft, ChevronRight, Trash2, Copy, Users } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Check, Share2, Calendar, ChevronLeft, ChevronRight, Trash2, Copy, Users, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,6 +23,13 @@ interface Ingredient {
   packageSize: number;
   packageUnit: string;
   displayAmount: string;
+  isCustom?: boolean;
+}
+
+interface CustomItem {
+  id: string;
+  name: string;
+  category: string;
 }
 
 interface DietPlan {
@@ -302,6 +310,36 @@ const INGREDIENT_CATEGORIES: Record<string, { label: string; emoji: string; keyw
   },
 };
 
+// Polish plural forms for package names - MOVED BEFORE useMemo
+const getPluralForm = (packageName: string, count: number): string => {
+  const forms: Record<string, [string, string, string]> = {
+    'opakowanie': ['opakowanie', 'opakowania', 'opakowań'],
+    'karton': ['karton', 'kartony', 'kartonów'],
+    'butelka': ['butelka', 'butelki', 'butelek'],
+    'kubek': ['kubek', 'kubki', 'kubków'],
+    'słoik': ['słoik', 'słoiki', 'słoików'],
+    'słoiczek': ['słoiczek', 'słoiczki', 'słoiczków'],
+    'sztuka': ['sztuka', 'sztuki', 'sztuk'],
+    'puszka': ['puszka', 'puszki', 'puszek'],
+    'kostka': ['kostka', 'kostki', 'kostek'],
+    'tabliczka': ['tabliczka', 'tabliczki', 'tabliczek'],
+    'główka': ['główka', 'główki', 'główek'],
+    'bochenek': ['bochenek', 'bochenki', 'bochenków'],
+    'kiść': ['kiść', 'kiście', 'kiści'],
+    'porcja': ['porcja', 'porcje', 'porcji'],
+    'pęczek': ['pęczek', 'pęczki', 'pęczków'],
+    'korzeń': ['korzeń', 'korzenie', 'korzeni'],
+    'plasterek': ['plasterek', 'plasterki', 'plasterków'],
+    'kg': ['kg', 'kg', 'kg'],
+  };
+  
+  const form = forms[packageName] || [packageName, packageName, packageName];
+  
+  if (count === 1) return form[0];
+  if (count >= 2 && count <= 4) return form[1];
+  return form[2];
+};
+
 // Normalize ingredient name to base form
 const normalizeIngredientName = (name: string): string => {
   const lower = name.toLowerCase().trim();
@@ -487,12 +525,15 @@ const parseIngredientsFromMeals = (
 
 export default function ShoppingList() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isInitialized } = useAuth();
   const { friends } = useFriends();
   const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [customItems, setCustomItems] = useState<CustomItem[]>([]);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
   
   // Date range selection
   const [weekOffset, setWeekOffset] = useState(0);
@@ -503,9 +544,16 @@ export default function ShoppingList() {
   const weekStart = startOfWeek(addDays(new Date(), weekOffset * 7), { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
+  // Load diet plan
   useEffect(() => {
+    if (!isInitialized) return;
+    
     const fetchDietPlan = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       
       try {
@@ -515,9 +563,9 @@ export default function ShoppingList() {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') {
+        if (error) {
           console.error('Error fetching diet plan:', error);
         }
         
@@ -532,23 +580,53 @@ export default function ShoppingList() {
     };
 
     fetchDietPlan();
-  }, [user]);
+  }, [user, isInitialized]);
 
-  // Load checked items from localStorage
+  // Load checked items and custom items from localStorage - with SSR guard
   useEffect(() => {
-    const saved = localStorage.getItem('shoppingListChecked');
-    if (saved) {
-      setCheckedItems(new Set(JSON.parse(saved)));
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const savedChecked = localStorage.getItem('shoppingListChecked');
+      if (savedChecked) {
+        setCheckedItems(new Set(JSON.parse(savedChecked)));
+      }
+      
+      const savedCustom = localStorage.getItem('shoppingListCustomItems');
+      if (savedCustom) {
+        setCustomItems(JSON.parse(savedCustom));
+      }
+    } catch (err) {
+      console.error('Error loading from localStorage:', err);
     }
   }, []);
 
-  // Save checked items to localStorage
+  // Save checked items to localStorage - with SSR guard
   useEffect(() => {
-    localStorage.setItem('shoppingListChecked', JSON.stringify([...checkedItems]));
+    if (typeof window === 'undefined') return;
+    
+    try {
+      localStorage.setItem('shoppingListChecked', JSON.stringify([...checkedItems]));
+    } catch (err) {
+      console.error('Error saving to localStorage:', err);
+    }
   }, [checkedItems]);
 
-  const handleDateClick = (date: Date) => {
-    soundFeedback.buttonClick();
+  // Save custom items to localStorage - with SSR guard
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      localStorage.setItem('shoppingListCustomItems', JSON.stringify(customItems));
+    } catch (err) {
+      console.error('Error saving custom items:', err);
+    }
+  }, [customItems]);
+
+  const handleDateClick = useCallback((date: Date) => {
+    try {
+      soundFeedback.buttonClick();
+    } catch {}
     
     if (selectingStart || !startDate) {
       setStartDate(date);
@@ -563,91 +641,84 @@ export default function ShoppingList() {
       }
       setSelectingStart(true);
     }
-  };
+  }, [selectingStart, startDate]);
 
+  // Combine diet plan ingredients with custom items
   const ingredients = useMemo(() => {
-    if (!dietPlan?.plan_data || !startDate || !endDate) return [];
-    
-    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    
-    // Collect all meals
-    const allMeals: Array<{ name: string; description: string }> = [];
-    
-    if (dietPlan.plan_data.dailyMeals) {
-      const { breakfast, lunch, dinner, snacks } = dietPlan.plan_data.dailyMeals;
-      [...(breakfast || []), ...(lunch || []), ...(dinner || []), ...(snacks || [])].forEach(meal => {
-        allMeals.push({ name: meal.name, description: meal.description || '' });
-      });
-    }
-    
-    // Parse and aggregate ingredients
-    const parsedIngredients = parseIngredientsFromMeals(allMeals, daysDiff);
-    
-    // Convert to final format with packaging
     const result: Ingredient[] = [];
     
-    parsedIngredients.forEach((data, name) => {
-      const { count, size, packageUnit, packageName } = getPackageInfo(name, data.amount, data.unit);
-      const category = categorizeIngredient(name);
-      
-      // Format display amount
-      let displayAmount = '';
-      if (count > 1 || packageName !== 'sztuka') {
-        const plural = count > 1 ? getPluralForm(packageName, count) : packageName;
-        if (size > 0 && data.amount > 0) {
-          displayAmount = `${count} ${plural} (${Math.round(data.amount)}${data.unit})`;
-        } else {
-          displayAmount = `${count} ${plural}`;
-        }
-      } else {
-        displayAmount = `${Math.round(data.count)} szt`;
-      }
-      
+    // Add custom items first (always visible, no date selection needed)
+    customItems.forEach(item => {
       result.push({
-        name: name.charAt(0).toUpperCase() + name.slice(1),
-        amount: data.amount,
-        unit: data.unit,
-        category,
-        checked: checkedItems.has(name.toLowerCase()),
-        packageCount: count,
-        packageSize: size,
-        packageUnit,
-        displayAmount,
+        name: item.name,
+        amount: 0,
+        unit: 'szt',
+        category: item.category,
+        checked: checkedItems.has(item.name.toLowerCase()),
+        packageCount: 1,
+        packageSize: 0,
+        packageUnit: 'szt',
+        displayAmount: '1 szt',
+        isCustom: true,
       });
     });
     
+    // Only add diet plan ingredients if dates are selected
+    if (dietPlan?.plan_data && startDate && endDate) {
+      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      
+      // Collect all meals
+      const allMeals: Array<{ name: string; description: string }> = [];
+      
+      if (dietPlan.plan_data.dailyMeals) {
+        const { breakfast, lunch, dinner, snacks } = dietPlan.plan_data.dailyMeals;
+        [...(breakfast || []), ...(lunch || []), ...(dinner || []), ...(snacks || [])].forEach(meal => {
+          allMeals.push({ name: meal?.name || '', description: meal?.description || '' });
+        });
+      }
+      
+      // Parse and aggregate ingredients
+      const parsedIngredients = parseIngredientsFromMeals(allMeals, daysDiff);
+      
+      // Convert to final format with packaging
+      parsedIngredients.forEach((data, name) => {
+        // Skip if already added as custom item
+        if (customItems.some(ci => ci.name.toLowerCase() === name.toLowerCase())) {
+          return;
+        }
+        
+        const { count, size, packageUnit, packageName } = getPackageInfo(name, data.amount, data.unit);
+        const category = categorizeIngredient(name);
+        
+        // Format display amount
+        let displayAmount = '';
+        if (count > 1 || packageName !== 'sztuka') {
+          const plural = count > 1 ? getPluralForm(packageName, count) : packageName;
+          if (size > 0 && data.amount > 0) {
+            displayAmount = `${count} ${plural} (${Math.round(data.amount)}${data.unit})`;
+          } else {
+            displayAmount = `${count} ${plural}`;
+          }
+        } else {
+          displayAmount = `${Math.round(data.count)} szt`;
+        }
+        
+        result.push({
+          name: name.charAt(0).toUpperCase() + name.slice(1),
+          amount: data.amount,
+          unit: data.unit,
+          category,
+          checked: checkedItems.has(name.toLowerCase()),
+          packageCount: count,
+          packageSize: size,
+          packageUnit,
+          displayAmount,
+        });
+      });
+    }
+    
     return result;
-  }, [dietPlan, startDate, endDate, checkedItems]);
-
-  // Polish plural forms for package names
-  const getPluralForm = (packageName: string, count: number): string => {
-    const forms: Record<string, [string, string, string]> = {
-      'opakowanie': ['opakowanie', 'opakowania', 'opakowań'],
-      'karton': ['karton', 'kartony', 'kartonów'],
-      'butelka': ['butelka', 'butelki', 'butelek'],
-      'kubek': ['kubek', 'kubki', 'kubków'],
-      'słoik': ['słoik', 'słoiki', 'słoików'],
-      'słoiczek': ['słoiczek', 'słoiczki', 'słoiczków'],
-      'sztuka': ['sztuka', 'sztuki', 'sztuk'],
-      'puszka': ['puszka', 'puszki', 'puszek'],
-      'kostka': ['kostka', 'kostki', 'kostek'],
-      'tabliczka': ['tabliczka', 'tabliczki', 'tabliczek'],
-      'główka': ['główka', 'główki', 'główek'],
-      'bochenek': ['bochenek', 'bochenki', 'bochenków'],
-      'kiść': ['kiść', 'kiście', 'kiści'],
-      'porcja': ['porcja', 'porcje', 'porcji'],
-      'pęczek': ['pęczek', 'pęczki', 'pęczków'],
-      'korzeń': ['korzeń', 'korzenie', 'korzeni'],
-      'plasterek': ['plasterek', 'plasterki', 'plasterków'],
-      'kg': ['kg', 'kg', 'kg'],
-    };
-    
-    const form = forms[packageName] || [packageName, packageName, packageName];
-    
-    if (count === 1) return form[0];
-    if (count >= 2 && count <= 4) return form[1];
-    return form[2];
-  };
+  }, [dietPlan, startDate, endDate, checkedItems, customItems]);
 
   const groupedIngredients = useMemo(() => {
     const groups: Record<string, Ingredient[]> = {};
@@ -670,34 +741,84 @@ export default function ShoppingList() {
     return sortedGroups;
   }, [ingredients]);
 
-  const toggleItem = (name: string) => {
-    soundFeedback.buttonClick();
+  const toggleItem = useCallback((name: string) => {
+    try {
+      soundFeedback.buttonClick();
+    } catch {}
+    
     const key = name.toLowerCase();
-    const newChecked = new Set(checkedItems);
-    if (newChecked.has(key)) {
-      newChecked.delete(key);
-    } else {
-      newChecked.add(key);
-    }
-    setCheckedItems(newChecked);
-  };
+    setCheckedItems(prev => {
+      const newChecked = new Set(prev);
+      if (newChecked.has(key)) {
+        newChecked.delete(key);
+      } else {
+        newChecked.add(key);
+      }
+      return newChecked;
+    });
+  }, []);
 
-  const clearChecked = () => {
-    soundFeedback.buttonClick();
+  const clearChecked = useCallback(() => {
+    try {
+      soundFeedback.buttonClick();
+    } catch {}
+    
     setCheckedItems(new Set());
     toast.success('Lista wyczyszczona');
-  };
+  }, []);
 
-  const copyToClipboard = () => {
-    soundFeedback.buttonClick();
+  const addCustomItem = useCallback(() => {
+    const trimmedName = newItemName.trim();
+    if (!trimmedName) {
+      toast.error('Wpisz nazwę produktu');
+      return;
+    }
+    
+    // Check for duplicates
+    if (customItems.some(ci => ci.name.toLowerCase() === trimmedName.toLowerCase())) {
+      toast.error('Ten produkt już jest na liście');
+      return;
+    }
+    
+    const category = categorizeIngredient(trimmedName);
+    const newItem: CustomItem = {
+      id: Date.now().toString(),
+      name: trimmedName.charAt(0).toUpperCase() + trimmedName.slice(1),
+      category,
+    };
+    
+    setCustomItems(prev => [...prev, newItem]);
+    setNewItemName('');
+    setShowAddDialog(false);
+    toast.success('Dodano produkt');
+  }, [newItemName, customItems]);
+
+  const removeCustomItem = useCallback((itemId: string) => {
+    setCustomItems(prev => prev.filter(item => item.id !== itemId));
+    toast.success('Usunięto produkt');
+  }, []);
+
+  const copyToClipboard = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) {
+      toast.error('Kopiowanie niedostępne');
+      return;
+    }
+    
+    try {
+      soundFeedback.buttonClick();
+    } catch {}
     
     let text = '🛒 Lista zakupów FITFLY\n';
     if (startDate && endDate) {
       text += `📅 ${format(startDate, 'd MMM', { locale: pl })} - ${format(endDate, 'd MMM yyyy', { locale: pl })}\n\n`;
+    } else if (customItems.length > 0) {
+      text += '\n';
     }
 
     Object.entries(groupedIngredients).forEach(([category, items]) => {
       const catConfig = INGREDIENT_CATEGORIES[category];
+      if (!catConfig) return;
+      
       text += `${catConfig.emoji} ${catConfig.label}:\n`;
       items.forEach(item => {
         const checkbox = checkedItems.has(item.name.toLowerCase()) ? '✅' : '⬜';
@@ -706,20 +827,31 @@ export default function ShoppingList() {
       text += '\n';
     });
 
-    navigator.clipboard.writeText(text);
-    toast.success('Skopiowano do schowka! 📋');
-  };
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success('Skopiowano do schowka! 📋');
+    }).catch(() => {
+      toast.error('Nie udało się skopiować');
+    });
+  }, [groupedIngredients, startDate, endDate, checkedItems, customItems]);
 
-  const shareWithFriend = async (friendId: string) => {
-    soundFeedback.buttonClick();
+  const shareWithFriend = useCallback(async (friendId: string) => {
+    if (!user) return;
+    
+    try {
+      soundFeedback.buttonClick();
+    } catch {}
     
     let text = '🛒 Lista zakupów FITFLY\n';
     if (startDate && endDate) {
       text += `📅 ${format(startDate, 'd MMM', { locale: pl })} - ${format(endDate, 'd MMM yyyy', { locale: pl })}\n\n`;
+    } else {
+      text += '\n';
     }
 
     Object.entries(groupedIngredients).forEach(([category, items]) => {
       const catConfig = INGREDIENT_CATEGORIES[category];
+      if (!catConfig) return;
+      
       text += `${catConfig.emoji} ${catConfig.label}:\n`;
       items.forEach(item => {
         text += `  • ${item.name} - ${item.displayAmount}\n`;
@@ -731,7 +863,7 @@ export default function ShoppingList() {
       const { error } = await supabase
         .from('direct_messages')
         .insert({
-          sender_id: user!.id,
+          sender_id: user.id,
           receiver_id: friendId,
           content: text,
           message_type: 'text',
@@ -745,10 +877,19 @@ export default function ShoppingList() {
       console.error('Error sharing:', error);
       toast.error('Nie udało się wysłać listy');
     }
-  };
+  }, [user, groupedIngredients, startDate, endDate]);
 
   const checkedCount = ingredients.filter(i => checkedItems.has(i.name.toLowerCase())).length;
   const progress = ingredients.length > 0 ? (checkedCount / ingredients.length) * 100 : 0;
+
+  // Loading state
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -756,7 +897,10 @@ export default function ShoppingList() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="px-4 py-4 flex items-center gap-4">
           <button 
-            onClick={() => { soundFeedback.navTap(); navigate('/inne'); }}
+            onClick={() => { 
+              try { soundFeedback.navTap(); } catch {}
+              navigate('/inne'); 
+            }}
             className="p-2 rounded-xl hover:bg-muted transition-colors"
           >
             <ArrowLeft className="w-6 h-6 text-foreground" />
@@ -769,6 +913,13 @@ export default function ShoppingList() {
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => setShowAddDialog(true)}
+          >
+            <Plus className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setShowShareDialog(true)}
             disabled={ingredients.length === 0}
           >
@@ -778,11 +929,23 @@ export default function ShoppingList() {
       </header>
 
       <div className="px-4 py-6 space-y-6">
+        {/* Custom Items Notice */}
+        {customItems.length > 0 && (!startDate || !endDate) && (
+          <div className="bg-primary/10 rounded-2xl p-4 text-center">
+            <p className="text-sm text-foreground">
+              Masz {customItems.length} własnych produktów na liście
+            </p>
+          </div>
+        )}
+
         {/* Calendar Date Range Selector */}
         <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-card-playful">
           <div className="flex items-center justify-between mb-4">
             <button 
-              onClick={() => { soundFeedback.buttonClick(); setWeekOffset(w => w - 1); }}
+              onClick={() => { 
+                try { soundFeedback.buttonClick(); } catch {}
+                setWeekOffset(w => w - 1); 
+              }}
               className="p-2 rounded-xl hover:bg-muted transition-colors"
             >
               <ChevronLeft className="w-5 h-5 text-foreground" />
@@ -796,7 +959,10 @@ export default function ShoppingList() {
               </p>
             </div>
             <button 
-              onClick={() => { soundFeedback.buttonClick(); setWeekOffset(w => w + 1); }}
+              onClick={() => { 
+                try { soundFeedback.buttonClick(); } catch {}
+                setWeekOffset(w => w + 1); 
+              }}
               className="p-2 rounded-xl hover:bg-muted transition-colors"
             >
               <ChevronRight className="w-5 h-5 text-foreground" />
@@ -848,30 +1014,33 @@ export default function ShoppingList() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
           </div>
-        ) : !dietPlan ? (
+        ) : ingredients.length === 0 && !dietPlan ? (
           <div className="text-center py-12 px-4">
             <ShoppingCart className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="font-bold text-foreground mb-2">Brak planu diety</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Najpierw skonfiguruj swoją dietę, aby wygenerować listę zakupów
+              Skonfiguruj dietę lub dodaj własne produkty
             </p>
-            <Button onClick={() => navigate('/konfiguracja-diety')}>
-              Skonfiguruj dietę
-            </Button>
-          </div>
-        ) : !startDate || !endDate ? (
-          <div className="text-center py-8 px-4">
-            <Calendar className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <p className="text-sm text-muted-foreground">
-              Wybierz okres na kalendarzu powyżej, aby zobaczyć listę zakupów
-            </p>
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => navigate('/konfiguracja-diety')}>
+                Skonfiguruj dietę
+              </Button>
+              <Button variant="outline" onClick={() => setShowAddDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Dodaj własny produkt
+              </Button>
+            </div>
           </div>
         ) : ingredients.length === 0 ? (
           <div className="text-center py-8 px-4">
-            <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <p className="text-sm text-muted-foreground">
-              Brak składników w wybranym okresie
+            <Calendar className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+            <p className="text-sm text-muted-foreground mb-4">
+              Wybierz okres na kalendarzu powyżej lub dodaj własne produkty
             </p>
+            <Button variant="outline" onClick={() => setShowAddDialog(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Dodaj własny produkt
+            </Button>
           </div>
         ) : (
           <>
@@ -928,6 +1097,8 @@ export default function ShoppingList() {
             <div className="space-y-4">
               {Object.entries(groupedIngredients).map(([category, items]) => {
                 const catConfig = INGREDIENT_CATEGORIES[category];
+                if (!catConfig) return null;
+                
                 const categoryChecked = items.filter(i => checkedItems.has(i.name.toLowerCase())).length;
 
                 return (
@@ -945,37 +1116,59 @@ export default function ShoppingList() {
                       {items.map((item, idx) => {
                         const isChecked = checkedItems.has(item.name.toLowerCase());
                         return (
-                          <button
+                          <div
                             key={`${item.name}-${idx}`}
-                            onClick={() => toggleItem(item.name)}
                             className={cn(
-                              "w-full px-4 py-3 flex items-center gap-3 transition-all text-left",
+                              "w-full px-4 py-3 flex items-center gap-3 transition-all",
                               isChecked && "bg-primary/5"
                             )}
                           >
-                            <div className={cn(
-                              "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0",
-                              isChecked 
-                                ? "bg-primary border-primary" 
-                                : "border-border"
-                            )}>
-                              {isChecked && <Check className="w-4 h-4 text-primary-foreground" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={cn(
-                                "font-medium transition-all",
-                                isChecked ? "text-muted-foreground line-through" : "text-foreground"
+                            <button
+                              onClick={() => toggleItem(item.name)}
+                              className="flex-1 flex items-center gap-3 text-left"
+                            >
+                              <div className={cn(
+                                "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0",
+                                isChecked 
+                                  ? "bg-primary border-primary" 
+                                  : "border-border"
                               )}>
-                                {item.name}
-                              </p>
-                              <p className={cn(
-                                "text-xs",
-                                isChecked ? "text-muted-foreground/50" : "text-muted-foreground"
-                              )}>
-                                {item.displayAmount}
-                              </p>
-                            </div>
-                          </button>
+                                {isChecked && <Check className="w-4 h-4 text-primary-foreground" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={cn(
+                                  "font-medium transition-all",
+                                  isChecked ? "text-muted-foreground line-through" : "text-foreground"
+                                )}>
+                                  {item.name}
+                                  {item.isCustom && (
+                                    <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                      własny
+                                    </span>
+                                  )}
+                                </p>
+                                <p className={cn(
+                                  "text-xs",
+                                  isChecked ? "text-muted-foreground/50" : "text-muted-foreground"
+                                )}>
+                                  {item.displayAmount}
+                                </p>
+                              </div>
+                            </button>
+                            {item.isCustom && (
+                              <button
+                                onClick={() => {
+                                  const customItem = customItems.find(ci => ci.name === item.name);
+                                  if (customItem) {
+                                    removeCustomItem(customItem.id);
+                                  }
+                                }}
+                                className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -986,6 +1179,52 @@ export default function ShoppingList() {
           </>
         )}
       </div>
+
+      {/* Add Custom Item Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Dodaj własny produkt
+            </DialogTitle>
+            <DialogDescription>
+              Dodaj produkt, który chcesz kupić
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <Input
+              placeholder="Nazwa produktu..."
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  addCustomItem();
+                }
+              }}
+              autoFocus
+            />
+            
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowAddDialog(false)}
+              >
+                Anuluj
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={addCustomItem}
+                disabled={!newItemName.trim()}
+              >
+                Dodaj
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Share Dialog */}
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
@@ -1001,7 +1240,7 @@ export default function ShoppingList() {
           </DialogHeader>
           
           <div className="space-y-2 max-h-60 overflow-y-auto">
-            {friends.length === 0 ? (
+            {!friends || friends.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground py-4">
                 Nie masz jeszcze znajomych
               </p>
