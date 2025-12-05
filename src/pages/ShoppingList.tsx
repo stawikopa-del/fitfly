@@ -565,6 +565,36 @@ export default function ShoppingList() {
     }
   };
 
+  // Polish plural forms for package names - must be defined before useMemo that uses it
+  const getPluralForm = (packageName: string, count: number): string => {
+    const forms: Record<string, [string, string, string]> = {
+      'opakowanie': ['opakowanie', 'opakowania', 'opakowań'],
+      'karton': ['karton', 'kartony', 'kartonów'],
+      'butelka': ['butelka', 'butelki', 'butelek'],
+      'kubek': ['kubek', 'kubki', 'kubków'],
+      'słoik': ['słoik', 'słoiki', 'słoików'],
+      'słoiczek': ['słoiczek', 'słoiczki', 'słoiczków'],
+      'sztuka': ['sztuka', 'sztuki', 'sztuk'],
+      'puszka': ['puszka', 'puszki', 'puszek'],
+      'kostka': ['kostka', 'kostki', 'kostek'],
+      'tabliczka': ['tabliczka', 'tabliczki', 'tabliczek'],
+      'główka': ['główka', 'główki', 'główek'],
+      'bochenek': ['bochenek', 'bochenki', 'bochenków'],
+      'kiść': ['kiść', 'kiście', 'kiści'],
+      'porcja': ['porcja', 'porcje', 'porcji'],
+      'pęczek': ['pęczek', 'pęczki', 'pęczków'],
+      'korzeń': ['korzeń', 'korzenie', 'korzeni'],
+      'plasterek': ['plasterek', 'plasterki', 'plasterków'],
+      'kg': ['kg', 'kg', 'kg'],
+    };
+    
+    const form = forms[packageName] || [packageName, packageName, packageName];
+    
+    if (count === 1) return form[0];
+    if (count >= 2 && count <= 4) return form[1];
+    return form[2];
+  };
+
   const ingredients = useMemo(() => {
     if (!dietPlan?.plan_data || !startDate || !endDate) return [];
     
@@ -618,36 +648,6 @@ export default function ShoppingList() {
     
     return result;
   }, [dietPlan, startDate, endDate, checkedItems]);
-
-  // Polish plural forms for package names
-  const getPluralForm = (packageName: string, count: number): string => {
-    const forms: Record<string, [string, string, string]> = {
-      'opakowanie': ['opakowanie', 'opakowania', 'opakowań'],
-      'karton': ['karton', 'kartony', 'kartonów'],
-      'butelka': ['butelka', 'butelki', 'butelek'],
-      'kubek': ['kubek', 'kubki', 'kubków'],
-      'słoik': ['słoik', 'słoiki', 'słoików'],
-      'słoiczek': ['słoiczek', 'słoiczki', 'słoiczków'],
-      'sztuka': ['sztuka', 'sztuki', 'sztuk'],
-      'puszka': ['puszka', 'puszki', 'puszek'],
-      'kostka': ['kostka', 'kostki', 'kostek'],
-      'tabliczka': ['tabliczka', 'tabliczki', 'tabliczek'],
-      'główka': ['główka', 'główki', 'główek'],
-      'bochenek': ['bochenek', 'bochenki', 'bochenków'],
-      'kiść': ['kiść', 'kiście', 'kiści'],
-      'porcja': ['porcja', 'porcje', 'porcji'],
-      'pęczek': ['pęczek', 'pęczki', 'pęczków'],
-      'korzeń': ['korzeń', 'korzenie', 'korzeni'],
-      'plasterek': ['plasterek', 'plasterki', 'plasterków'],
-      'kg': ['kg', 'kg', 'kg'],
-    };
-    
-    const form = forms[packageName] || [packageName, packageName, packageName];
-    
-    if (count === 1) return form[0];
-    if (count >= 2 && count <= 4) return form[1];
-    return form[2];
-  };
 
   const groupedIngredients = useMemo(() => {
     const groups: Record<string, Ingredient[]> = {};
