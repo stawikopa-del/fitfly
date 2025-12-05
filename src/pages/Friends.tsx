@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/flyfit/AppLayout';
 import { PageHeader } from '@/components/flyfit/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,13 +20,15 @@ import {
   Trash2,
   Loader2,
   UserX,
-  Share2
+  Share2,
+  MessageCircle
 } from 'lucide-react';
 import { useFriends, Friend, FriendRequest } from '@/hooks/useFriends';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { cn } from '@/lib/utils';
 
 export default function Friends() {
+  const navigate = useNavigate();
   const { 
     friends, 
     pendingRequests, 
@@ -74,7 +77,7 @@ export default function Friends() {
   };
 
   const FriendCard = ({ friend }: { friend: Friend }) => (
-    <Card className="bg-card/80 backdrop-blur-sm border-border/50">
+    <Card className="bg-card/80 backdrop-blur-sm border-border/50 hover:-translate-y-0.5 hover:shadow-card-playful transition-all">
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 border-2 border-primary/30">
@@ -93,14 +96,27 @@ export default function Friends() {
             )}
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-destructive hover:bg-destructive/10"
-            onClick={() => handleRemove(friend.friendshipId)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="text-primary hover:bg-primary/10"
+              onClick={() => {
+                soundFeedback.buttonClick();
+                navigate(`/czat/${friend.userId}`);
+              }}
+            >
+              <MessageCircle className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-destructive hover:bg-destructive/10"
+              onClick={() => handleRemove(friend.friendshipId)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {friend.progress && (

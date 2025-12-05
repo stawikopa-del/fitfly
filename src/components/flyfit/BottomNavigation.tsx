@@ -1,13 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, Utensils, Menu } from 'lucide-react';
+import { Home, Dumbbell, Utensils, Menu, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
-import fitekAvatar from '@/assets/fitek-avatar.png';
 
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/treningi', icon: Dumbbell, label: 'Treningi' },
-  { to: '/czat', icon: null, label: 'FITEK', isCenter: true },
+  { to: '/czat', icon: MessageCircle, label: 'Chaty', isCenter: true },
   { to: '/odzywianie', icon: Utensils, label: 'Dieta' },
   { to: '/inne', icon: Menu, label: 'Inne' },
 ];
@@ -22,6 +21,9 @@ export function BottomNavigation() {
     if (to === '/inne') {
       return inneSubRoutes.includes(location.pathname);
     }
+    if (to === '/czat') {
+      return location.pathname.startsWith('/czat');
+    }
     return location.pathname === to;
   };
 
@@ -32,7 +34,7 @@ export function BottomNavigation() {
           {navItems.map(({ to, icon: Icon, label, isCenter }) => {
             const isActive = isRouteActive(to);
             
-            // Center FITEK button
+            // Center Chaty button
             if (isCenter) {
               return (
                 <NavLink
@@ -43,15 +45,11 @@ export function BottomNavigation() {
                 >
                   <div className={cn(
                     'w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300',
-                    'bg-[#fdfeea] border-4 border-primary/20 shadow-lg',
-                    'hover:scale-105 hover:shadow-xl hover:border-primary/40',
-                    isActive && 'ring-4 ring-primary/30 scale-105 border-primary/50'
+                    'bg-primary shadow-lg',
+                    'hover:scale-105 hover:shadow-xl',
+                    isActive && 'ring-4 ring-primary/30 scale-105'
                   )}>
-                    <img 
-                      src={fitekAvatar} 
-                      alt="FITEK" 
-                      className="w-11 h-11 rounded-full object-cover"
-                    />
+                    <MessageCircle className="w-7 h-7 text-primary-foreground" />
                   </div>
                   <span className={cn(
                     'text-[10px] font-bold mt-1',

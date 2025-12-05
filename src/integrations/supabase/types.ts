@@ -167,6 +167,39 @@ export type Database = {
         }
         Relationships: []
       }
+      direct_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          message_type: string
+          read_at: string | null
+          receiver_id: string
+          recipe_data: Json | null
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          read_at?: string | null
+          receiver_id: string
+          recipe_data?: Json | null
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          read_at?: string | null
+          receiver_id?: string
+          recipe_data?: Json | null
+          sender_id?: string
+        }
+        Relationships: []
+      }
       favorite_recipes: {
         Row: {
           created_at: string
