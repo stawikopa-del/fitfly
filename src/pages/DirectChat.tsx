@@ -190,6 +190,15 @@ export default function DirectChat() {
   };
 
   const ShoppingListMessage = ({ shoppingListId }: { shoppingListId: string }) => {
+    const handleClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        soundFeedback.buttonClick();
+      } catch {}
+      navigate('/lista-zakupow');
+    };
+
     return (
       <Card className="bg-card/50 border-border/50 mt-2">
         <CardContent className="p-3">
@@ -200,10 +209,7 @@ export default function DirectChat() {
           <Button 
             size="sm" 
             className="w-full mt-2"
-            onClick={() => {
-              soundFeedback.buttonClick();
-              navigate('/lista-zakupow');
-            }}
+            onClick={handleClick}
           >
             Zobacz listę zakupów
           </Button>
@@ -348,8 +354,8 @@ export default function DirectChat() {
                     <RecipeMessage recipeData={message.recipeData} />
                   )}
                   
-                  {message.messageType === 'shopping_list' && message.shoppingListId && (
-                    <ShoppingListMessage shoppingListId={message.shoppingListId} />
+                  {message.messageType === 'shopping_list' && (
+                    <ShoppingListMessage shoppingListId={message.shoppingListId || ''} />
                   )}
                 </div>
                 
