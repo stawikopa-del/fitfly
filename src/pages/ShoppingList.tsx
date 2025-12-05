@@ -351,7 +351,7 @@ export default function ShoppingList() {
             amount: Number(item.amount),
             unit: item.unit,
             category: item.category,
-            is_checked: item.is_checked ?? false,
+            is_checked: item.is_checked,
           })));
         }
       } catch (err) {
