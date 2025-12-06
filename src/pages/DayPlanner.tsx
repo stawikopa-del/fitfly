@@ -32,6 +32,7 @@ interface DayPlan {
   time_of_day: string | null;
   order_index: number;
   plan_date: string;
+  recurrence: string | null;
 }
 
 const CATEGORIES = [
@@ -96,7 +97,7 @@ export default function DayPlanner() {
   // Date state
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [datesWithPlans, setDatesWithPlans] = useState<Set<string>>(new Set());
+  const [plansCountByDate, setPlansCountByDate] = useState<Record<string, number>>({});
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -104,16 +105,16 @@ export default function DayPlanner() {
   useEffect(() => {
     if (user) {
       fetchPlans();
-      fetchDatesWithPlans();
+      fetchPlansCount();
     }
   }, [user, selectedDateStr]);
 
-  // Fetch dates with plans for calendar indicators
+  // Fetch plans count for calendar indicators
   useEffect(() => {
-    if (user) fetchDatesWithPlans();
+    if (user) fetchPlansCount();
   }, [user, calendarMonth]);
 
-  const fetchDatesWithPlans = async () => {
+  const fetchPlansCount = async () => {
     if (!user) return;
     try {
       const monthStart = format(startOfMonth(calendarMonth), 'yyyy-MM-dd');
@@ -128,10 +129,13 @@ export default function DayPlanner() {
       
       if (error) throw error;
       
-      const dates = new Set(data?.map(p => p.plan_date) || []);
-      setDatesWithPlans(dates);
+      const countObj: Record<string, number> = {};
+      (data || []).forEach(p => {
+        countObj[p.plan_date] = (countObj[p.plan_date] || 0) + 1;
+      });
+      setPlansCountByDate(countObj);
     } catch (err) {
-      console.error('Error fetching dates with plans:', err);
+      console.error('Error fetching plans count:', err);
     }
   };
 
@@ -307,7 +311,7 @@ export default function DayPlanner() {
       resetForm();
       setIsAddingPlan(false);
       fetchPlans();
-      fetchDatesWithPlans();
+      fetchPlansCount();
     } catch (err) {
       console.error('Error saving plan:', err);
       toast.error('Błąd podczas zapisywania planu');
@@ -340,10 +344,34 @@ export default function DayPlanner() {
       const { error } = await supabase.from('day_plans').delete().eq('id', id);
       if (error) throw error;
       setPlans(prev => prev.filter(p => p.id !== id));
-      fetchDatesWithPlans();
+      fetchPlansCount();
       toast.success('Plan usunięty');
     } catch (err) {
       console.error('Error deleting plan:', err);
+    }
+  };
+
+  const deleteRecurringSeries = async (plan: DayPlan) => {
+    if (!user || !plan.recurrence) return;
+    
+    try {
+      // Delete all plans with same name, time, category, and recurrence pattern
+      const { error, count } = await supabase
+        .from('day_plans')
+        .delete({ count: 'exact' })
+        .eq('user_id', user.id)
+        .eq('name', plan.name)
+        .eq('recurrence', plan.recurrence)
+        .eq('category', plan.category);
+      
+      if (error) throw error;
+      
+      fetchPlans();
+      fetchPlansCount();
+      toast.success(`Usunięto ${count || 0} planów z serii`);
+    } catch (err) {
+      console.error('Error deleting series:', err);
+      toast.error('Błąd podczas usuwania serii');
     }
   };
 
@@ -514,6 +542,12 @@ export default function DayPlanner() {
               <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-medium', priority.bg, priority.color)}>
                 {priority.label}
               </span>
+              {plan.recurrence && (
+                <span className="flex items-center gap-1 text-secondary">
+                  <Repeat className="w-3 h-3" />
+                  {plan.recurrence === 'daily' ? 'Codziennie' : plan.recurrence === 'weekly' ? 'Co tydzień' : 'Co miesiąc'}
+                </span>
+              )}
             </div>
 
             {plan.notes && (
@@ -521,12 +555,24 @@ export default function DayPlanner() {
             )}
           </div>
 
-          <button
-            onClick={() => deletePlan(plan.id)}
-            className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={() => deletePlan(plan.id)}
+              className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+              title="Usuń ten plan"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            {plan.recurrence && (
+              <button
+                onClick={() => deleteRecurringSeries(plan)}
+                className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                title="Usuń całą serię"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -813,10 +859,26 @@ export default function DayPlanner() {
                 className="p-3 pointer-events-auto"
                 locale={pl}
                 modifiers={{
-                  hasPlans: (date) => datesWithPlans.has(format(date, 'yyyy-MM-dd'))
+                  hasPlans: (date) => !!plansCountByDate[format(date, 'yyyy-MM-dd')]
                 }}
                 modifiersClassNames={{
-                  hasPlans: 'relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:bg-primary after:rounded-full'
+                  hasPlans: 'relative'
+                }}
+                components={{
+                  DayContent: ({ date }) => {
+                    const dateStr = format(date, 'yyyy-MM-dd');
+                    const count = plansCountByDate[dateStr];
+                    return (
+                      <div className="relative w-full h-full flex items-center justify-center">
+                        {date.getDate()}
+                        {count > 0 && (
+                          <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 min-w-[14px] h-[14px] bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
+                            {count}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  }
                 }}
               />
             </PopoverContent>
