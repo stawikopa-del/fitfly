@@ -247,29 +247,48 @@ export default function Auth() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
+      // Safe origin access
+      let redirectUrl = redirectTo;
+      try {
+        if (typeof window !== 'undefined' && window.location?.origin) {
+          redirectUrl = `${window.location.origin}${redirectTo}`;
+        }
+      } catch {
+        redirectUrl = redirectTo;
+      }
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}${redirectTo}`,
+          redirectTo: redirectUrl,
         },
       });
       if (error) {
+        console.error('Google login error:', error);
         toast.error('Błąd logowania przez Google');
       }
+    } catch (error) {
+      console.error('Google OAuth error:', error);
+      toast.error('Coś poszło nie tak. Spróbuj ponownie.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleBiometricLogin = async () => {
-    const result = await authenticateWithBiometric();
-    if (result.success && result.email) {
-      // Biometric verified identity - pre-fill email and ask for password
-      // (No token storage for security - Supabase handles session persistence)
-      setLoginEmail(result.email);
-      toast.info('Wpisz hasło, aby się zalogować');
-    } else if (result.error) {
-      toast.error(result.error);
+    try {
+      const result = await authenticateWithBiometric();
+      if (result.success && result.email) {
+        // Biometric verified identity - pre-fill email and ask for password
+        // (No token storage for security - Supabase handles session persistence)
+        setLoginEmail(result.email);
+        toast.info('Wpisz hasło, aby się zalogować');
+      } else if (result.error) {
+        toast.error(result.error);
+      }
+    } catch (error) {
+      console.error('Biometric login error:', error);
+      toast.error('Błąd logowania biometrycznego');
     }
   };
 

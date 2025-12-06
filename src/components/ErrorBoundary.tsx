@@ -15,7 +15,7 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  private resetTimeoutId: NodeJS.Timeout | null = null;
+  private resetTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor(props: Props) {
     super(props);
@@ -27,7 +27,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Safe console logging
+    try {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
+    } catch {
+      // Ignore logging errors
+    }
+    
     this.setState(prev => ({ 
       errorInfo, 
       errorCount: prev.errorCount + 1 
@@ -56,27 +62,37 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   handleReload = () => {
-    if (typeof window !== 'undefined') {
-      try {
+    try {
+      if (typeof window !== 'undefined') {
         // Clear session storage to prevent infinite error loops
-        sessionStorage.clear();
-      } catch {
-        // Ignore storage errors
+        try {
+          sessionStorage.clear();
+        } catch {
+          // Ignore storage errors
+        }
+        window.location.reload();
       }
-      window.location.reload();
+    } catch {
+      // If reload fails, try to reset state
+      this.handleReset();
     }
   };
 
   handleGoHome = () => {
     this.setState({ hasError: false, error: undefined, errorInfo: undefined, errorCount: 0 });
-    if (typeof window !== 'undefined') {
-      try {
+    try {
+      if (typeof window !== 'undefined') {
         // Clear session storage
-        sessionStorage.clear();
-      } catch {
-        // Ignore storage errors
+        try {
+          sessionStorage.clear();
+        } catch {
+          // Ignore storage errors
+        }
+        window.location.href = '/';
       }
-      window.location.href = '/';
+    } catch {
+      // If navigation fails, just reset state
+      this.handleReset();
     }
   };
 
@@ -88,15 +104,19 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // If too many errors, force reload
       if (this.state.errorCount > 3) {
-        if (typeof window !== 'undefined') {
-          setTimeout(() => {
-            try {
-              sessionStorage.clear();
-            } catch {
-              // Ignore
-            }
-            window.location.href = '/';
-          }, 100);
+        try {
+          if (typeof window !== 'undefined') {
+            setTimeout(() => {
+              try {
+                sessionStorage.clear();
+              } catch {
+                // Ignore
+              }
+              window.location.href = '/';
+            }, 100);
+          }
+        } catch {
+          // Ignore errors
         }
         return null;
       }
