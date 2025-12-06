@@ -52,36 +52,43 @@ export interface ShopifyProduct {
 
 // Storefront API helper function
 export async function storefrontApiRequest(query: string, variables: Record<string, unknown> = {}) {
-  const response = await fetch(SHOPIFY_STOREFRONT_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_TOKEN
-    },
-    body: JSON.stringify({
-      query,
-      variables,
-    }),
-  });
-
-  if (response.status === 402) {
-    toast.error("Shopify: Wymagana płatność", {
-      description: "API Shopify wymaga aktywnego planu. Odwiedź admin.shopify.com aby upgrade'ować."
+  try {
+    const response = await fetch(SHOPIFY_STOREFRONT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_TOKEN
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+      }),
     });
+
+    if (response.status === 402) {
+      toast.error("Shopify: Wymagana płatność", {
+        description: "API Shopify wymaga aktywnego planu. Odwiedź admin.shopify.com aby upgrade'ować."
+      });
+      return null;
+    }
+
+    if (!response.ok) {
+      console.error(`Shopify API HTTP error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    if (data.errors) {
+      console.error('Shopify API errors:', data.errors);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Shopify API request failed:', error);
     return null;
   }
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  
-  if (data.errors) {
-    throw new Error(`Error calling Shopify: ${data.errors.map((e: { message: string }) => e.message).join(', ')}`);
-  }
-
-  return data;
 }
 
 // GraphQL query to fetch products
@@ -161,6 +168,8 @@ export const CART_CREATE_MUTATION = `
 // Create checkout function
 export async function createStorefrontCheckout(variantId: string, quantity: number = 1): Promise<string | null> {
   try {
+    if (!variantId) return null;
+    
     const lines = [{
       quantity,
       merchandiseId: variantId,
@@ -172,22 +181,30 @@ export async function createStorefrontCheckout(variantId: string, quantity: numb
 
     if (!cartData) return null;
 
-    if (cartData.data.cartCreate.userErrors.length > 0) {
-      throw new Error(`Cart creation failed: ${cartData.data.cartCreate.userErrors.map((e: { message: string }) => e.message).join(', ')}`);
+    // Safe access with optional chaining
+    const userErrors = cartData?.data?.cartCreate?.userErrors;
+    if (userErrors && userErrors.length > 0) {
+      console.error('Cart creation errors:', userErrors);
+      return null;
     }
 
-    const cart = cartData.data.cartCreate.cart;
+    const cart = cartData?.data?.cartCreate?.cart;
     
-    if (!cart.checkoutUrl) {
-      throw new Error('No checkout URL returned from Shopify');
+    if (!cart?.checkoutUrl) {
+      console.error('No checkout URL returned from Shopify');
+      return null;
     }
 
-    const url = new URL(cart.checkoutUrl);
-    url.searchParams.set('channel', 'online_store');
-    return url.toString();
+    try {
+      const url = new URL(cart.checkoutUrl);
+      url.searchParams.set('channel', 'online_store');
+      return url.toString();
+    } catch {
+      return cart.checkoutUrl;
+    }
   } catch (error) {
     console.error('Error creating storefront checkout:', error);
-    throw error;
+    return null;
   }
 }
 
