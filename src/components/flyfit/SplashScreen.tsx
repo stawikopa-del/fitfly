@@ -17,8 +17,21 @@ const backgroundGradients = [
   'from-orange-100 via-amber-50 to-yellow-100',
 ];
 
-const getRandomGradient = () => {
-  return backgroundGradients[Math.floor(Math.random() * backgroundGradients.length)];
+const getRandomGradient = (): string => {
+  try {
+    const index = Math.floor(Math.random() * backgroundGradients.length);
+    return backgroundGradients[index] || backgroundGradients[0];
+  } catch {
+    return backgroundGradients[0];
+  }
+};
+
+const safeGetMessage = (): string => {
+  try {
+    return getRandomLoadingMessage();
+  } catch {
+    return 'Ładowanie...';
+  }
 };
 
 interface SplashScreenProps {
@@ -28,7 +41,7 @@ interface SplashScreenProps {
 
 export function SplashScreen({ onComplete, minDuration = 2500 }: SplashScreenProps) {
   const [isExiting, setIsExiting] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState(getRandomLoadingMessage);
+  const [loadingMessage, setLoadingMessage] = useState(() => safeGetMessage());
   
   // Losowy gradient tylko raz przy renderowaniu
   const randomGradient = useMemo(() => getRandomGradient(), []);
@@ -36,7 +49,11 @@ export function SplashScreen({ onComplete, minDuration = 2500 }: SplashScreenPro
   // Zmiana hasełka co 2 sekundy
   useEffect(() => {
     const messageInterval = setInterval(() => {
-      setLoadingMessage(getRandomLoadingMessage());
+      try {
+        setLoadingMessage(safeGetMessage());
+      } catch {
+        // Ignore errors
+      }
     }, 2000);
 
     return () => clearInterval(messageInterval);
