@@ -543,6 +543,8 @@ export default function CalendarPage() {
               {/* Day Cells */}
               {weekDays.map((day) => {
                 const dayEvents = getEventsForDate(day);
+                const dayPlansForDate = getPlansForDate(day);
+                const totalItems = dayEvents.length + dayPlansForDate.length;
                 const isSelected = isSameDay(day, selectedDate);
                 const isTodayDate = isToday(day);
                 const dayNames = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'];
@@ -573,14 +575,25 @@ export default function CalendarPage() {
                       {format(day, 'dd.MM')}
                     </span>
                     
-                    {/* Event Dots */}
-                    {dayEvents.length > 0 && (
+                    {/* Event and Plan Dots */}
+                    {totalItems > 0 && (
                       <div className="flex flex-wrap gap-0.5 justify-center mt-1">
-                        {dayEvents.slice(0, 3).map((event, idx) => {
+                        {/* Plan dots (blue) */}
+                        {dayPlansForDate.slice(0, 2).map((_, idx) => (
+                          <div
+                            key={`plan-${idx}`}
+                            className={cn(
+                              "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full",
+                              isSelected ? "bg-primary-foreground/80" : "bg-blue-500"
+                            )}
+                          />
+                        ))}
+                        {/* Event dots */}
+                        {dayEvents.slice(0, Math.max(0, 3 - dayPlansForDate.length)).map((event, idx) => {
                           const config = getEventConfig(event.type);
                           return (
                             <div
-                              key={idx}
+                              key={`event-${idx}`}
                               className={cn(
                                 "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full",
                                 isSelected ? "bg-primary-foreground/80" : config.dotColor
@@ -588,12 +601,12 @@ export default function CalendarPage() {
                             />
                           );
                         })}
-                        {dayEvents.length > 3 && (
+                        {totalItems > 3 && (
                           <span className={cn(
                             "text-[7px] sm:text-[8px] font-bold",
                             isSelected ? "text-primary-foreground" : "text-muted-foreground"
                           )}>
-                            +{dayEvents.length - 3}
+                            +{totalItems - 3}
                           </span>
                         )}
                       </div>
