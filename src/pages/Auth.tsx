@@ -796,8 +796,8 @@ export default function Auth() {
   // Login / Forgot password form
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
-      <div className="w-64 h-64 mb-4 animate-float-slow">
-        <img src={fitekDetective} alt="FITEK Detektyw" className="w-full h-full object-contain" />
+      <div className="w-72 h-56 mb-2 mt-4 animate-float-slow overflow-hidden flex items-end justify-center">
+        <img src={fitekDetective} alt="FITEK Detektyw" className="w-80 h-auto object-contain" />
       </div>
 
       <div className="text-center mb-8">
