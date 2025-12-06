@@ -11,7 +11,7 @@ import { useHabitsAndChallenges } from '@/hooks/useHabitsAndChallenges';
 import { useAuth } from '@/hooks/useAuth';
 import { LevelProgress } from '@/components/flyfit/LevelProgress';
 import { supabase } from '@/integrations/supabase/client';
-import fitflyLogo from '@/assets/fitfly-logo.png';
+import fitflyLogoFull from '@/assets/fitfly-logo-full.png';
 import fitekReceWGore from '@/assets/fitek/fitek-rece-w-gore.png';
 import fitekPiatka from '@/assets/fitek/fitek-piatka.png';
 import fitekPuchar from '@/assets/fitek/fitek-puchar.png';
@@ -124,22 +124,15 @@ export default function Home() {
   return (
     <div className="px-4 py-6 space-y-6">
       {/* Brand Banner */}
-      <section className="flex flex-col items-center justify-center gap-2 py-4">
+      <section className="flex flex-col items-center justify-center gap-1 py-4">
         <img 
-          src={fitflyLogo} 
+          src={fitflyLogoFull} 
           alt="FITFLY Logo" 
-          className="w-32 h-32 object-contain drop-shadow-lg animate-float-slow"
+          className="w-48 h-48 object-contain drop-shadow-lg animate-float-slow"
         />
-        <div className="flex flex-col items-center text-center">
-          <h2 className="text-4xl font-extrabold font-display tracking-wide">
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent inline-block px-1">
-              FITFLY
-            </span>
-          </h2>
-          <p className="text-sm text-muted-foreground font-medium mt-1">
-            Twoja forma, Nasza misja 🍎
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground font-medium">
+          Twoja forma, Nasza misja 🍎
+        </p>
       </section>
 
       {/* Header z personalizowanym powitaniem */}
