@@ -3,7 +3,8 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
-import { X, Check, Loader2, Navigation } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { X, Check, Loader2, Navigation, Search, MapPin } from 'lucide-react';
 
 // Fix for default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -36,11 +37,11 @@ function LocationMarker({
   );
 }
 
-function CenterOnLocation({ lat, lng }: { lat: number; lng: number }) {
+function FlyToLocation({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   
   useEffect(() => {
-    map.setView([lat, lng], 15);
+    map.flyTo([lat, lng], 16, { duration: 0.5 });
   }, [lat, lng, map]);
   
   return null;
@@ -52,6 +53,14 @@ export default function LocationPickerMap({ onSelectLocation, onClose }: Locatio
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const [address, setAddress] = useState<string>('');
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Array<{ display_name: string; lat: string; lon: string }>>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [flyToCoords, setFlyToCoords] = useState<{ lat: number; lng: number } | null>(null);
   
   // Get user's current location on mount
   useEffect(() => {
@@ -76,6 +85,65 @@ export default function LocationPickerMap({ onSelectLocation, onClose }: Locatio
       setIsLoadingLocation(false);
     }
   }, []);
+
+  // Search for addresses
+  const searchAddress = async (query: string) => {
+    if (query.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=pl&countrycodes=pl`;
+      
+      // Add location bias if available
+      if (userLocation) {
+        const delta = 0.5;
+        url += `&viewbox=${userLocation.lng - delta},${userLocation.lat + delta},${userLocation.lng + delta},${userLocation.lat - delta}&bounded=0`;
+      }
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      setSearchResults(data || []);
+      setShowSearchResults(true);
+    } catch (err) {
+      console.error('Address search error:', err);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    if (value.length >= 3) {
+      searchTimeoutRef.current = setTimeout(() => {
+        searchAddress(value);
+      }, 300);
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  };
+
+  // Select search result
+  const selectSearchResult = (result: { display_name: string; lat: string; lon: string }) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    
+    setPosition(new L.LatLng(lat, lng));
+    setFlyToCoords({ lat, lng });
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowSearchResults(false);
+  };
 
   // Reverse geocode when position changes
   useEffect(() => {
@@ -118,6 +186,7 @@ export default function LocationPickerMap({ onSelectLocation, onClose }: Locatio
   const centerOnUser = () => {
     if (userLocation) {
       setPosition(new L.LatLng(userLocation.lat, userLocation.lng));
+      setFlyToCoords({ lat: userLocation.lat, lng: userLocation.lng });
     }
   };
 
@@ -134,13 +203,50 @@ export default function LocationPickerMap({ onSelectLocation, onClose }: Locatio
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-card">
-        <button onClick={onClose} className="p-2 -m-2">
-          <X className="w-6 h-6" />
-        </button>
-        <h2 className="font-bold text-lg">Wybierz lokalizację</h2>
-        <div className="w-10" />
+      {/* Header with search */}
+      <div className="p-4 border-b border-border bg-card space-y-3">
+        <div className="flex items-center justify-between">
+          <button onClick={onClose} className="p-2 -m-2">
+            <X className="w-6 h-6" />
+          </button>
+          <h2 className="font-bold text-lg">Wybierz lokalizację</h2>
+          <div className="w-10" />
+        </div>
+        
+        {/* Search input */}
+        <div className="relative">
+          <div className="flex items-center gap-2 bg-muted/50 rounded-xl px-3 py-2">
+            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Wyszukaj adres..."
+              className="border-0 bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+            {isSearching && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+            {searchQuery && !isSearching && (
+              <button onClick={() => { setSearchQuery(''); setSearchResults([]); setShowSearchResults(false); }}>
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+          
+          {/* Search results dropdown */}
+          {showSearchResults && searchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-[1001] max-h-48 overflow-y-auto">
+              {searchResults.map((result, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => selectSearchResult(result)}
+                  className="w-full text-left p-3 hover:bg-muted/50 transition-colors flex items-start gap-2 border-b border-border last:border-0"
+                >
+                  <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <span className="text-sm line-clamp-2">{result.display_name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Map */}
@@ -157,7 +263,7 @@ export default function LocationPickerMap({ onSelectLocation, onClose }: Locatio
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <LocationMarker position={position} setPosition={setPosition} />
-            {position && <CenterOnLocation lat={position.lat} lng={position.lng} />}
+            {flyToCoords && <FlyToLocation lat={flyToCoords.lat} lng={flyToCoords.lng} />}
           </MapContainer>
         )}
 
@@ -175,7 +281,7 @@ export default function LocationPickerMap({ onSelectLocation, onClose }: Locatio
         {!position && (
           <div className="absolute top-4 left-4 right-4 z-[1000] bg-card/95 backdrop-blur rounded-xl p-3 shadow-lg">
             <p className="text-sm text-center text-foreground">
-              👆 Dotknij mapę, aby upuścić pinezkę
+              👆 Dotknij mapę lub wyszukaj adres powyżej
             </p>
           </div>
         )}
