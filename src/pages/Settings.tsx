@@ -83,33 +83,61 @@ export default function Settings() {
   // Meal personalization state
   const [mealsCount, setMealsCount] = useState(4);
   const [mealSchedule, setMealSchedule] = useState(defaultMealConfigs[4]);
+  const [isLoadingMeals, setIsLoadingMeals] = useState(true);
 
-  // Load meal settings from localStorage
+  // Load meal settings from Supabase
   useEffect(() => {
-    try {
-      const savedMealsCount = localStorage.getItem('fitfly_meals_count');
-      const savedMealSchedule = localStorage.getItem('fitfly_meal_schedule');
+    const loadMealSettings = async () => {
+      if (!user) {
+        setIsLoadingMeals(false);
+        return;
+      }
       
-      if (savedMealsCount) {
-        const count = parseInt(savedMealsCount, 10);
-        setMealsCount(count);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('meals_count, meal_schedule')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error) throw error;
+        
+        if (data) {
+          if (data.meals_count) {
+            setMealsCount(data.meals_count);
+          }
+          if (data.meal_schedule && Array.isArray(data.meal_schedule)) {
+            setMealSchedule(data.meal_schedule as typeof mealSchedule);
+          }
+        }
+      } catch (e) {
+        console.error('Error loading meal settings:', e);
+      } finally {
+        setIsLoadingMeals(false);
       }
-      if (savedMealSchedule) {
-        setMealSchedule(JSON.parse(savedMealSchedule));
-      }
-    } catch (e) {
-      console.error('Error loading meal settings:', e);
-    }
-  }, []);
+    };
+    
+    loadMealSettings();
+  }, [user]);
 
-  // Save meal settings
-  const saveMealSettings = (count: number, schedule: typeof mealSchedule) => {
+  // Save meal settings to Supabase
+  const saveMealSettings = async (count: number, schedule: typeof mealSchedule) => {
+    if (!user) return;
+    
     try {
-      localStorage.setItem('fitfly_meals_count', count.toString());
-      localStorage.setItem('fitfly_meal_schedule', JSON.stringify(schedule));
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          meals_count: count,
+          meal_schedule: schedule,
+        })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
       toast.success('Ustawienia posiłków zapisane! 🍽️');
     } catch (e) {
       console.error('Error saving meal settings:', e);
+      toast.error('Nie udało się zapisać ustawień');
     }
   };
 

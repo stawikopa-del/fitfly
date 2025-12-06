@@ -456,6 +456,8 @@ export type Database = {
           goal_weight: number | null
           height: number | null
           id: string
+          meal_schedule: Json | null
+          meals_count: number | null
           updated_at: string | null
           user_id: string
           username: string | null
@@ -475,6 +477,8 @@ export type Database = {
           goal_weight?: number | null
           height?: number | null
           id?: string
+          meal_schedule?: Json | null
+          meals_count?: number | null
           updated_at?: string | null
           user_id: string
           username?: string | null
@@ -494,6 +498,8 @@ export type Database = {
           goal_weight?: number | null
           height?: number | null
           id?: string
+          meal_schedule?: Json | null
+          meals_count?: number | null
           updated_at?: string | null
           user_id?: string
           username?: string | null
