@@ -191,7 +191,7 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[85vw] max-w-[320px] max-h-[75vh] overflow-y-auto overflow-x-hidden mx-auto p-4">
+        <DialogContent className="w-[85vw] max-w-[320px] max-h-[75vh] overflow-y-auto overflow-x-hidden mx-auto p-4 rounded-3xl">
           <DialogHeader className="pb-2">
             <DialogTitle className="flex items-center gap-2 text-base">
               <ShoppingCart className="w-4 h-4" />
@@ -279,14 +279,14 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
                   placeholder="Ilość"
                   value={newItemAmount}
                   onChange={(e) => setNewItemAmount(e.target.value)}
-                  className="w-16 h-9 text-sm"
+                  className="w-16 h-9 text-sm rounded-xl"
                   min="0"
                   step="0.1"
                 />
                 <select
                   value={newItemUnit}
                   onChange={(e) => setNewItemUnit(e.target.value)}
-                  className="h-9 px-2 rounded-lg border border-input bg-background text-xs"
+                  className="h-9 px-3 rounded-xl border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   {AVAILABLE_UNITS.map(unit => (
                     <option key={unit} value={unit}>{unit}</option>
