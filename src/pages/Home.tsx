@@ -1,4 +1,4 @@
-import { Footprints, Flame, Target, Dumbbell, Calendar, Utensils, CheckCircle, TrendingUp, Sparkles } from 'lucide-react';
+import { Footprints, Flame, Target, Dumbbell, Calendar, Utensils, CheckCircle, TrendingUp, Sparkles, ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
 import { ChatHeroBubble } from '@/components/flyfit/ChatHeroBubble';
@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import fitekReceWGore from '@/assets/fitek/fitek-rece-w-gore.png';
 import fitekPiatka from '@/assets/fitek/fitek-piatka.png';
 import fitekPuchar from '@/assets/fitek/fitek-puchar.png';
+import fitekCel from '@/assets/fitek/fitek-cel.png';
 
 // Personalized greeting based on time of day
 const getTimeGreeting = () => {
@@ -280,6 +281,16 @@ export default function Home() {
               }
               color="orange"
               onClick={() => navigate('/wyzwania')}
+            />
+          </div>
+
+          <div className="animate-float" style={{ animationDelay: '1.6s' }}>
+            <QuickAction
+              icon={<img src={fitekCel} alt="FITEK" className="w-8 h-8 object-contain" />}
+              title="Planowanie dnia"
+              description="Zaplanuj zadania i przypomnienia"
+              color="pink"
+              onClick={() => navigate('/planowanie')}
             />
           </div>
         </div>
