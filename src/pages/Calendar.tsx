@@ -336,63 +336,66 @@ export default function CalendarPage() {
               </Button>
             </div>
 
-            {/* Week Days Grid */}
-            <div className="grid grid-cols-7 gap-1">
-              {/* Day Headers */}
-              {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map((day) => (
-                <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
-                  {day}
-                </div>
-              ))}
-              
+            {/* Week Days Grid - compact style like MealCalendar */}
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {/* Day Cells */}
               {weekDays.map((day) => {
                 const dayEvents = getEventsForDate(day);
                 const isSelected = isSameDay(day, selectedDate);
                 const isTodayDate = isToday(day);
+                const dayNames = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'];
                 
                 return (
                   <button
                     key={day.toISOString()}
                     onClick={() => setSelectedDate(day)}
                     className={cn(
-                      "flex flex-col items-center p-2 rounded-2xl min-h-[80px] transition-all",
-                      isSelected && "bg-primary text-primary-foreground",
-                      !isSelected && isTodayDate && "bg-primary/10 border-2 border-primary",
-                      !isSelected && !isTodayDate && "hover:bg-muted"
+                      "flex flex-col items-center py-2 sm:py-3 px-1 sm:px-2 rounded-xl sm:rounded-2xl transition-all duration-200",
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                        : isTodayDate
+                        ? "bg-secondary/20 text-secondary-foreground border-2 border-secondary"
+                        : "bg-muted/50 text-foreground hover:bg-muted"
                     )}
                   >
                     <span className={cn(
-                      "text-sm font-bold mb-1",
-                      isSelected && "text-primary-foreground",
-                      !isSelected && isTodayDate && "text-primary"
+                      "text-[10px] sm:text-xs font-bold",
+                      isSelected ? "text-primary-foreground" : "text-foreground"
                     )}>
-                      {format(day, 'd')}
+                      {dayNames[day.getDay()]}
+                    </span>
+                    <span className={cn(
+                      "text-[9px] sm:text-[10px] mt-0.5 sm:mt-1",
+                      isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
+                    )}>
+                      {format(day, 'dd.MM')}
                     </span>
                     
                     {/* Event Dots */}
-                    <div className="flex flex-wrap gap-0.5 justify-center mt-1">
-                      {dayEvents.slice(0, 4).map((event, idx) => {
-                        const config = getEventConfig(event.type);
-                        return (
-                          <div
-                            key={idx}
-                            className={cn(
-                              "w-2 h-2 rounded-full",
-                              isSelected ? "bg-primary-foreground/80" : config.dotColor
-                            )}
-                          />
-                        );
-                      })}
-                      {dayEvents.length > 4 && (
-                        <span className={cn(
-                          "text-[8px] font-bold",
-                          isSelected ? "text-primary-foreground" : "text-muted-foreground"
-                        )}>
-                          +{dayEvents.length - 4}
-                        </span>
-                      )}
-                    </div>
+                    {dayEvents.length > 0 && (
+                      <div className="flex flex-wrap gap-0.5 justify-center mt-1">
+                        {dayEvents.slice(0, 3).map((event, idx) => {
+                          const config = getEventConfig(event.type);
+                          return (
+                            <div
+                              key={idx}
+                              className={cn(
+                                "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full",
+                                isSelected ? "bg-primary-foreground/80" : config.dotColor
+                              )}
+                            />
+                          );
+                        })}
+                        {dayEvents.length > 3 && (
+                          <span className={cn(
+                            "text-[7px] sm:text-[8px] font-bold",
+                            isSelected ? "text-primary-foreground" : "text-muted-foreground"
+                          )}>
+                            +{dayEvents.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </button>
                 );
               })}
