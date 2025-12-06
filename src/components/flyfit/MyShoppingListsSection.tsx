@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, ShoppingCart, Check, Calendar, ChevronRight, Trash2, Plus, Gift, User, Heart, FolderOpen, ChevronDown, Send } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Check, Calendar, Trash2, Plus, Gift, User, Heart, FolderOpen, ChevronDown, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
@@ -244,7 +244,14 @@ export function MyShoppingListsSection({ isOpen, onClose, onSelectList, user }: 
                   collapsedSections.has('custom') ? "max-h-0" : "max-h-[2000px]"
                 )}>
                   {customLists.map(list => (
-                    <div key={list.id} className="p-3 hover:bg-muted/30 transition-colors">
+                    <button
+                      key={list.id}
+                      onClick={() => {
+                        try { soundFeedback.buttonClick(); } catch {}
+                        onSelectList(list);
+                      }}
+                      className="w-full p-3 hover:bg-muted/30 transition-colors text-left"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
                           <ShoppingCart className="w-5 h-5 text-destructive" />
@@ -255,26 +262,17 @@ export function MyShoppingListsSection({ isOpen, onClose, onSelectList, user }: 
                             {list.items.length} produktów • {format(new Date(list.created_at), 'd MMM', { locale: pl })}
                           </p>
                         </div>
-                        <button
+                        <div
                           onClick={(e) => {
                             e.stopPropagation();
                             deleteList(list.id, 'custom');
                           }}
-                          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                          className="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-primary/80 transition-colors"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            try { soundFeedback.buttonClick(); } catch {}
-                            onSelectList(list);
-                          }}
-                          className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </button>
+                          <Trash2 className="w-4 h-4 text-primary-foreground" />
+                        </div>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -305,7 +303,14 @@ export function MyShoppingListsSection({ isOpen, onClose, onSelectList, user }: 
                   collapsedSections.has('shared') ? "max-h-0" : "max-h-[2000px]"
                 )}>
                   {sharedLists.map(list => (
-                    <div key={list.id} className="p-3 hover:bg-muted/30 transition-colors">
+                    <button
+                      key={list.id}
+                      onClick={() => {
+                        try { soundFeedback.buttonClick(); } catch {}
+                        onSelectList(list);
+                      }}
+                      className="w-full p-3 hover:bg-muted/30 transition-colors text-left"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
                           <User className="w-5 h-5 text-secondary" />
@@ -316,26 +321,17 @@ export function MyShoppingListsSection({ isOpen, onClose, onSelectList, user }: 
                             {list.items.length} produktów • {format(new Date(list.created_at), 'd MMM', { locale: pl })}
                           </p>
                         </div>
-                        <button
+                        <div
                           onClick={(e) => {
                             e.stopPropagation();
                             deleteList(list.id, 'shared');
                           }}
-                          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                          className="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-primary/80 transition-colors"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            try { soundFeedback.buttonClick(); } catch {}
-                            onSelectList(list);
-                          }}
-                          className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </button>
+                          <Trash2 className="w-4 h-4 text-primary-foreground" />
+                        </div>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
