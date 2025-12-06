@@ -13,7 +13,7 @@ const navItems = [
 
 // Sub-routes that belong to each main category
 const homeSubRoutes = [
-  '/', '/kalendarz'
+  '/', '/kalendarz', '/planowanie'
 ];
 
 const inneSubRoutes = [
