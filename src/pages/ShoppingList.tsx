@@ -1850,14 +1850,20 @@ export default function ShoppingList() {
             <button
               onClick={() => {
                 try { soundFeedback.buttonClick(); } catch {}
-                // Scroll to calendar section
-                const calendarSection = document.getElementById('calendar-section');
-                if (calendarSection) {
-                  calendarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                // Auto-select 7 days starting from today
+                const today = new Date();
+                const weekLater = addDays(today, 6);
+                setStartDate(today);
+                setEndDate(weekLater);
                 setSelectingStart(true);
-                setStartDate(null);
-                setEndDate(null);
+                // Scroll to calendar section
+                setTimeout(() => {
+                  const calendarSection = document.getElementById('calendar-section');
+                  if (calendarSection) {
+                    calendarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }, 100);
+                toast.success('Wybrano tydzień od dziś! Lista zakupów wygenerowana.');
               }}
               className="w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 border-secondary/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
             >
