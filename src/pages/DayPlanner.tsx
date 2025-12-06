@@ -1,14 +1,18 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map, X } from 'lucide-react';
+import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { format, addDays, subDays, isToday, isTomorrow, isYesterday } from 'date-fns';
+import { pl } from 'date-fns/locale';
 import fitekCel from '@/assets/fitek/fitek-cel.png';
 
 // Lazy load the map component
@@ -80,11 +84,15 @@ export default function DayPlanner() {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const dragOverId = useRef<string | null>(null);
 
-  const today = new Date().toISOString().split('T')[0];
+  // Date state
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
 
   useEffect(() => {
     if (user) fetchPlans();
-  }, [user]);
+  }, [user, selectedDateStr]);
 
   const fetchPlans = async () => {
     if (!user) return;
@@ -93,7 +101,7 @@ export default function DayPlanner() {
         .from('day_plans')
         .select('*')
         .eq('user_id', user.id)
-        .eq('plan_date', today)
+        .eq('plan_date', selectedDateStr)
         .order('order_index', { ascending: true });
       
       if (error) throw error;
@@ -200,7 +208,7 @@ export default function DayPlanner() {
         // Insert new plan
         const { error } = await supabase.from('day_plans').insert({
           user_id: user.id,
-          plan_date: today,
+          plan_date: selectedDateStr,
           name: planName.trim(),
           time: planTime || null,
           location: planLocation || null,
@@ -623,12 +631,60 @@ export default function DayPlanner() {
           </button>
           <div className="flex-1">
             <h1 className="font-bold font-display text-lg">Planowanie dnia</h1>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
           </div>
           <img src={fitekCel} alt="FITEK" className="w-12 h-12 object-contain" />
+        </div>
+        
+        {/* Date navigation */}
+        <div className="flex items-center justify-between mt-3 bg-muted/50 rounded-xl p-1">
+          <button
+            onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+            className="p-2 hover:bg-card rounded-lg transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-2 px-3 py-1.5 hover:bg-card rounded-lg transition-colors">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span className="font-medium text-sm">
+                  {isToday(selectedDate) 
+                    ? 'Dzisiaj' 
+                    : isTomorrow(selectedDate) 
+                      ? 'Jutro' 
+                      : isYesterday(selectedDate) 
+                        ? 'Wczoraj' 
+                        : format(selectedDate, 'd MMMM', { locale: pl })}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {format(selectedDate, 'EEEE', { locale: pl })}
+                </span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  if (date) {
+                    setSelectedDate(date);
+                    setCalendarOpen(false);
+                  }
+                }}
+                initialFocus
+                className="p-3 pointer-events-auto"
+                locale={pl}
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <button
+            onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+            className="p-2 hover:bg-card rounded-lg transition-colors"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
       </header>
 
