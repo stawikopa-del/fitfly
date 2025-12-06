@@ -59,6 +59,35 @@ serve(async (req) => {
       5: 'bardzo wysoka aktywność (codzienne intensywne treningi)',
     };
 
+    // Generate meal categories based on mealsPerDay
+    const getMealCategories = (mealsPerDay: number) => {
+      if (mealsPerDay <= 3) {
+        return {
+          categories: ['breakfast', 'lunch', 'dinner'],
+          polishNames: { breakfast: 'śniadanie', lunch: 'obiad', dinner: 'kolacja' },
+        };
+      } else if (mealsPerDay === 4) {
+        return {
+          categories: ['breakfast', 'lunch', 'dinner', 'snacks'],
+          polishNames: { breakfast: 'śniadanie', lunch: 'obiad', dinner: 'kolacja', snacks: 'przekąska' },
+        };
+      } else if (mealsPerDay === 5) {
+        return {
+          categories: ['breakfast', 'secondBreakfast', 'lunch', 'snacks', 'dinner'],
+          polishNames: { breakfast: 'śniadanie', secondBreakfast: 'drugie śniadanie', lunch: 'obiad', snacks: 'przekąska', dinner: 'kolacja' },
+        };
+      } else {
+        return {
+          categories: ['breakfast', 'secondBreakfast', 'lunch', 'snacks', 'afternoonSnack', 'dinner'],
+          polishNames: { breakfast: 'śniadanie', secondBreakfast: 'drugie śniadanie', lunch: 'obiad', snacks: 'przekąska', afternoonSnack: 'podwieczorek', dinner: 'kolacja' },
+        };
+      }
+    };
+
+    const mealConfig = getMealCategories(preferences.mealsPerDay);
+    const dailyMealsStructure = mealConfig.categories.map(cat => `"${cat}": [{"name": "nazwa", "calories": liczba, "description": "opis"}]`).join(',\n    ');
+    const weeklyMealsExample = mealConfig.categories.map(cat => `"${mealConfig.polishNames[cat as keyof typeof mealConfig.polishNames]}: nazwa"`).join(', ');
+
     const systemPrompt = `Jesteś ekspertem dietetyki i fitness. Twoim zadaniem jest stworzenie spersonalizowanego planu żywieniowego w języku polskim.
 
 KRYTYCZNE ZASADY CENOWE - ŚREDNIA PÓŁKA CENOWA:
@@ -71,26 +100,27 @@ RÓŻNORODNOŚĆ - KAŻDY DZIEŃ INNY:
 - NIE powtarzaj tych samych dań w różne dni
 - Zapewnij różnorodność smaków i składników przez cały tydzień
 
+LICZBA POSIŁKÓW: ${preferences.mealsPerDay} posiłków dziennie
+Kategorie posiłków: ${mealConfig.categories.map(cat => mealConfig.polishNames[cat as keyof typeof mealConfig.polishNames]).join(', ')}
+
 ZAWSZE odpowiadaj w formacie JSON zgodnym ze strukturą:
 {
   "summary": "krótkie podsumowanie planu (2-3 zdania)",
   "dailyMeals": {
-    "breakfast": [{"name": "nazwa", "calories": liczba, "description": "opis"}],
-    "lunch": [{"name": "nazwa", "calories": liczba, "description": "opis"}],
-    "dinner": [{"name": "nazwa", "calories": liczba, "description": "opis"}],
-    "snacks": [{"name": "nazwa", "calories": liczba, "description": "opis"}]
+    ${dailyMealsStructure}
   },
   "tips": ["wskazówka 1", "wskazówka 2", ...],
   "weeklySchedule": [
-    {"day": "Poniedziałek", "meals": ["śniadanie: nazwa", "obiad: nazwa", "kolacja: nazwa", "przekąska: nazwa"]},
-    {"day": "Wtorek", "meals": ["śniadanie: INNA nazwa", "obiad: INNA nazwa", "kolacja: INNA nazwa", "przekąska: INNA nazwa"]},
+    {"day": "Poniedziałek", "meals": [${weeklyMealsExample}]},
+    {"day": "Wtorek", "meals": [${weeklyMealsExample.replace(/nazwa/g, 'INNA nazwa')}]},
     ... (każdy dzień z INNYMI przepisami)
   ]
 }
 
 Zasady:
 - Wszystkie teksty w języku polskim
-- Kalorie posiłków muszą sumować się do podanej dziennej normy
+- Kalorie posiłków muszą sumować się do podanej dziennej normy (${preferences.dailyCalories} kcal)
+- MUSISZ wygenerować dokładnie ${preferences.mealsPerDay} kategorii posiłków
 - Dostosuj posiłki do typu diety
 - Podaj realistyczne, łatwe do przygotowania posiłki ZE ŚREDNIEJ PÓŁKI CENOWEJ
 - Uwzględnij lokalne polskie produkty
@@ -111,9 +141,11 @@ PREFERENCJE DIETY:
 - Typ diety: ${preferences.dietName || preferences.dietType}
 - Dzienne kalorie: ${preferences.dailyCalories} kcal
 - Poziom aktywności: ${activityDescriptions[preferences.activityLevel as keyof typeof activityDescriptions]}
-- Liczba posiłków dziennie: ${preferences.mealsPerDay}
+- Liczba posiłków dziennie: ${preferences.mealsPerDay} (WAŻNE: wygeneruj dokładnie tyle kategorii!)
 - Treningi tygodniowo: ${preferences.workoutsPerWeek}
 ${preferences.macros ? `- Rozkład makroskładników: Białko ${preferences.macros.protein}%, Węglowodany ${preferences.macros.carbs}%, Tłuszcze ${preferences.macros.fat}%` : ''}
+
+Kategorie posiłków do wygenerowania: ${mealConfig.categories.map(cat => mealConfig.polishNames[cat as keyof typeof mealConfig.polishNames]).join(', ')}
 
 Stwórz kompletny, praktyczny plan żywieniowy. Zwróć TYLKO JSON bez dodatkowego tekstu.`;
 
