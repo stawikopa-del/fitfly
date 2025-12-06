@@ -1830,7 +1830,7 @@ export default function ShoppingList() {
               setShowDietSelectDialog(true);
             }} 
             className={cn(
-              "w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group",
+              "w-full min-h-[88px] bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group",
               (!startDate || !endDate) ? "border-secondary/30 opacity-70" : "border-secondary/50"
             )}
           >
@@ -1858,7 +1858,7 @@ export default function ShoppingList() {
           <button onClick={() => {
             try { soundFeedback.buttonClick(); } catch {}
             setShowCreateListDialog(true);
-          }} className="w-full bg-gradient-to-r from-primary/20 via-fitfly-blue/20 to-fitfly-blue-light/20 rounded-3xl p-5 border-2 border-primary/30 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group">
+          }} className="w-full min-h-[88px] bg-gradient-to-r from-primary/20 via-fitfly-blue/20 to-fitfly-blue-light/20 rounded-3xl p-5 border-2 border-primary/30 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-dark flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
                 <Plus className="w-7 h-7 text-white" />
