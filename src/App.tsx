@@ -382,6 +382,14 @@ const AppRoutes = () => (
         }
       />
       <Route
+        path="/lista-zakupow/fav/:favId"
+        element={
+          <ProtectedRoute>
+            <SharedShoppingList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/regulamin"
         element={
           <ProtectedRoute>
