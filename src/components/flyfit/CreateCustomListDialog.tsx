@@ -191,7 +191,7 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-sm max-h-[85vh] overflow-y-auto overflow-x-hidden">
+        <DialogContent className="w-[90vw] max-w-[340px] max-h-[80vh] overflow-y-auto overflow-x-hidden mx-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5" />
