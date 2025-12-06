@@ -1846,7 +1846,7 @@ export default function ShoppingList() {
               </div>
               <div className="text-left flex-1">
                 <h3 className="font-extrabold font-display text-foreground flex items-center gap-2 text-left">
-                  Utwórz swoją 
+                  Utwórz swoją
 listę zakupów 📝  
                   
                 </h3>
