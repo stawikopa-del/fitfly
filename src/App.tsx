@@ -47,6 +47,7 @@ const QuickMeal = lazy(() => import("./pages/QuickMeal"));
 const QuickMealMethod = lazy(() => import("./pages/QuickMealMethod"));
 const ShoppingList = lazy(() => import("./pages/ShoppingList"));
 const SharedShoppingList = lazy(() => import("./pages/SharedShoppingList"));
+const DietShoppingList = lazy(() => import("./pages/DietShoppingList"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -386,6 +387,14 @@ const AppRoutes = () => (
         element={
           <ProtectedRoute>
             <SharedShoppingList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/lista-zakupow/dieta"
+        element={
+          <ProtectedRoute>
+            <DietShoppingList />
           </ProtectedRoute>
         }
       />
