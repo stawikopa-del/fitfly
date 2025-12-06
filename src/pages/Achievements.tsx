@@ -43,9 +43,8 @@ export default function Achievements() {
       />
       <div className="p-4 space-y-6 pb-24">
 
-        {/* FITEK z pucharem - hero */}
         <div className="flex items-center justify-center py-2">
-          <div className="w-32 h-32 rounded-full bg-white/90 dark:bg-card shadow-lg border border-border/30 flex items-center justify-center">
+          <div className="w-32 h-32 rounded-full bg-muted/80 shadow-lg border border-border/30 flex items-center justify-center">
             <img 
               src={fitekPuchar} 
               alt="FITEK z pucharem" 
