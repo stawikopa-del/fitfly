@@ -167,6 +167,57 @@ export type Database = {
         }
         Relationships: []
       }
+      day_plans: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_completed: boolean
+          location: string | null
+          name: string
+          notes: string | null
+          order_index: number
+          plan_date: string
+          priority: string
+          time: string | null
+          time_of_day: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          location?: string | null
+          name: string
+          notes?: string | null
+          order_index?: number
+          plan_date?: string
+          priority?: string
+          time?: string | null
+          time_of_day?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          location?: string | null
+          name?: string
+          notes?: string | null
+          order_index?: number
+          plan_date?: string
+          priority?: string
+          time?: string | null
+          time_of_day?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       direct_messages: {
         Row: {
           content: string

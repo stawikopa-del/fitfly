@@ -6,7 +6,7 @@ interface QuickActionProps {
   icon: ReactNode;
   title: string;
   description: string;
-  color: 'blue' | 'green' | 'orange' | 'purple';
+  color: 'blue' | 'green' | 'orange' | 'purple' | 'pink';
   onClick?: () => void;
 }
 
@@ -34,6 +34,12 @@ const colorClasses = {
     border: 'border-fitfly-purple/30',
     icon: 'bg-card/80 backdrop-blur-sm border border-border/40 shadow-sm',
     hover: 'hover:from-fitfly-purple/20 hover:via-fitfly-purple/15',
+  },
+  pink: {
+    bg: 'bg-gradient-to-r from-pink-500/15 via-pink-400/10 to-transparent',
+    border: 'border-pink-400/30',
+    icon: 'bg-card/80 backdrop-blur-sm border border-border/40 shadow-sm',
+    hover: 'hover:from-pink-500/20 hover:via-pink-400/15',
   },
 };
 
