@@ -324,6 +324,75 @@ export default function DietConfig() {
 
   const suggestedCalories = calculateSuggestedCalories();
 
+  // Generate meal schedule based on mealsPerDay
+  const generateMealSchedule = (mealsCount: number) => {
+    const baseSchedule = [
+      { name: 'Śniadanie', time: '07:00' },
+      { name: 'Obiad', time: '12:00' },
+      { name: 'Kolacja', time: '18:00' },
+      { name: 'Przekąska', time: '15:00' },
+      { name: 'Drugie śniadanie', time: '10:00' },
+      { name: 'Podwieczorek', time: '16:00' },
+    ];
+    
+    // Arrange meals in logical order based on count
+    if (mealsCount === 3) {
+      return [
+        { name: 'Śniadanie', time: '08:00' },
+        { name: 'Obiad', time: '13:00' },
+        { name: 'Kolacja', time: '19:00' },
+      ];
+    } else if (mealsCount === 4) {
+      return [
+        { name: 'Śniadanie', time: '07:00' },
+        { name: 'Obiad', time: '12:00' },
+        { name: 'Przekąska', time: '15:00' },
+        { name: 'Kolacja', time: '18:00' },
+      ];
+    } else if (mealsCount === 5) {
+      return [
+        { name: 'Śniadanie', time: '07:00' },
+        { name: 'Drugie śniadanie', time: '10:00' },
+        { name: 'Obiad', time: '13:00' },
+        { name: 'Przekąska', time: '16:00' },
+        { name: 'Kolacja', time: '19:00' },
+      ];
+    } else if (mealsCount === 6) {
+      return [
+        { name: 'Śniadanie', time: '07:00' },
+        { name: 'Drugie śniadanie', time: '09:30' },
+        { name: 'Obiad', time: '12:00' },
+        { name: 'Przekąska', time: '15:00' },
+        { name: 'Podwieczorek', time: '17:00' },
+        { name: 'Kolacja', time: '19:30' },
+      ];
+    }
+    
+    return baseSchedule.slice(0, mealsCount);
+  };
+
+  // Sync meal settings to user profile
+  const syncMealSettingsToProfile = async (mealsCount: number) => {
+    if (!user) return;
+    
+    try {
+      const mealSchedule = generateMealSchedule(mealsCount);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          meals_count: mealsCount,
+          meal_schedule: mealSchedule,
+        })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      console.log('Meal settings synced to profile:', { mealsCount, mealSchedule });
+    } catch (error) {
+      console.error('Error syncing meal settings:', error);
+    }
+  };
+
   const handleGenerateDiet = async () => {
     if (!user) return;
     
@@ -355,6 +424,9 @@ export default function DietConfig() {
       });
       
       if (error) throw error;
+      
+      // Sync meal settings to profile
+      await syncMealSettingsToProfile(mealsPerDay);
       
       setGeneratedPlan(data);
       setStep('result');
