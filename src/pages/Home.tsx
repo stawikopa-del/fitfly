@@ -128,10 +128,10 @@ export default function Home() {
         <img 
           src={fitflyLogo} 
           alt="FITFLY Logo" 
-          className="w-24 h-24 object-contain drop-shadow-lg animate-float-slow"
+          className="w-32 h-32 object-contain drop-shadow-lg animate-float-slow"
         />
         <div className="flex flex-col items-center text-center">
-          <h2 className="text-3xl font-extrabold font-display tracking-wide">
+          <h2 className="text-4xl font-extrabold font-display tracking-wide">
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent inline-block px-1">
               FITFLY
             </span>
