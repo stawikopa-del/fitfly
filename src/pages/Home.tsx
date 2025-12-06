@@ -5,6 +5,7 @@ import { ChatHeroBubble } from '@/components/flyfit/ChatHeroBubble';
 import { StatCard } from '@/components/flyfit/StatCard';
 import { WaterTracker } from '@/components/flyfit/WaterTracker';
 import { QuickAction } from '@/components/flyfit/QuickAction';
+import { MeasurementsSummary } from '@/components/flyfit/MeasurementsSummary';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useGamification } from '@/hooks/useGamification';
 import { useHabitsAndChallenges } from '@/hooks/useHabitsAndChallenges';
@@ -253,6 +254,11 @@ export default function Home() {
             onClick={() => navigate('/wyzwania')}
           />
         </div>
+      </section>
+
+      {/* Dzisiejsze pomiary */}
+      <section className="relative z-10 animate-float" style={{ animationDelay: '0.95s' }}>
+        <MeasurementsSummary />
       </section>
 
       {/* Tracker wody */}

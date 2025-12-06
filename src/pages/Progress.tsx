@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Droplets, Footprints, Timer, TrendingUp, Calendar, Award, Target, Flame } from 'lucide-react';
+import { Droplets, Footprints, Timer, TrendingUp, Calendar, Award, Target, Flame, Scale, Smile, Zap, Brain, Moon, TrendingDown, Minus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useMeasurements } from '@/hooks/useMeasurements';
 import { cn } from '@/lib/utils';
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, LineChart, Line } from 'recharts';
 import { PageHeader } from '@/components/flyfit/PageHeader';
+import { AddMeasurementDialog } from '@/components/flyfit/AddMeasurementDialog';
 import fitekWykresy from '@/assets/fitek/fitek-wykresy.png';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
 interface DailyData {
   date: string;
@@ -16,9 +20,12 @@ interface DailyData {
 }
 
 const dayNames = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'];
+const moodEmojis = ['😢', '😕', '😐', '🙂', '😄'];
+const energyEmojis = ['😴', '🥱', '😌', '💪', '⚡'];
 
 export default function Progress() {
   const { user } = useAuth();
+  const { measurements, getWeightHistory, getAverages, loading: measurementsLoading } = useMeasurements();
   const [weeklyData, setWeeklyData] = useState<DailyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState<'water' | 'steps' | 'activeMinutes'>('water');
@@ -300,6 +307,169 @@ export default function Progress() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Sekcja pomiarów */}
+      <section className="space-y-4 relative z-10">
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold font-display text-foreground text-lg flex items-center gap-2">
+            Pomiary ciała
+            <Scale className="w-5 h-5 text-primary" />
+          </h2>
+          <AddMeasurementDialog />
+        </div>
+
+        {/* Wykres wagi */}
+        {(() => {
+          const weightHistory = getWeightHistory(14);
+          if (weightHistory.length > 1) {
+            const firstWeight = weightHistory[0]?.weight;
+            const lastWeight = weightHistory[weightHistory.length - 1]?.weight;
+            const diff = lastWeight - firstWeight;
+            const trend = diff > 0 ? 'up' : diff < 0 ? 'down' : 'neutral';
+            
+            return (
+              <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                      <Scale className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold font-display text-foreground">Waga</h3>
+                      <p className="text-xs text-muted-foreground">Ostatnie 2 tygodnie</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex items-center gap-2">
+                    <p className="text-xl font-extrabold font-display text-foreground">
+                      {lastWeight} kg
+                    </p>
+                    {trend !== 'neutral' && (
+                      <span className={cn(
+                        'flex items-center text-sm font-bold',
+                        trend === 'down' ? 'text-green-500' : 'text-red-500'
+                      )}>
+                        {trend === 'down' ? <TrendingDown className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
+                        {Math.abs(diff).toFixed(1)} kg
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={weightHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <XAxis 
+                        dataKey="date" 
+                        axisLine={false} 
+                        tickLine={false}
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                        tickFormatter={(value) => format(new Date(value), 'd MMM', { locale: pl })}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false}
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                        width={40}
+                        domain={['dataMin - 1', 'dataMax + 1']}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'hsl(var(--card))',
+                          border: '2px solid hsl(var(--border))',
+                          borderRadius: '16px',
+                        }}
+                        formatter={(value: number) => [`${value} kg`, 'Waga']}
+                        labelFormatter={(label) => format(new Date(label), 'd MMMM yyyy', { locale: pl })}
+                      />
+                      <Line 
+                        type="monotone"
+                        dataKey="weight" 
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={3}
+                        dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 4 }}
+                        activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
+        {/* Średnie samopoczucia */}
+        {(() => {
+          const avgs = getAverages(7);
+          const hasAnyData = avgs.mood || avgs.energy || avgs.stress || avgs.sleepQuality || avgs.sleepHours;
+          
+          if (!hasAnyData) {
+            return (
+              <div className="bg-card rounded-3xl p-6 border-2 border-dashed border-border text-center">
+                <Smile className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm mb-3">
+                  Zacznij śledzić swoje samopoczucie
+                </p>
+                <AddMeasurementDialog />
+              </div>
+            );
+          }
+          
+          return (
+            <div className="grid grid-cols-2 gap-3">
+              {avgs.mood && (
+                <div className="bg-yellow-100 dark:bg-yellow-500/20 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Smile className="w-4 h-4 text-yellow-600" />
+                    <span className="text-xs font-bold text-yellow-800 dark:text-yellow-300">Humor</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{moodEmojis[Math.round(avgs.mood) - 1]}</span>
+                    <span className="font-bold text-foreground">{avgs.mood.toFixed(1)}/5</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">średnia 7 dni</p>
+                </div>
+              )}
+              
+              {avgs.energy && (
+                <div className="bg-amber-100 dark:bg-amber-500/20 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Zap className="w-4 h-4 text-amber-600" />
+                    <span className="text-xs font-bold text-amber-800 dark:text-amber-300">Energia</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{energyEmojis[Math.round(avgs.energy) - 1]}</span>
+                    <span className="font-bold text-foreground">{avgs.energy.toFixed(1)}/5</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">średnia 7 dni</p>
+                </div>
+              )}
+              
+              {avgs.stress && (
+                <div className="bg-purple-100 dark:bg-purple-500/20 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Brain className="w-4 h-4 text-purple-600" />
+                    <span className="text-xs font-bold text-purple-800 dark:text-purple-300">Stres</span>
+                  </div>
+                  <span className="font-bold text-xl text-foreground">{avgs.stress.toFixed(1)}/5</span>
+                  <p className="text-xs text-muted-foreground mt-1">średnia 7 dni</p>
+                </div>
+              )}
+              
+              {avgs.sleepHours && (
+                <div className="bg-indigo-100 dark:bg-indigo-500/20 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Moon className="w-4 h-4 text-indigo-600" />
+                    <span className="text-xs font-bold text-indigo-800 dark:text-indigo-300">Sen</span>
+                  </div>
+                  <span className="font-bold text-xl text-foreground">{avgs.sleepHours.toFixed(1)}h</span>
+                  <p className="text-xs text-muted-foreground mt-1">średnio/noc</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </section>
 
       {/* Motywacyjna karta z FITEK */}
