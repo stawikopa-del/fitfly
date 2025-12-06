@@ -292,9 +292,8 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
                     <option key={unit} value={unit}>{unit}</option>
                   ))}
                 </select>
-                <Button onClick={handleAddItem} disabled={!newItemName.trim()} size="sm" className="h-9 text-xs px-3">
-                  <Plus className="w-3 h-3 mr-1" />
-                  Dodaj
+                <Button onClick={handleAddItem} disabled={!newItemName.trim()} size="sm" className="h-9 text-xs px-2 rounded-xl">
+                  <Plus className="w-3.5 h-3.5" />
                 </Button>
               </div>
             </div>
