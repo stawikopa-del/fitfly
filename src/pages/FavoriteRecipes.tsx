@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlayCircle, Heart, Send, ArrowLeft, Loader2, Users, Link2, Share2 } from 'lucide-react';
+import { PlayCircle, Heart, Send, ArrowLeft, Loader2, Users, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -334,7 +334,7 @@ export default function FavoriteRecipes() {
                         onClick={() => handleNativeShare(fav)}
                         className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
                       >
-                        <Share2 className="w-4 h-4 text-primary" />
+                        <Send className="w-4 h-4 text-primary" />
                         <span>Więcej opcji...</span>
                       </button>
                     </div>

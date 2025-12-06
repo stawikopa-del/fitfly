@@ -20,7 +20,7 @@ import {
   Trash2,
   Loader2,
   UserX,
-  Share2,
+  Send,
   MessageCircle
 } from 'lucide-react';
 import { useFriends, Friend, FriendRequest } from '@/hooks/useFriends';
@@ -253,7 +253,7 @@ export default function Friends() {
             }}
             className="rounded-xl"
           >
-            <Share2 className="h-4 w-4 mr-1" />
+            <Send className="h-4 w-4 mr-1" />
             Zaproś
           </Button>
         </div>

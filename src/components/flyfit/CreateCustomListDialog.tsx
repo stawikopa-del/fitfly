@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Heart, Share2, X, ShoppingCart, Check, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Heart, Send, X, ShoppingCart, Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { supabase } from '@/integrations/supabase/client';
@@ -301,7 +301,7 @@ export function CreateCustomListDialog({
                 Ulubione
               </Button>
               <Button size="sm" className="flex-1 text-xs h-9" onClick={() => setShowShareDialog(true)} disabled={items.length === 0 || saving}>
-                <Share2 className="w-3 h-3 mr-1" />
+                <Send className="w-3 h-3 mr-1" />
                 Udostępnij
               </Button>
             </div>
@@ -336,7 +336,7 @@ export function CreateCustomListDialog({
                         @{friend.username}
                       </p>}
                   </div>
-                  <Share2 className="w-4 h-4 text-muted-foreground" />
+                  <Send className="w-4 h-4 text-muted-foreground" />
                 </button>)}
           </div>
         </DialogContent>
