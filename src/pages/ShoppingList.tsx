@@ -1724,12 +1724,8 @@ export default function ShoppingList() {
               Lista zakupów <ShoppingCart className="w-5 h-5" />
             </h1>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setShowAddDialog(true)}>
-            <Plus className="w-5 h-5" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={saveToFavorites} disabled={ingredients.length === 0} title="Dodaj do ulubionych">
-            <Heart className="w-5 h-5" />
-          </Button>
+          
+          
           <Button variant="ghost" size="icon" onClick={() => setShowShareDialog(true)} disabled={ingredients.length === 0}>
             <Share2 className="w-5 h-5" />
           </Button>
@@ -1827,7 +1823,7 @@ export default function ShoppingList() {
                     Twoja dieta
                     <span>🥗</span>
                   </h3>
-                  <p className="text-sm text-muted-foreground">Generuj listę zakupów z planu diety</p>
+                  <p className="text-sm text-muted-foreground">Generuj listę zakupów z twojego planu diety</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
@@ -1850,7 +1846,7 @@ export default function ShoppingList() {
 listę zakupów 📝  
                   
                 </h3>
-                <p className="text-sm text-muted-foreground">Dodaj produkty, notatki i udostępnij</p>
+                <p className="text-sm text-muted-foreground">Dodaj produkty, notatki oraz udostępnij znajomym  </p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
             </div>
