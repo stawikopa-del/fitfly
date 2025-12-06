@@ -63,7 +63,8 @@ export default function Workouts() {
     <div className="px-4 py-6 space-y-6">
       {/* Header z FITEK */}
       <header className="relative z-10 flex items-center gap-4">
-        <div className="w-18 h-18 rounded-full bg-gradient-to-br from-primary/30 to-fitfly-blue-light/30 shadow-lg flex items-center justify-center">
+        <div className="w-18 h-18 rounded-full bg-gradient-to-br from-primary/20 to-fitfly-blue-light/20 shadow-lg flex items-center justify-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-primary/15 blur-2xl" />
           <img 
             src={fitekPoranek} 
             alt="FITEK poranny" 
