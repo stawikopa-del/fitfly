@@ -58,6 +58,7 @@ export default function DayPlanner() {
   const [loading, setLoading] = useState(true);
   const [isAddingPlan, setIsAddingPlan] = useState(false);
   const [editingTimeOfDay, setEditingTimeOfDay] = useState<string | null>(null);
+  const [editingPlan, setEditingPlan] = useState<DayPlan | null>(null);
   
   // Form state
   const [planName, setPlanName] = useState('');
@@ -106,40 +107,73 @@ export default function DayPlanner() {
     setPlanPriority('normal');
     setPlanNotes('');
     setEditingTimeOfDay(null);
+    setEditingPlan(null);
   };
 
-  const handleAddPlan = async () => {
+  const openEditForm = (plan: DayPlan) => {
+    setEditingPlan(plan);
+    setPlanName(plan.name);
+    setPlanTime(plan.time || '');
+    setPlanLocation(plan.location || '');
+    setPlanCategory(plan.category);
+    setPlanPriority(plan.priority);
+    setPlanNotes(plan.notes || '');
+    setEditingTimeOfDay(plan.time_of_day);
+    setIsAddingPlan(true);
+  };
+
+  const handleSavePlan = async () => {
     if (!user || !planName.trim()) {
       toast.error('Wpisz nazwę planu');
       return;
     }
 
     const finalCategory = planCategory === 'custom' ? customCategory || 'inne' : planCategory;
-    const timeOfDay = mode === 'template' ? editingTimeOfDay : null;
+    const timeOfDay = mode === 'template' ? editingTimeOfDay : (editingPlan?.time_of_day || null);
 
     try {
-      const { error } = await supabase.from('day_plans').insert({
-        user_id: user.id,
-        plan_date: today,
-        name: planName.trim(),
-        time: planTime || null,
-        location: planLocation || null,
-        category: finalCategory,
-        priority: planPriority,
-        notes: planNotes || null,
-        time_of_day: timeOfDay,
-        order_index: plans.length,
-      });
+      if (editingPlan) {
+        // Update existing plan
+        const { error } = await supabase
+          .from('day_plans')
+          .update({
+            name: planName.trim(),
+            time: planTime || null,
+            location: planLocation || null,
+            category: finalCategory,
+            priority: planPriority,
+            notes: planNotes || null,
+            time_of_day: timeOfDay,
+          })
+          .eq('id', editingPlan.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success('Plan zaktualizowany!');
+      } else {
+        // Insert new plan
+        const { error } = await supabase.from('day_plans').insert({
+          user_id: user.id,
+          plan_date: today,
+          name: planName.trim(),
+          time: planTime || null,
+          location: planLocation || null,
+          category: finalCategory,
+          priority: planPriority,
+          notes: planNotes || null,
+          time_of_day: timeOfDay,
+          order_index: plans.length,
+        });
+
+        if (error) throw error;
+        toast.success('Plan dodany!');
+      }
       
-      toast.success('Plan dodany!');
       resetForm();
       setIsAddingPlan(false);
       fetchPlans();
     } catch (err) {
-      console.error('Error adding plan:', err);
-      toast.error('Błąd podczas dodawania planu');
+      console.error('Error saving plan:', err);
+      toast.error('Błąd podczas zapisywania planu');
     }
   };
 
@@ -295,7 +329,10 @@ export default function DayPlanner() {
             {plan.is_completed && <Check className="w-4 h-4" />}
           </button>
 
-          <div className="flex-1 min-w-0">
+          <div 
+            className="flex-1 min-w-0 cursor-pointer"
+            onClick={() => openEditForm(plan)}
+          >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-lg">{category.icon}</span>
               <h4 className={cn(
@@ -451,9 +488,18 @@ export default function DayPlanner() {
         />
       </div>
 
-      <Button onClick={handleAddPlan} className="w-full" size="lg">
-        <Plus className="w-5 h-5 mr-2" />
-        Dodaj plan
+      <Button onClick={handleSavePlan} className="w-full" size="lg">
+        {editingPlan ? (
+          <>
+            <Check className="w-5 h-5 mr-2" />
+            Zapisz zmiany
+          </>
+        ) : (
+          <>
+            <Plus className="w-5 h-5 mr-2" />
+            Dodaj plan
+          </>
+        )}
       </Button>
     </div>
   );
@@ -608,15 +654,15 @@ export default function DayPlanner() {
 
       {/* FAB for Loose mode */}
       {mode === 'loose' && (
-        <Sheet open={isAddingPlan} onOpenChange={setIsAddingPlan}>
+        <Sheet open={isAddingPlan} onOpenChange={(open) => { setIsAddingPlan(open); if (!open) resetForm(); }}>
           <SheetTrigger asChild>
             <button className="fixed bottom-24 right-4 w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform z-50">
               <Plus className="w-6 h-6" />
             </button>
           </SheetTrigger>
           <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle className="text-left">Nowy plan</SheetTitle>
+          <SheetHeader>
+              <SheetTitle className="text-left">{editingPlan ? 'Edytuj plan' : 'Nowy plan'}</SheetTitle>
             </SheetHeader>
             {formContent}
           </SheetContent>
