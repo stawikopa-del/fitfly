@@ -202,6 +202,7 @@ const CATEGORY_OPTIONS = [{
 interface DietPlan {
   id: string;
   name: string;
+  created_at?: string;
   plan_data: {
     dailyMeals?: {
       breakfast: Array<{
@@ -1143,9 +1144,13 @@ export default function ShoppingList() {
     friends
   } = useFriends();
   const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
+  const [allDietPlans, setAllDietPlans] = useState<DietPlan[]>([]);
+  const [selectedDietPlan, setSelectedDietPlan] = useState<DietPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showDietSelectDialog, setShowDietSelectDialog] = useState(false);
+  const [showGeneratedList, setShowGeneratedList] = useState(false);
   const [customItems, setCustomItems] = useState<CustomItem[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showCreateListDialog, setShowCreateListDialog] = useState(false);
@@ -1167,10 +1172,10 @@ export default function ShoppingList() {
     length: 7
   }, (_, i) => addDays(weekStart, i));
 
-  // Load diet plan
+  // Load all diet plans
   useEffect(() => {
     if (!isInitialized) return;
-    const fetchDietPlan = async () => {
+    const fetchDietPlans = async () => {
       if (!user) {
         setLoading(false);
         return;
@@ -1182,12 +1187,13 @@ export default function ShoppingList() {
           error
         } = await supabase.from('saved_diet_plans').select('*').eq('user_id', user.id).order('created_at', {
           ascending: false
-        }).limit(1).maybeSingle();
+        });
         if (error) {
-          console.error('Error fetching diet plan:', error);
+          console.error('Error fetching diet plans:', error);
         }
-        if (data) {
-          setDietPlan(data as DietPlan);
+        if (data && data.length > 0) {
+          setAllDietPlans(data as DietPlan[]);
+          setDietPlan(data[0] as DietPlan);
         }
       } catch (err) {
         console.error('Error:', err);
@@ -1195,7 +1201,7 @@ export default function ShoppingList() {
         setLoading(false);
       }
     };
-    fetchDietPlan();
+    fetchDietPlans();
   }, [user, isInitialized]);
 
   // Load checked items and custom items from localStorage - with SSR guard
@@ -1807,13 +1813,25 @@ export default function ShoppingList() {
             Moje listy
           </h2>
           
-          {/* Twoja dieta button - only show if user has a diet plan */}
-          {dietPlan && <button onClick={() => {
-          try {
-            soundFeedback.buttonClick();
-          } catch {}
-          navigate('/lista-zakupow/dieta');
-        }} className="w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 border-secondary/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group">
+          {/* Twoja dieta button - only show if user has diet plans */}
+          {allDietPlans.length > 0 && <button 
+            onClick={() => {
+              try {
+                soundFeedback.buttonClick();
+              } catch {}
+              if (!startDate || !endDate) {
+                toast.error('Najpierw wybierz okres w kalendarzu powyżej');
+                // Scroll to calendar
+                document.getElementById('calendar-section')?.scrollIntoView({ behavior: 'smooth' });
+                return;
+              }
+              setShowDietSelectDialog(true);
+            }} 
+            className={cn(
+              "w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group",
+              (!startDate || !endDate) ? "border-secondary/20 opacity-70" : "border-secondary/30"
+            )}
+          >
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-fitfly-green-dark flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
                   <Calendar className="w-7 h-7 text-white" />
@@ -1823,7 +1841,12 @@ export default function ShoppingList() {
                     Twoja dieta
                     <span>🥗</span>
                   </h3>
-                  <p className="text-sm text-muted-foreground">Generuj listę zakupów z twojego planu diety</p>
+                  <p className="text-sm text-muted-foreground">
+                    {(!startDate || !endDate) 
+                      ? 'Najpierw wybierz okres w kalendarzu' 
+                      : `Generuj listę dla ${format(startDate, 'd.MM', { locale: pl })} - ${format(endDate, 'd.MM', { locale: pl })}`
+                    }
+                  </p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
@@ -2312,5 +2335,345 @@ lub dodaj własne produkty</p>
         });
       }
     }} />
+
+      {/* Diet Selection Dialog */}
+      <Dialog open={showDietSelectDialog} onOpenChange={setShowDietSelectDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              🥗 Wybierz dietę
+            </DialogTitle>
+            <DialogDescription>
+              {startDate && endDate && (
+                <span className="flex items-center gap-1 mt-1">
+                  <Calendar className="w-4 h-4" />
+                  Okres: {format(startDate, 'd MMMM', { locale: pl })} — {format(endDate, 'd MMMM yyyy', { locale: pl })}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 max-h-80 overflow-y-auto">
+            {allDietPlans.map((diet) => (
+              <button
+                key={diet.id}
+                onClick={() => {
+                  try { soundFeedback.buttonClick(); } catch {}
+                  setSelectedDietPlan(diet);
+                  setShowDietSelectDialog(false);
+                  setShowGeneratedList(true);
+                }}
+                className="w-full p-4 rounded-2xl border-2 border-border hover:border-primary/50 bg-card hover:bg-muted/50 transition-all text-left group"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">
+                      {diet.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(diet.created_at || new Date()), 'd MMM yyyy', { locale: pl })}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </div>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generated Shopping List Dialog/Modal */}
+      <Dialog open={showGeneratedList} onOpenChange={setShowGeneratedList}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5" />
+              Lista zakupów
+            </DialogTitle>
+            <DialogDescription>
+              {selectedDietPlan && startDate && endDate && (
+                <span className="text-sm">
+                  {selectedDietPlan.name} • {format(startDate, 'd.MM', { locale: pl })} - {format(endDate, 'd.MM.yyyy', { locale: pl })}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <GeneratedShoppingList 
+            dietPlan={selectedDietPlan}
+            startDate={startDate}
+            endDate={endDate}
+            checkedItems={checkedItems}
+            onToggleItem={toggleItem}
+            onClose={() => setShowGeneratedList(false)}
+            user={user}
+          />
+        </DialogContent>
+      </Dialog>
     </div>;
+}
+
+// Separate component for the generated shopping list
+interface GeneratedShoppingListProps {
+  dietPlan: DietPlan | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  checkedItems: Set<string>;
+  onToggleItem: (name: string) => void;
+  onClose: () => void;
+  user: any;
+}
+
+function GeneratedShoppingList({ dietPlan, startDate, endDate, checkedItems, onToggleItem, onClose, user }: GeneratedShoppingListProps) {
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  
+  const ingredients = useMemo(() => {
+    const result: Ingredient[] = [];
+    
+    if (!dietPlan?.plan_data || !startDate || !endDate) return result;
+    
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    // Collect all meals
+    const allMeals: Array<{ name: string; description: string }> = [];
+    if (dietPlan.plan_data.dailyMeals) {
+      const { breakfast, lunch, dinner, snacks } = dietPlan.plan_data.dailyMeals;
+      [...(breakfast || []), ...(lunch || []), ...(dinner || []), ...(snacks || [])].forEach(meal => {
+        allMeals.push({
+          name: meal?.name || '',
+          description: meal?.description || ''
+        });
+      });
+    }
+    
+    // Parse and aggregate ingredients
+    const parsedIngredients = processShoppingList(allMeals, daysDiff);
+    
+    parsedIngredients.forEach(ing => {
+      result.push({
+        name: ing.name,
+        amount: ing.totalAmount,
+        unit: ing.unit,
+        category: ing.category,
+        checked: checkedItems.has(ing.name.toLowerCase()),
+        packageCount: ing.packageCount,
+        packageSize: ing.packageSize,
+        packageUnit: ing.unit,
+        displayAmount: ing.displayText
+      });
+    });
+    
+    return result;
+  }, [dietPlan, startDate, endDate, checkedItems]);
+  
+  const groupedIngredients = useMemo(() => {
+    const groups: Record<string, Ingredient[]> = {};
+    ingredients.forEach(ing => {
+      if (!groups[ing.category]) {
+        groups[ing.category] = [];
+      }
+      groups[ing.category].push(ing);
+    });
+    
+    const sortedGroups: Record<string, Ingredient[]> = {};
+    Object.keys(INGREDIENT_CATEGORIES).forEach(cat => {
+      if (groups[cat]) {
+        sortedGroups[cat] = groups[cat].sort((a, b) => a.name.localeCompare(b.name, 'pl'));
+      }
+    });
+    return sortedGroups;
+  }, [ingredients]);
+  
+  const checkedCount = ingredients.filter(i => checkedItems.has(i.name.toLowerCase())).length;
+  const progress = ingredients.length > 0 ? (checkedCount / ingredients.length) * 100 : 0;
+  
+  const copyToClipboard = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) {
+      toast.error('Kopiowanie niedostępne');
+      return;
+    }
+    try { soundFeedback.buttonClick(); } catch {}
+    
+    let text = '🛒 Lista zakupów FITFLY\n';
+    if (startDate && endDate) {
+      text += `📅 ${format(startDate, 'd MMM', { locale: pl })} - ${format(endDate, 'd MMM yyyy', { locale: pl })}\n\n`;
+    }
+    
+    Object.entries(groupedIngredients).forEach(([category, items]) => {
+      const catConfig = INGREDIENT_CATEGORIES[category];
+      if (!catConfig) return;
+      text += `${catConfig.emoji} ${catConfig.label}:\n`;
+      items.forEach(item => {
+        const checkbox = checkedItems.has(item.name.toLowerCase()) ? '✅' : '⬜';
+        text += `  ${checkbox} ${item.name} - ${item.displayAmount}\n`;
+      });
+      text += '\n';
+    });
+    
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success('Skopiowano do schowka! 📋');
+    }).catch(() => {
+      toast.error('Nie udało się skopiować');
+    });
+  }, [groupedIngredients, startDate, endDate, checkedItems]);
+  
+  const saveToFavorites = useCallback(async () => {
+    if (!user || ingredients.length === 0) return;
+    try { soundFeedback.buttonClick(); } catch {}
+    
+    const listName = startDate && endDate 
+      ? `Lista ${format(startDate, 'd.MM', { locale: pl })} - ${format(endDate, 'd.MM', { locale: pl })}`
+      : `Lista ${format(new Date(), 'd.MM.yyyy', { locale: pl })}`;
+    
+    const itemsToSave = ingredients.map(ing => ({
+      name: ing.name,
+      amount: ing.amount,
+      unit: ing.unit,
+      category: ing.category,
+      displayAmount: ing.displayAmount
+    }));
+    
+    try {
+      const { error } = await supabase.from('favorite_shopping_lists').insert({
+        user_id: user.id,
+        name: listName,
+        items: itemsToSave
+      });
+      if (error) throw error;
+      toast.success('Zapisano do ulubionych! ❤️');
+    } catch (err) {
+      console.error('Error saving to favorites:', err);
+      toast.error('Nie udało się zapisać');
+    }
+  }, [user, ingredients, startDate, endDate]);
+  
+  if (ingredients.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+        <p className="text-muted-foreground">Brak składników do wyświetlenia</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="flex-1 overflow-y-auto space-y-4">
+      {/* Progress */}
+      <div className="bg-muted/50 rounded-xl p-3">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-foreground">Postęp zakupów</span>
+          <span className="text-sm font-bold text-primary">{checkedCount}/{ingredients.length}</span>
+        </div>
+        <div className="h-2 bg-background rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" 
+            style={{ width: `${progress}%` }} 
+          />
+        </div>
+      </div>
+      
+      {/* Quick Actions */}
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" className="flex-1" onClick={copyToClipboard}>
+          <Copy className="w-4 h-4 mr-1" />
+          Kopiuj
+        </Button>
+        <Button variant="outline" size="sm" className="flex-1" onClick={saveToFavorites}>
+          <Heart className="w-4 h-4 mr-1" />
+          Zapisz
+        </Button>
+      </div>
+      
+      {/* Categories */}
+      <div className="space-y-3">
+        {Object.entries(groupedIngredients).map(([category, items]) => {
+          const catConfig = INGREDIENT_CATEGORIES[category];
+          if (!catConfig) return null;
+          const categoryChecked = items.filter(i => checkedItems.has(i.name.toLowerCase())).length;
+          const isCollapsed = collapsedCategories.has(category);
+          const allChecked = categoryChecked === items.length;
+          
+          return (
+            <div key={category} className="bg-card rounded-xl border border-border/50 overflow-hidden">
+              <button
+                onClick={() => {
+                  try { soundFeedback.buttonClick(); } catch {}
+                  setCollapsedCategories(prev => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(category)) {
+                      newSet.delete(category);
+                    } else {
+                      newSet.add(category);
+                    }
+                    return newSet;
+                  });
+                }}
+                className="w-full px-3 py-2 bg-muted/50 flex items-center justify-between hover:bg-muted/70 transition-colors"
+              >
+                <span className={cn(
+                  "font-bold text-sm flex items-center gap-2 transition-colors",
+                  allChecked ? "text-muted-foreground" : "text-foreground"
+                )}>
+                  <span>{catConfig.emoji}</span>
+                  {catConfig.label}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    "text-xs px-2 py-0.5 rounded-full",
+                    allChecked ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    {categoryChecked}/{items.length}
+                  </span>
+                  <ChevronDown className={cn(
+                    "w-4 h-4 text-muted-foreground transition-transform duration-200",
+                    isCollapsed && "-rotate-90"
+                  )} />
+                </div>
+              </button>
+              
+              <div className={cn(
+                "divide-y divide-border/30 transition-all duration-200 overflow-hidden",
+                isCollapsed ? "max-h-0" : "max-h-[1000px]"
+              )}>
+                {items.map((item, idx) => {
+                  const isChecked = checkedItems.has(item.name.toLowerCase());
+                  return (
+                    <button
+                      key={`${item.name}-${idx}`}
+                      onClick={() => onToggleItem(item.name)}
+                      className={cn(
+                        "w-full px-3 py-2 flex items-center gap-3 transition-all text-left",
+                        isChecked && "bg-primary/5"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0",
+                        isChecked ? "bg-primary border-primary" : "border-border"
+                      )}>
+                        {isChecked && <Check className="w-3 h-3 text-primary-foreground" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "text-sm font-medium transition-all",
+                          isChecked ? "text-muted-foreground line-through" : "text-foreground"
+                        )}>
+                          {item.name}
+                        </p>
+                        <p className={cn(
+                          "text-xs",
+                          isChecked ? "text-muted-foreground/50" : "text-muted-foreground"
+                        )}>
+                          {item.displayAmount}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
