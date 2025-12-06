@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -67,7 +67,10 @@ export default function DayPlanner() {
   const [customCategory, setCustomCategory] = useState('');
   const [planPriority, setPlanPriority] = useState('normal');
   const [planNotes, setPlanNotes] = useState('');
-  const [planTimeOfDay, setPlanTimeOfDay] = useState<string | null>(null);
+
+  // Drag state
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const dragOverId = useRef<string | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -102,7 +105,6 @@ export default function DayPlanner() {
     setCustomCategory('');
     setPlanPriority('normal');
     setPlanNotes('');
-    setPlanTimeOfDay(null);
     setEditingTimeOfDay(null);
   };
 
@@ -113,7 +115,7 @@ export default function DayPlanner() {
     }
 
     const finalCategory = planCategory === 'custom' ? customCategory || 'inne' : planCategory;
-    const timeOfDay = mode === 'template' ? (editingTimeOfDay || planTimeOfDay) : null;
+    const timeOfDay = mode === 'template' ? editingTimeOfDay : null;
 
     try {
       const { error } = await supabase.from('day_plans').insert({
@@ -173,6 +175,74 @@ export default function DayPlanner() {
     }
   };
 
+  const handleDragStart = (id: string) => {
+    setDraggedId(id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    dragOverId.current = id;
+  };
+
+  const handleDragEnd = async () => {
+    if (!draggedId || !dragOverId.current || draggedId === dragOverId.current) {
+      setDraggedId(null);
+      return;
+    }
+
+    const oldIndex = plans.findIndex(p => p.id === draggedId);
+    const newIndex = plans.findIndex(p => p.id === dragOverId.current);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      setDraggedId(null);
+      return;
+    }
+
+    const newPlans = [...plans];
+    const [removed] = newPlans.splice(oldIndex, 1);
+    newPlans.splice(newIndex, 0, removed);
+
+    // Update order_index for all affected items
+    const updatedPlans = newPlans.map((p, idx) => ({ ...p, order_index: idx }));
+    setPlans(updatedPlans);
+    setDraggedId(null);
+
+    // Save to database
+    try {
+      const updates = updatedPlans.map(p => 
+        supabase.from('day_plans').update({ order_index: p.order_index }).eq('id', p.id)
+      );
+      await Promise.all(updates);
+    } catch (err) {
+      console.error('Error reordering plans:', err);
+      fetchPlans(); // Revert on error
+    }
+  };
+
+  // Touch drag support
+  const handleTouchStart = (id: string) => {
+    setDraggedId(id);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!draggedId) return;
+    
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const planCard = element?.closest('[data-plan-id]');
+    
+    if (planCard) {
+      const planId = planCard.getAttribute('data-plan-id');
+      if (planId) {
+        dragOverId.current = planId;
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    handleDragEnd();
+  };
+
   const getCategoryInfo = (categoryId: string) => {
     return CATEGORIES.find(c => c.id === categoryId) || CATEGORIES.find(c => c.id === 'inne')!;
   };
@@ -184,19 +254,35 @@ export default function DayPlanner() {
   const completedCount = plans.filter(p => p.is_completed).length;
   const progressPercent = plans.length > 0 ? Math.round((completedCount / plans.length) * 100) : 0;
 
-  const renderPlanCard = (plan: DayPlan) => {
+  const renderPlanCard = (plan: DayPlan, isDraggable = false) => {
     const category = getCategoryInfo(plan.category);
     const priority = getPriorityInfo(plan.priority);
 
     return (
       <div
         key={plan.id}
+        data-plan-id={plan.id}
+        draggable={isDraggable}
+        onDragStart={() => handleDragStart(plan.id)}
+        onDragOver={(e) => handleDragOver(e, plan.id)}
+        onDragEnd={handleDragEnd}
+        onTouchStart={() => isDraggable && handleTouchStart(plan.id)}
+        onTouchMove={isDraggable ? handleTouchMove : undefined}
+        onTouchEnd={isDraggable ? handleTouchEnd : undefined}
         className={cn(
           'bg-card rounded-2xl p-4 border border-border/50 transition-all',
-          plan.is_completed && 'opacity-60 bg-muted/30'
+          plan.is_completed && 'opacity-60 bg-muted/30',
+          draggedId === plan.id && 'opacity-50 scale-95',
+          isDraggable && 'cursor-grab active:cursor-grabbing'
         )}
       >
         <div className="flex items-start gap-3">
+          {isDraggable && (
+            <div className="p-1 text-muted-foreground/50 touch-none">
+              <GripVertical className="w-4 h-4" />
+            </div>
+          )}
+          
           <button
             onClick={() => toggleComplete(plan)}
             className={cn(
@@ -257,9 +343,9 @@ export default function DayPlanner() {
     );
   };
 
-  const AddPlanForm = () => (
+  // Separate form JSX to avoid re-render issues
+  const formContent = (
     <div className="space-y-4 p-4">
-      {/* Nazwa */}
       <div>
         <label className="text-sm font-medium text-foreground mb-1.5 block">Nazwa planu *</label>
         <Input
@@ -270,7 +356,6 @@ export default function DayPlanner() {
         />
       </div>
 
-      {/* Czas i Miejsce */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
@@ -298,7 +383,6 @@ export default function DayPlanner() {
         </div>
       </div>
 
-      {/* Kategoria */}
       <div>
         <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
           <Tag className="w-4 h-4 text-muted-foreground" />
@@ -308,6 +392,7 @@ export default function DayPlanner() {
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
+              type="button"
               onClick={() => setPlanCategory(cat.id)}
               className={cn(
                 'p-2 rounded-xl border text-center transition-all text-sm',
@@ -331,7 +416,6 @@ export default function DayPlanner() {
         )}
       </div>
 
-      {/* Priorytet */}
       <div>
         <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
           <Flag className="w-4 h-4 text-muted-foreground" />
@@ -341,6 +425,7 @@ export default function DayPlanner() {
           {PRIORITIES.map((pri) => (
             <button
               key={pri.id}
+              type="button"
               onClick={() => setPlanPriority(pri.id)}
               className={cn(
                 'flex-1 py-2 px-3 rounded-xl border text-sm font-medium transition-all',
@@ -355,7 +440,6 @@ export default function DayPlanner() {
         </div>
       </div>
 
-      {/* Notatki */}
       <div>
         <label className="text-sm font-medium text-foreground mb-1.5 block">Notatki</label>
         <Textarea
@@ -442,6 +526,14 @@ export default function DayPlanner() {
           </div>
         )}
 
+        {/* Drag hint for loose mode */}
+        {mode === 'loose' && plans.length > 1 && (
+          <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+            <GripVertical className="w-3 h-3" />
+            Przeciągnij, aby zmienić kolejność
+          </p>
+        )}
+
         {/* Content */}
         {mode === 'loose' ? (
           <div className="space-y-3">
@@ -455,7 +547,7 @@ export default function DayPlanner() {
                 <p className="text-sm text-muted-foreground/70">Dodaj swój pierwszy plan!</p>
               </div>
             ) : (
-              plans.map(renderPlanCard)
+              plans.map(plan => renderPlanCard(plan, true))
             )}
           </div>
         ) : (
@@ -491,14 +583,14 @@ export default function DayPlanner() {
                         <SheetHeader>
                           <SheetTitle className="text-left">Dodaj plan - {section.label}</SheetTitle>
                         </SheetHeader>
-                        <AddPlanForm />
+                        {formContent}
                       </SheetContent>
                     </Sheet>
                   </div>
                   
                   {sectionPlans.length > 0 && (
                     <div className="px-4 pb-4 space-y-2">
-                      {sectionPlans.map(renderPlanCard)}
+                      {sectionPlans.map(plan => renderPlanCard(plan, false))}
                     </div>
                   )}
                   
@@ -526,7 +618,7 @@ export default function DayPlanner() {
             <SheetHeader>
               <SheetTitle className="text-left">Nowy plan</SheetTitle>
             </SheetHeader>
-            <AddPlanForm />
+            {formContent}
           </SheetContent>
         </Sheet>
       )}
