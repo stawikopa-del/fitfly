@@ -11,22 +11,48 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useFriends } from '@/hooks/useFriends';
-
-const CATEGORY_OPTIONS = [
-  { key: 'pieczywo', label: 'Pieczywo', emoji: '🍞' },
-  { key: 'nabial', label: 'Nabiał', emoji: '🥛' },
-  { key: 'mieso', label: 'Mięso i ryby', emoji: '🥩' },
-  { key: 'warzywa', label: 'Warzywa', emoji: '🥬' },
-  { key: 'owoce', label: 'Owoce', emoji: '🍎' },
-  { key: 'przyprawy', label: 'Przyprawy i oleje', emoji: '🧂' },
-  { key: 'zboza', label: 'Zboża i makarony', emoji: '🍝' },
-  { key: 'napoje', label: 'Napoje', emoji: '🥤' },
-  { key: 'slodycze', label: 'Słodycze i przekąski', emoji: '🍫' },
-  { key: 'inne', label: 'Inne', emoji: '📦' },
-];
-
+const CATEGORY_OPTIONS = [{
+  key: 'pieczywo',
+  label: 'Pieczywo',
+  emoji: '🍞'
+}, {
+  key: 'nabial',
+  label: 'Nabiał',
+  emoji: '🥛'
+}, {
+  key: 'mieso',
+  label: 'Mięso i ryby',
+  emoji: '🥩'
+}, {
+  key: 'warzywa',
+  label: 'Warzywa',
+  emoji: '🥬'
+}, {
+  key: 'owoce',
+  label: 'Owoce',
+  emoji: '🍎'
+}, {
+  key: 'przyprawy',
+  label: 'Przyprawy i oleje',
+  emoji: '🧂'
+}, {
+  key: 'zboza',
+  label: 'Zboża i makarony',
+  emoji: '🍝'
+}, {
+  key: 'napoje',
+  label: 'Napoje',
+  emoji: '🥤'
+}, {
+  key: 'slodycze',
+  label: 'Słodycze i przekąski',
+  emoji: '🍫'
+}, {
+  key: 'inne',
+  label: 'Inne',
+  emoji: '📦'
+}];
 const AVAILABLE_UNITS = ['g', 'ml', 'kg', 'l', 'szt', 'opak'];
-
 interface ListItem {
   id: string;
   name: string;
@@ -35,32 +61,36 @@ interface ListItem {
   category: string;
   checked: boolean;
 }
-
 interface CreateCustomListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onListCreated?: () => void;
 }
-
-export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: CreateCustomListDialogProps) {
-  const { user } = useAuth();
-  const { friends } = useFriends();
-  
+export function CreateCustomListDialog({
+  open,
+  onOpenChange,
+  onListCreated
+}: CreateCustomListDialogProps) {
+  const {
+    user
+  } = useAuth();
+  const {
+    friends
+  } = useFriends();
   const [listName, setListName] = useState('');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<ListItem[]>([]);
-  
+
   // New item form
   const [newItemName, setNewItemName] = useState('');
   const [newItemAmount, setNewItemAmount] = useState('1');
   const [newItemUnit, setNewItemUnit] = useState('szt');
   const [newItemCategory, setNewItemCategory] = useState('inne');
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-  
+
   // Share dialog
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [saving, setSaving] = useState(false);
-
   const resetForm = useCallback(() => {
     setListName('');
     setNotes('');
@@ -70,60 +100,55 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
     setNewItemUnit('szt');
     setNewItemCategory('inne');
   }, []);
-
   useEffect(() => {
     if (!open) {
       resetForm();
     }
   }, [open, resetForm]);
-
   const handleAddItem = useCallback(() => {
     if (!newItemName.trim()) return;
-    
-    try { soundFeedback.buttonClick(); } catch {}
-    
+    try {
+      soundFeedback.buttonClick();
+    } catch {}
     const newItem: ListItem = {
       id: crypto.randomUUID(),
       name: newItemName.trim(),
       amount: parseFloat(newItemAmount) || 1,
       unit: newItemUnit,
       category: newItemCategory,
-      checked: false,
+      checked: false
     };
-    
     setItems(prev => [...prev, newItem]);
     setNewItemName('');
     setNewItemAmount('1');
   }, [newItemName, newItemAmount, newItemUnit, newItemCategory]);
-
   const handleRemoveItem = useCallback((id: string) => {
-    try { soundFeedback.buttonClick(); } catch {}
+    try {
+      soundFeedback.buttonClick();
+    } catch {}
     setItems(prev => prev.filter(item => item.id !== id));
   }, []);
-
   const handleSaveToFavorites = useCallback(async () => {
     if (!user || items.length === 0) return;
-    
-    try { soundFeedback.success(); } catch {}
-    setSaving(true);
-    
     try {
-      const { error } = await supabase
-        .from('favorite_shopping_lists')
-        .insert({
-          user_id: user.id,
-          name: listName.trim() || 'Moja lista zakupów',
-          items: items.map(item => ({
-            name: item.name,
-            amount: item.amount,
-            unit: item.unit,
-            category: item.category,
-            displayAmount: `${item.amount} ${item.unit}`,
-          })),
-        });
-
+      soundFeedback.success();
+    } catch {}
+    setSaving(true);
+    try {
+      const {
+        error
+      } = await supabase.from('favorite_shopping_lists').insert({
+        user_id: user.id,
+        name: listName.trim() || 'Moja lista zakupów',
+        items: items.map(item => ({
+          name: item.name,
+          amount: item.amount,
+          unit: item.unit,
+          category: item.category,
+          displayAmount: `${item.amount} ${item.unit}`
+        }))
+      });
       if (error) throw error;
-      
       toast.success('Lista została zapisana do ulubionych! ❤️');
       onListCreated?.();
       onOpenChange(false);
@@ -134,46 +159,42 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
       setSaving(false);
     }
   }, [user, items, listName, onListCreated, onOpenChange]);
-
   const handleShareWithFriend = useCallback(async (friendId: string) => {
     if (!user || items.length === 0) return;
-    
-    try { soundFeedback.success(); } catch {}
+    try {
+      soundFeedback.success();
+    } catch {}
     setSaving(true);
-    
     try {
       // Create shared shopping list
-      const { data: sharedList, error } = await supabase
-        .from('shared_shopping_lists')
-        .insert({
-          owner_id: user.id,
-          shared_with_id: friendId,
-          items: items.map(item => ({
-            name: item.name,
-            amount: item.amount,
-            unit: item.unit,
-            category: item.category,
-            displayAmount: `${item.amount} ${item.unit}`,
-            checked: false,
-          })),
-          notes: notes || null,
-        })
-        .select('id')
-        .single();
-
+      const {
+        data: sharedList,
+        error
+      } = await supabase.from('shared_shopping_lists').insert({
+        owner_id: user.id,
+        shared_with_id: friendId,
+        items: items.map(item => ({
+          name: item.name,
+          amount: item.amount,
+          unit: item.unit,
+          category: item.category,
+          displayAmount: `${item.amount} ${item.unit}`,
+          checked: false
+        })),
+        notes: notes || null
+      }).select('id').single();
       if (error) throw error;
 
       // Send chat message notification
-      await supabase
-        .from('direct_messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: friendId,
-          content: '🛒 Udostępniono Ci listę zakupów!',
-          message_type: 'shopping_list',
-          recipe_data: { shoppingListId: sharedList.id }
-        });
-
+      await supabase.from('direct_messages').insert({
+        sender_id: user.id,
+        receiver_id: friendId,
+        content: '🛒 Udostępniono Ci listę zakupów!',
+        message_type: 'shopping_list',
+        recipe_data: {
+          shoppingListId: sharedList.id
+        }
+      });
       toast.success('Lista została udostępniona! 🛒');
       setShowShareDialog(false);
       onListCreated?.();
@@ -185,11 +206,8 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
       setSaving(false);
     }
   }, [user, items, notes, onListCreated, onOpenChange]);
-
   const selectedCategoryEmoji = CATEGORY_OPTIONS.find(c => c.key === newItemCategory)?.emoji || '📦';
-
-  return (
-    <>
+  return <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="w-[85vw] max-w-[320px] max-h-[75vh] overflow-y-auto overflow-x-hidden mx-auto p-4 rounded-3xl">
           <DialogHeader className="pb-2">
@@ -206,93 +224,46 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
             {/* List name */}
             <div className="space-y-1">
               <Label htmlFor="listName" className="text-xs">Nazwa listy</Label>
-              <Input
-                id="listName"
-                placeholder="np. Zakupy na weekend"
-                value={listName}
-                onChange={(e) => setListName(e.target.value)}
-                className="h-9 text-sm"
-              />
+              <Input id="listName" placeholder="np. Zakupy na weekend" value={listName} onChange={e => setListName(e.target.value)} className="h-9 text-sm" />
             </div>
 
             {/* Notes */}
             <div className="space-y-1">
               <Label htmlFor="notes" className="text-xs">Notatki (opcjonalnie)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Dodaj notatki do listy..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                className="text-sm min-h-[60px]"
-              />
+              <Textarea id="notes" placeholder="Dodaj notatki do listy..." value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="text-sm min-h-[60px]" />
             </div>
 
             {/* Add new item */}
             <div className="space-y-1">
               <Label className="text-xs">Dodaj produkt</Label>
               <div className="flex gap-1.5">
-                <Input
-                  placeholder="Nazwa produktu"
-                  value={newItemName}
-                  onChange={(e) => setNewItemName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddItem();
-                    }
-                  }}
-                  className="flex-1 h-9 text-sm"
-                />
+                <Input placeholder="Nazwa produktu" value={newItemName} onChange={e => setNewItemName(e.target.value)} onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddItem();
+                }
+              }} className="flex-1 h-9 text-sm" />
                 <div className="relative">
-                  <button
-                    onClick={() => setShowCategoryPicker(!showCategoryPicker)}
-                    className="h-9 w-9 flex items-center justify-center bg-muted rounded-lg hover:bg-muted/80 transition-colors text-base"
-                  >
+                  <button onClick={() => setShowCategoryPicker(!showCategoryPicker)} className="h-9 w-9 flex items-center justify-center bg-muted rounded-lg hover:bg-muted/80 transition-colors text-base">
                     {selectedCategoryEmoji}
                   </button>
-                  {showCategoryPicker && (
-                    <div className="absolute top-full right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 p-1.5 min-w-[160px]">
-                      {CATEGORY_OPTIONS.map(cat => (
-                        <button
-                          key={cat.key}
-                          onClick={() => {
-                            setNewItemCategory(cat.key);
-                            setShowCategoryPicker(false);
-                          }}
-                          className={cn(
-                            "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors",
-                            newItemCategory === cat.key ? "bg-primary/20 text-primary" : "hover:bg-muted"
-                          )}
-                        >
+                  {showCategoryPicker && <div className="absolute top-full right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 p-1.5 min-w-[160px]">
+                      {CATEGORY_OPTIONS.map(cat => <button key={cat.key} onClick={() => {
+                    setNewItemCategory(cat.key);
+                    setShowCategoryPicker(false);
+                  }} className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors", newItemCategory === cat.key ? "bg-primary/20 text-primary" : "hover:bg-muted")}>
                           <span>{cat.emoji}</span>
                           <span>{cat.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                        </button>)}
+                    </div>}
                 </div>
               </div>
               <div className="flex gap-1.5">
-                <Input
-                  type="number"
-                  placeholder="Ilość"
-                  value={newItemAmount}
-                  onChange={(e) => setNewItemAmount(e.target.value)}
-                  className="w-16 h-9 text-sm rounded-xl"
-                  min="0"
-                  step="0.1"
-                />
-                <select
-                  value={newItemUnit}
-                  onChange={(e) => setNewItemUnit(e.target.value)}
-                  className="h-9 px-3 rounded-xl border-2 border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
-                >
-                  {AVAILABLE_UNITS.map(unit => (
-                    <option key={unit} value={unit}>{unit}</option>
-                  ))}
+                <Input type="number" placeholder="Ilość" value={newItemAmount} onChange={e => setNewItemAmount(e.target.value)} className="w-16 h-9 text-sm rounded-xl" min="0" step="0.1" />
+                <select value={newItemUnit} onChange={e => setNewItemUnit(e.target.value)} className="h-9 px-3 rounded-xl border-2 border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary">
+                  {AVAILABLE_UNITS.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                 </select>
-                <Button onClick={handleAddItem} disabled={!newItemName.trim()} size="sm" className="h-9 text-[10px] px-2 rounded-xl">
+                <Button onClick={handleAddItem} disabled={!newItemName.trim()} size="sm" className="h-8 text-[10px] px-2 rounded-xl">
                   <Plus className="w-3 h-3 mr-0.5" />
                   Dodaj
                 </Button>
@@ -300,17 +271,12 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
             </div>
 
             {/* Items list */}
-            {items.length > 0 && (
-              <div className="space-y-1">
+            {items.length > 0 && <div className="space-y-1">
                 <Label className="text-xs">Produkty ({items.length})</Label>
                 <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
                   {items.map(item => {
-                    const cat = CATEGORY_OPTIONS.find(c => c.key === item.category);
-                    return (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg"
-                      >
+                const cat = CATEGORY_OPTIONS.find(c => c.key === item.category);
+                return <div key={item.id} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
                         <span className="text-sm">{cat?.emoji || '📦'}</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-foreground truncate">
@@ -320,37 +286,21 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
                             {item.amount} {item.unit}
                           </p>
                         </div>
-                        <button
-                          onClick={() => handleRemoveItem(item.id)}
-                          className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-                        >
+                        <button onClick={() => handleRemoveItem(item.id)} className="p-1 text-muted-foreground hover:text-destructive transition-colors">
                           <Trash2 className="w-3 h-3" />
                         </button>
-                      </div>
-                    );
-                  })}
+                      </div>;
+              })}
                 </div>
-              </div>
-            )}
+              </div>}
 
             {/* Action buttons */}
             <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 text-xs h-9"
-                onClick={handleSaveToFavorites}
-                disabled={items.length === 0 || saving}
-              >
+              <Button variant="outline" size="sm" className="flex-1 text-xs h-9" onClick={handleSaveToFavorites} disabled={items.length === 0 || saving}>
                 <Heart className="w-3 h-3 mr-1" />
                 Ulubione
               </Button>
-              <Button
-                size="sm"
-                className="flex-1 text-xs h-9"
-                onClick={() => setShowShareDialog(true)}
-                disabled={items.length === 0 || saving}
-              >
+              <Button size="sm" className="flex-1 text-xs h-9" onClick={() => setShowShareDialog(true)} disabled={items.length === 0 || saving}>
                 <Share2 className="w-3 h-3 mr-1" />
                 Udostępnij
               </Button>
@@ -370,48 +320,26 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
           </DialogHeader>
           
           <div className="space-y-2 mt-4 max-h-[300px] overflow-y-auto">
-            {friends.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
+            {friends.length === 0 ? <p className="text-sm text-muted-foreground text-center py-4">
                 Brak znajomych do udostępnienia
-              </p>
-            ) : (
-              friends.map(friend => (
-                <button
-                  key={friend.userId}
-                  onClick={() => handleShareWithFriend(friend.userId)}
-                  disabled={saving}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-                >
+              </p> : friends.map(friend => <button key={friend.userId} onClick={() => handleShareWithFriend(friend.userId)} disabled={saving} className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                    {friend.avatarUrl ? (
-                      <img
-                        src={friend.avatarUrl}
-                        alt={friend.displayName || ''}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm font-bold text-primary">
+                    {friend.avatarUrl ? <img src={friend.avatarUrl} alt={friend.displayName || ''} className="w-full h-full rounded-full object-cover" /> : <span className="text-sm font-bold text-primary">
                         {friend.displayName?.charAt(0).toUpperCase() || '?'}
-                      </span>
-                    )}
+                      </span>}
                   </div>
                   <div className="flex-1 text-left">
                     <p className="text-sm font-medium text-foreground">
                       {friend.displayName || 'Znajomy'}
                     </p>
-                    {friend.username && (
-                      <p className="text-xs text-muted-foreground">
+                    {friend.username && <p className="text-xs text-muted-foreground">
                         @{friend.username}
-                      </p>
-                    )}
+                      </p>}
                   </div>
                   <Share2 className="w-4 h-4 text-muted-foreground" />
-                </button>
-              ))
-            )}
+                </button>)}
           </div>
         </DialogContent>
       </Dialog>
-    </>
-  );
+    </>;
 }
