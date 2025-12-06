@@ -8,6 +8,7 @@ import { workouts, categories, difficultyConfig, WorkoutData } from '@/data/work
 import { useToast } from '@/hooks/use-toast';
 import { useGamification } from '@/hooks/useGamification';
 import { useUserProgress } from '@/hooks/useUserProgress';
+import fitekPoranek from '@/assets/fitek/fitek-poranek.png';
 
 export default function Workouts() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,12 +61,19 @@ export default function Workouts() {
 
   return (
     <div className="px-4 py-6 space-y-6">
-      {/* Header */}
-      <header className="relative z-10">
-        <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent">
-          Treningi
-        </h1>
-        <p className="text-sm text-muted-foreground font-medium">Ćwicz ze mną! 💪</p>
+      {/* Header z FITEK */}
+      <header className="relative z-10 flex items-center gap-4">
+        <img 
+          src={fitekPoranek} 
+          alt="FITEK poranny" 
+          className="w-16 h-16 object-contain animate-float"
+        />
+        <div>
+          <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent">
+            Treningi
+          </h1>
+          <p className="text-sm text-muted-foreground font-medium">Ćwicz ze mną! 💪</p>
+        </div>
       </header>
 
       {/* Wyszukiwarka */}

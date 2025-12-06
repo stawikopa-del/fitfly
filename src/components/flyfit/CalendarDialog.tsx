@@ -12,6 +12,7 @@ import { pl } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import fitekDzwoni from '@/assets/fitek/fitek-dzwoni.png';
 
 interface CalendarEvent {
   id: string;
@@ -130,7 +131,7 @@ export function CalendarDialog({ trigger }: CalendarDialogProps) {
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border-2 border-border/50">
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold font-display flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-primary" />
+            <img src={fitekDzwoni} alt="FITEK z dzwonkiem" className="w-8 h-8 object-contain" />
             Twój Kalendarz
           </DialogTitle>
         </DialogHeader>

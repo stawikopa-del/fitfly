@@ -10,6 +10,7 @@ import { soundFeedback } from '@/utils/soundFeedback';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import fitekCel from '@/assets/fitek/fitek-cel.png';
 
 interface Goal {
   id: string;
@@ -254,9 +255,11 @@ export default function Goals() {
             className="w-full p-8 rounded-3xl bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-all group"
           >
             <div className="flex flex-col items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Target className="w-10 h-10 text-primary" />
-              </div>
+              <img 
+                src={fitekCel} 
+                alt="FITEK przy celu" 
+                className="w-24 h-24 object-contain group-hover:scale-110 transition-transform"
+              />
               <div className="text-center">
                 <p className="font-bold text-foreground text-lg">Ustaw swój pierwszy cel!</p>
                 <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">

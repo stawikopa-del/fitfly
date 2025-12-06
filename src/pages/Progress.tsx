@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar } from 'recharts';
 import { PageHeader } from '@/components/flyfit/PageHeader';
+import fitekWykresy from '@/assets/fitek/fitek-wykresy.png';
 
 interface DailyData {
   date: string;
@@ -301,21 +302,25 @@ export default function Progress() {
         </div>
       </section>
 
-      {/* Motywacyjna karta */}
+      {/* Motywacyjna karta z FITEK */}
       <div className="bg-gradient-to-br from-primary/20 via-accent/10 to-secondary/20 rounded-3xl p-6 border-2 border-primary/20 relative z-10 overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <Target className="w-6 h-6 text-primary" />
-            <h3 className="font-bold font-display text-foreground">Tak trzymaj! 💪</h3>
+        <div className="relative z-10 flex items-center gap-4">
+          <img 
+            src={fitekWykresy} 
+            alt="FITEK pokazuje wykresy" 
+            className="w-20 h-20 object-contain shrink-0 animate-float"
+          />
+          <div>
+            <h3 className="font-bold font-display text-foreground mb-1">Tak trzymaj! 💪</h3>
+            <p className="text-sm text-muted-foreground">
+              {activeDays >= 5 
+                ? 'Niesamowite! Byłeś aktywny przez większość tygodnia. Kontynuuj!' 
+                : activeDays >= 3 
+                  ? 'Dobra robota! Spróbuj być aktywny jeszcze częściej.' 
+                  : 'Każdy krok się liczy! Zacznij od małych celów.'}
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {activeDays >= 5 
-              ? 'Niesamowite! Byłeś aktywny przez większość tygodnia. Kontynuuj!' 
-              : activeDays >= 3 
-                ? 'Dobra robota! Spróbuj być aktywny jeszcze częściej.' 
-                : 'Każdy krok się liczy! Zacznij od małych celów.'}
-          </p>
         </div>
       </div>
       </div>

@@ -28,7 +28,7 @@ export interface FitekImage {
   name: string;
   description: string;
   suggestedUsage: string[];
-  usedIn?: string; // Gdzie zostało użyte (aby nie powtarzać)
+  usedIn?: string; // Gdzie zostało użyte
 }
 
 export const fitekImages: FitekImage[] = [
@@ -39,6 +39,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek z batonikiem',
     description: 'Fitek je batonik czekoladowy - wyraz twarzy zadowolony, lekko niezdrowa przekąska',
     suggestedUsage: ['przekąski', 'barcode-scanner', 'niezdrowe jedzenie', 'cheat meal'],
+    usedIn: undefined, // Wolne - do wykorzystania
   },
   {
     id: 'cel',
@@ -46,6 +47,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek z celem',
     description: 'Fitek stoi przy tarczy do rzutek ze strzałką w środku - dumny, osiągnięcie celu',
     suggestedUsage: ['cele', 'goals', 'achievements', 'wyzwania ukończone'],
+    usedIn: 'Goals.tsx - pusty stan bez celów',
   },
   {
     id: 'detektyw',
@@ -53,6 +55,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek detektyw',
     description: 'Fitek jako detektyw z lupą i czapką Sherlocka - skupiony, szuka czegoś',
     suggestedUsage: ['wyszukiwanie', 'skanowanie', 'analiza produktów', 'barcode scanner'],
+    usedIn: 'Nutrition.tsx - skaner produktów',
   },
   {
     id: 'dzwoni',
@@ -60,6 +63,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek dzwoni',
     description: 'Fitek dzwoni dzwonkiem - radosny, zwraca uwagę na coś',
     suggestedUsage: ['powiadomienia', 'przypomnienia', 'kalendarz', 'alarmy'],
+    usedIn: 'CalendarDialog.tsx - nagłówek kalendarza',
   },
   {
     id: 'jablko',
@@ -67,6 +71,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek z jabłkiem',
     description: 'Fitek trzyma nadgryzione czerwone jabłko - zadowolony, zdrowe odżywianie',
     suggestedUsage: ['dieta', 'zdrowe jedzenie', 'owoce', 'przepisy', 'nutrition'],
+    usedIn: 'Nutrition.tsx - przepisy i posiłki',
   },
   // Paczka 2
   {
@@ -75,6 +80,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek poranny',
     description: 'Fitek budzi się w łóżku, ziewa, słońce świeci, symbole ZzZ - senny ale gotowy do działania',
     suggestedUsage: ['poranny trening', 'budzenie się', 'poranek', 'sen'],
+    usedIn: 'Workouts.tsx - nagłówek sekcji treningów',
   },
   {
     id: 'kasa',
@@ -82,6 +88,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek z kasą',
     description: 'Fitek trzyma banknoty dolary - radosny, pokazuje pieniądze',
     suggestedUsage: ['pakiety', 'subskrypcje', 'zakupy', 'premium', 'płatności'],
+    usedIn: 'More.tsx - sekcja pakietów premium',
   },
   {
     id: 'obiad',
@@ -89,6 +96,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek je obiad',
     description: 'Fitek siedzi przy talerzu z jedzeniem (stek, groszek, marchewka), trzyma widelec - głodny, gotowy do jedzenia',
     suggestedUsage: ['obiad', 'lunch', 'posiłki główne', 'meal logging'],
+    usedIn: 'Nutrition.tsx - zjedz coś na szybko',
   },
   {
     id: 'palec',
@@ -96,6 +104,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek wskazuje',
     description: 'Fitek pokazuje palec wskazujący w górę - daje wskazówkę, zwraca uwagę',
     suggestedUsage: ['wskazówka', 'tip', 'uwaga', 'informacja', 'porady'],
+    usedIn: 'Challenges.tsx - tip z Atomowych Nawyków',
   },
   {
     id: 'piatka',
@@ -103,6 +112,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek daje piątkę',
     description: 'Fitek biegnie i daje piątkę (high five) - radosny, gratuluje sukcesu',
     suggestedUsage: ['gratulacje', 'sukces', 'high-five', 'ukończenie', 'brawo'],
+    usedIn: 'Home.tsx - szybka akcja wyzwanie dnia',
   },
   // Paczka 3
   {
@@ -111,6 +121,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek z pucharem',
     description: 'Fitek trzyma złoty puchar, napina mięśnie - dumny zwycięzca, triumf',
     suggestedUsage: ['zwycięstwo', 'nagrody', 'osiągnięcia', 'wyzwania ukończone', 'trofea'],
+    usedIn: 'Achievements.tsx - hero sekcji osiągnięć',
   },
   {
     id: 'rece-w-gore',
@@ -118,6 +129,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek z rękami w górze',
     description: 'Fitek radośnie podnosi ręce do góry, zamknięte oczy z uśmiechem - celebracja, euforia',
     suggestedUsage: ['celebracja', 'radość', 'sukces', 'ukończenie treningu', 'hurra'],
+    usedIn: 'Home.tsx - szybka akcja trening',
   },
   {
     id: 'samolot',
@@ -125,6 +137,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek z samolotem',
     description: 'Fitek puszcza papierowy samolot - wysyłanie, udostępnianie, wiadomość',
     suggestedUsage: ['wysyłanie', 'udostępnianie', 'share', 'wiadomości', 'zaproszenia'],
+    usedIn: 'ShareDialog.tsx - nagłówek udostępniania',
   },
   {
     id: 'sen',
@@ -132,6 +145,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek śpi',
     description: 'Fitek śpi na poduszce, symbole ZzZ - głęboki sen, odpoczynek, regeneracja',
     suggestedUsage: ['sen', 'odpoczynek', 'regeneracja', 'noc', 'dobranoc'],
+    usedIn: undefined, // Wolne - do wykorzystania w przyszłości
   },
   {
     id: 'woda',
@@ -139,6 +153,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek pije wodę',
     description: 'Fitek pije wodę ze szklanki - nawodnienie, zdrowie, orzeźwienie',
     suggestedUsage: ['woda', 'nawodnienie', 'hydratacja', 'water tracker', 'picie'],
+    usedIn: 'WaterTracker.tsx - ikona sekcji nawodnienia',
   },
   {
     id: 'wykresy',
@@ -146,6 +161,7 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek z wykresami',
     description: 'Fitek pokazuje tablicę z kolorowymi wykresami słupkowymi - analiza, postępy, statystyki',
     suggestedUsage: ['postępy', 'statystyki', 'wykresy', 'analiza', 'progress'],
+    usedIn: 'Progress.tsx - motywacyjna karta postępów',
   },
 ];
 
