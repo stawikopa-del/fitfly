@@ -173,7 +173,9 @@ export type Database = {
           created_at: string
           id: string
           is_completed: boolean
+          latitude: number | null
           location: string | null
+          longitude: number | null
           name: string
           notes: string | null
           order_index: number
@@ -189,7 +191,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_completed?: boolean
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           name: string
           notes?: string | null
           order_index?: number
@@ -205,7 +209,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_completed?: boolean
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           name?: string
           notes?: string | null
           order_index?: number
