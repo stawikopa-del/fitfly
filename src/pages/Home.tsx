@@ -128,9 +128,9 @@ export default function Home() {
         <img 
           src={fitflyLogoFull} 
           alt="FITFLY Logo" 
-          className="w-48 h-48 object-contain drop-shadow-lg animate-float-slow"
+          className="w-40 h-40 object-contain drop-shadow-lg animate-sway"
         />
-        <p className="text-sm text-muted-foreground font-medium">
+        <p className="text-base text-muted-foreground font-semibold">
           Twoja forma, Nasza misja 🍎
         </p>
       </section>

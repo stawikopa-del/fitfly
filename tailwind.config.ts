@@ -156,6 +156,10 @@ export default {
           "10%, 30%, 50%, 70%, 90%": { transform: "translateX(-4px)" },
           "20%, 40%, 60%, 80%": { transform: "translateX(4px)" },
         },
+        "sway": {
+          "0%, 100%": { transform: "rotate(-2deg)" },
+          "50%": { transform: "rotate(2deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -173,6 +177,7 @@ export default {
         "slide-up-fade": "slide-up-fade 0.3s ease-out",
         "pop": "pop 0.3s ease-out",
         "shake": "shake 0.5s ease-in-out",
+        "sway": "sway 3s ease-in-out infinite",
       },
       boxShadow: {
         "playful": "0 4px 0 hsl(var(--fitfly-blue-dark)), 0 6px 20px hsl(var(--fitfly-blue) / 0.3)",
