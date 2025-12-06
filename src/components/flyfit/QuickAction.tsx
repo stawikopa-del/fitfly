@@ -14,25 +14,25 @@ const colorClasses = {
   blue: {
     bg: 'bg-gradient-to-r from-primary/15 via-primary/10 to-transparent',
     border: 'border-primary/30',
-    icon: 'bg-primary text-primary-foreground shadow-playful-sm',
+    icon: 'bg-card/80 backdrop-blur-sm border border-border/40 shadow-sm',
     hover: 'hover:from-primary/20 hover:via-primary/15',
   },
   green: {
     bg: 'bg-gradient-to-r from-secondary/15 via-secondary/10 to-transparent',
     border: 'border-secondary/30',
-    icon: 'bg-secondary text-secondary-foreground shadow-playful-green',
+    icon: 'bg-card/80 backdrop-blur-sm border border-border/40 shadow-sm',
     hover: 'hover:from-secondary/20 hover:via-secondary/15',
   },
   orange: {
     bg: 'bg-gradient-to-r from-accent/15 via-accent/10 to-transparent',
     border: 'border-accent/30',
-    icon: 'bg-accent text-accent-foreground shadow-playful-orange',
+    icon: 'bg-card/80 backdrop-blur-sm border border-border/40 shadow-sm',
     hover: 'hover:from-accent/20 hover:via-accent/15',
   },
   purple: {
     bg: 'bg-gradient-to-r from-fitfly-purple/15 via-fitfly-purple/10 to-transparent',
     border: 'border-fitfly-purple/30',
-    icon: 'bg-fitfly-purple text-white shadow-md',
+    icon: 'bg-card/80 backdrop-blur-sm border border-border/40 shadow-sm',
     hover: 'hover:from-fitfly-purple/20 hover:via-fitfly-purple/15',
   },
 };
