@@ -133,23 +133,24 @@ export default function DayPlanner() {
     toast.success('Lokalizacja zapisana!');
   };
 
-  const openNavigationToLocation = () => {
-    if (!planCoords) {
-      toast.error('Najpierw zaznacz miejsce na mapie');
+  const openNavigationToLocation = (lat?: number | null, lng?: number | null) => {
+    const targetLat = lat ?? planCoords?.lat;
+    const targetLng = lng ?? planCoords?.lng;
+    
+    if (!targetLat || !targetLng) {
+      toast.error('Brak zapisanej lokalizacji');
       return;
     }
-    
-    const { lat, lng } = planCoords;
     
     // Detect if iOS
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
     if (isIOS) {
       // Apple Maps
-      window.open(`maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`, '_blank');
+      window.open(`maps://maps.apple.com/?daddr=${targetLat},${targetLng}&dirflg=d`, '_blank');
     } else {
       // Google Maps
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${targetLat},${targetLng}`, '_blank');
     }
   };
 
@@ -402,10 +403,24 @@ export default function DayPlanner() {
                 </span>
               )}
               {plan.location && (
-                <span className="flex items-center gap-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (plan.latitude && plan.longitude) {
+                      openNavigationToLocation(plan.latitude, plan.longitude);
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center gap-1",
+                    plan.latitude && plan.longitude && "text-primary hover:underline"
+                  )}
+                >
                   <MapPin className="w-3 h-3" />
                   {plan.location}
-                </span>
+                  {plan.latitude && plan.longitude && (
+                    <Navigation className="w-3 h-3 ml-0.5" />
+                  )}
+                </button>
               )}
               <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-medium', priority.bg, priority.color)}>
                 {priority.label}
@@ -504,7 +519,7 @@ export default function DayPlanner() {
             <Button
               type="button"
               variant="outline"
-              onClick={openNavigationToLocation}
+              onClick={() => openNavigationToLocation()}
               className="w-full justify-start gap-2 h-11 border-secondary text-secondary hover:bg-secondary/10"
             >
               <Navigation className="w-4 h-4" />
