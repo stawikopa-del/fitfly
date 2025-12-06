@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Star, Flame, Target } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/flyfit/PageHeader';
+import fitekPuchar from '@/assets/fitek/fitek-puchar.png';
 
 export default function Achievements() {
   const { gamification, badges, loading } = useGamification();
@@ -41,6 +42,15 @@ export default function Achievements() {
         icon={<Trophy className="w-5 h-5 text-primary" />} 
       />
       <div className="p-4 space-y-6 pb-24">
+
+        {/* FITEK z pucharem - hero */}
+        <div className="flex items-center justify-center py-2">
+          <img 
+            src={fitekPuchar} 
+            alt="FITEK z pucharem" 
+            className="w-28 h-28 object-contain animate-float"
+          />
+        </div>
 
         {/* Level Progress */}
         {gamification && (

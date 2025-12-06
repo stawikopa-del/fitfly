@@ -7,6 +7,8 @@ import { QuickAction } from '@/components/flyfit/QuickAction';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useGamification } from '@/hooks/useGamification';
 import { LevelProgress } from '@/components/flyfit/LevelProgress';
+import fitekReceWGore from '@/assets/fitek/fitek-rece-w-gore.png';
+import fitekPiatka from '@/assets/fitek/fitek-piatka.png';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -111,7 +113,7 @@ export default function Home() {
         <div className="space-y-3">
           <div className="animate-float" style={{ animationDelay: '1.2s' }}>
             <QuickAction
-              icon={<Dumbbell className="w-6 h-6" />}
+              icon={<img src={fitekReceWGore} alt="FITEK" className="w-8 h-8 object-contain" />}
               title="Szybki trening"
               description="10 minut ćwiczeń na start dnia"
               color="blue"
@@ -121,7 +123,7 @@ export default function Home() {
           
           <div className="animate-float" style={{ animationDelay: '1.4s' }}>
             <QuickAction
-              icon={<Target className="w-6 h-6" />}
+              icon={<img src={fitekPiatka} alt="FITEK" className="w-8 h-8 object-contain" />}
               title="Wyzwanie dnia"
               description="10 000 kroków - 3/7 dni ukończone"
               color="purple"

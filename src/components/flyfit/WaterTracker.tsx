@@ -1,6 +1,7 @@
 import { Droplets, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import fitekWoda from '@/assets/fitek/fitek-woda.png';
 
 interface WaterTrackerProps {
   current: number;
@@ -21,15 +22,19 @@ export function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className={cn(
-            'w-14 h-14 rounded-2xl flex items-center justify-center transition-all',
+            'w-14 h-14 rounded-2xl flex items-center justify-center transition-all overflow-hidden',
             isComplete 
-              ? 'bg-primary text-primary-foreground shadow-playful-sm' 
-              : 'bg-primary/15 text-primary'
+              ? 'bg-primary/20 shadow-playful-sm' 
+              : 'bg-primary/10'
           )}>
-            <Droplets className={cn(
-              'w-7 h-7',
-              isComplete && 'animate-bounce-soft'
-            )} />
+            <img 
+              src={fitekWoda} 
+              alt="FITEK pije wodę" 
+              className={cn(
+                'w-12 h-12 object-contain',
+                isComplete && 'animate-bounce-soft'
+              )} 
+            />
           </div>
           <div>
             <h3 className="font-bold font-display text-foreground text-lg">Nawodnienie 💧</h3>

@@ -13,6 +13,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useGamification } from '@/hooks/useGamification';
 import { soundFeedback } from '@/utils/soundFeedback';
+import fitekJablko from '@/assets/fitek/fitek-jablko.png';
+import fitekDetektyw from '@/assets/fitek/fitek-detektyw.png';
+import fitekObiad from '@/assets/fitek/fitek-obiad.png';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'snack2' | 'snack3';
 
@@ -330,8 +333,8 @@ export default function Nutrition() {
         className="w-full bg-gradient-to-r from-accent/20 via-yellow-400/20 to-orange-400/20 rounded-3xl p-5 border-2 border-accent/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
       >
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-orange-400 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-            <ChefHat className="w-7 h-7 text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent/20 to-orange-400/20 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
+            <img src={fitekJablko} alt="FITEK z jabłkiem" className="w-12 h-12 object-contain" />
           </div>
           <div className="text-left flex-1">
             <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
@@ -353,8 +356,8 @@ export default function Nutrition() {
         className="w-full bg-gradient-to-br from-accent/30 via-primary/20 to-secondary/30 rounded-3xl p-5 border-2 border-accent/40 hover:border-accent/60 transition-all duration-300 hover:-translate-y-1 shadow-card-playful relative z-10 group"
       >
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-yellow-400 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-            <Zap className="w-7 h-7 text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent/20 to-yellow-400/20 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
+            <img src={fitekObiad} alt="FITEK je obiad" className="w-12 h-12 object-contain" />
           </div>
           <div className="text-left flex-1">
             <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
@@ -376,8 +379,8 @@ export default function Nutrition() {
         className="w-full bg-gradient-to-r from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-3xl p-5 border-2 border-violet-500/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
       >
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-            <ScanBarcode className="w-7 h-7 text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
+            <img src={fitekDetektyw} alt="FITEK detektyw" className="w-12 h-12 object-contain" />
           </div>
           <div className="text-left flex-1">
             <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">

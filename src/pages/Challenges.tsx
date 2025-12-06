@@ -8,6 +8,7 @@ import { AddChallengeDialog } from '@/components/flyfit/AddChallengeDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/flyfit/PageHeader';
+import fitekPalec from '@/assets/fitek/fitek-palec.png';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -109,12 +110,19 @@ export default function Challenges() {
 
           {/* Atomic Habits Tip */}
           {habits.length === 0 && (
-            <div className="bg-primary/10 rounded-3xl p-5 border-2 border-primary/30">
-              <h3 className="font-bold text-primary mb-2">💡 Tip z "Atomowych Nawyków"</h3>
-              <p className="text-sm text-muted-foreground">
-                <strong>Zasada 2 minut:</strong> Kiedy zaczynasz nowy nawyk, powinien trwać mniej niż 2 minuty.
-                "Czytaj 30 stron" staje się "Przeczytaj jedną stronę".
-              </p>
+            <div className="bg-primary/10 rounded-3xl p-5 border-2 border-primary/30 flex items-start gap-4">
+              <img 
+                src={fitekPalec} 
+                alt="FITEK wskazuje" 
+                className="w-14 h-14 object-contain shrink-0"
+              />
+              <div>
+                <h3 className="font-bold text-primary mb-1">Tip z "Atomowych Nawyków"</h3>
+                <p className="text-sm text-muted-foreground">
+                  <strong>Zasada 2 minut:</strong> Kiedy zaczynasz nowy nawyk, powinien trwać mniej niż 2 minuty.
+                  "Czytaj 30 stron" staje się "Przeczytaj jedną stronę".
+                </p>
+              </div>
             </div>
           )}
 

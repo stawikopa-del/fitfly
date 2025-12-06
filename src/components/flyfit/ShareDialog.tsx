@@ -18,6 +18,7 @@ import {
 import { useFriends } from '@/hooks/useFriends';
 import { useSharing } from '@/hooks/useSharing';
 import { soundFeedback } from '@/utils/soundFeedback';
+import fitekSamolot from '@/assets/fitek/fitek-samolot.png';
 
 interface ShareDialogProps {
   open: boolean;
@@ -72,7 +73,7 @@ export function ShareDialog({ open, onOpenChange, type, itemId, itemName }: Shar
       <DialogContent className="max-w-md bg-card">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Send className="h-5 w-5 text-primary" />
+            <img src={fitekSamolot} alt="FITEK wysyła" className="w-8 h-8 object-contain" />
             Udostępnij {type === 'recipe' ? 'przepis' : 'wyzwanie'}
           </DialogTitle>
         </DialogHeader>

@@ -12,6 +12,7 @@ import { fetchSubscriptionProducts, createStorefrontCheckout, ShopifyProduct } f
 import { useSubscription, SubscriptionTier } from '@/hooks/useSubscription';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import fitekKasa from '@/assets/fitek/fitek-kasa.png';
 
 const menuItems = [
   { to: '/postepy', icon: TrendingUp, label: 'Postępy', emoji: '📊', description: 'Sprawdź swoje statystyki' },
@@ -320,6 +321,11 @@ export default function More() {
       {/* Pakiety Premium */}
       <div className="space-y-5">
         <div className="text-center">
+          <img 
+            src={fitekKasa} 
+            alt="FITEK z pieniędzmi" 
+            className="w-20 h-20 object-contain mx-auto mb-2 animate-float"
+          />
           <h2 className="text-lg font-extrabold font-display text-foreground">
             Pakiety FITFLY 💎
           </h2>
