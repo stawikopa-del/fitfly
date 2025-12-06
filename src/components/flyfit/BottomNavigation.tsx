@@ -12,6 +12,10 @@ const navItems = [
 ];
 
 // Sub-routes that belong to each main category
+const homeSubRoutes = [
+  '/', '/kalendarz'
+];
+
 const inneSubRoutes = [
   '/inne', '/profil', '/postepy', '/wyzwania', '/ustawienia', '/o-nas', '/pomoc', 
   '/informacje', '/prywatnosc', '/osiagniecia', '/cele', '/znajomi', '/lista-zakupow',
@@ -36,6 +40,9 @@ export function BottomNavigation() {
   const isRouteActive = (to: string) => {
     const pathname = location.pathname;
     
+    if (to === '/') {
+      return homeSubRoutes.some(route => pathname === route || (route !== '/' && pathname.startsWith(route + '/')));
+    }
     if (to === '/inne') {
       return inneSubRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
     }
