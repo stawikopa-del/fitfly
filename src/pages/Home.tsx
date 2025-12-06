@@ -122,6 +122,25 @@ export default function Home() {
 
   return (
     <div className="px-4 py-6 space-y-6">
+      {/* Brand Banner */}
+      <section className="flex items-center gap-3 py-2">
+        <img 
+          src={fitekReceWGore} 
+          alt="FITFLY Logo" 
+          className="w-12 h-12 object-contain drop-shadow-md"
+        />
+        <div className="flex flex-col">
+          <h2 className="text-2xl font-extrabold font-display tracking-tight">
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              FITFLY
+            </span>
+          </h2>
+          <p className="text-xs text-muted-foreground font-medium">
+            Twoja forma, Nasza misja 🍎
+          </p>
+        </div>
+      </section>
+
       {/* Header z personalizowanym powitaniem */}
       <header className="flex items-center justify-between relative z-10">
         <div>
