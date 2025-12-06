@@ -11,6 +11,7 @@ import { useHabitsAndChallenges } from '@/hooks/useHabitsAndChallenges';
 import { useAuth } from '@/hooks/useAuth';
 import { LevelProgress } from '@/components/flyfit/LevelProgress';
 import { supabase } from '@/integrations/supabase/client';
+import fitflyLogo from '@/assets/fitfly-logo.png';
 import fitekReceWGore from '@/assets/fitek/fitek-rece-w-gore.png';
 import fitekPiatka from '@/assets/fitek/fitek-piatka.png';
 import fitekPuchar from '@/assets/fitek/fitek-puchar.png';
@@ -125,12 +126,12 @@ export default function Home() {
       {/* Brand Banner */}
       <section className="flex items-center gap-3 py-2">
         <img 
-          src={fitekReceWGore} 
+          src={fitflyLogo} 
           alt="FITFLY Logo" 
-          className="w-12 h-12 object-contain drop-shadow-md"
+          className="w-14 h-14 object-contain drop-shadow-md"
         />
         <div className="flex flex-col">
-          <h2 className="text-2xl font-extrabold font-display tracking-tight">
+          <h2 className="text-2xl font-extrabold font-display tracking-tight pr-2">
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               FITFLY
             </span>
@@ -151,7 +152,6 @@ export default function Home() {
             {displayName && (
               <span className="text-foreground">, {displayName.split(' ')[0]}!</span>
             )}
-            <span className="ml-1">{greeting.emoji}</span>
           </h1>
           <p className="text-xs text-muted-foreground font-medium mt-0.5">Jak się dziś czujesz?</p>
         </div>
