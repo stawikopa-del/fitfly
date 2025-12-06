@@ -1839,7 +1839,7 @@ export default function ShoppingList() {
                   <Calendar className="w-7 h-7 text-white" />
                 </div>
                 <div className="text-left flex-1">
-                  <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+                  <h3 className="font-extrabold font-display text-foreground flex items-center gap-2 text-left">
                     Twoja dieta
                     <span>🥗</span>
                   </h3>
