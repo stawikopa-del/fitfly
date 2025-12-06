@@ -19,6 +19,8 @@ interface DayPlan {
   name: string;
   time: string | null;
   location: string | null;
+  latitude: number | null;
+  longitude: number | null;
   category: string;
   priority: string;
   is_completed: boolean;
@@ -156,6 +158,7 @@ export default function DayPlanner() {
     setPlanName(plan.name);
     setPlanTime(plan.time || '');
     setPlanLocation(plan.location || '');
+    setPlanCoords(plan.latitude && plan.longitude ? { lat: plan.latitude, lng: plan.longitude } : null);
     setPlanCategory(plan.category);
     setPlanPriority(plan.priority);
     setPlanNotes(plan.notes || '');
@@ -181,6 +184,8 @@ export default function DayPlanner() {
             name: planName.trim(),
             time: planTime || null,
             location: planLocation || null,
+            latitude: planCoords?.lat || null,
+            longitude: planCoords?.lng || null,
             category: finalCategory,
             priority: planPriority,
             notes: planNotes || null,
@@ -198,6 +203,8 @@ export default function DayPlanner() {
           name: planName.trim(),
           time: planTime || null,
           location: planLocation || null,
+          latitude: planCoords?.lat || null,
+          longitude: planCoords?.lng || null,
           category: finalCategory,
           priority: planPriority,
           notes: planNotes || null,
