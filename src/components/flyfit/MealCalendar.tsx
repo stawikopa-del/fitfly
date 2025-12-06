@@ -510,17 +510,17 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
           </button>
         </div>
 
-        {/* Days strip */}
+        {/* Days strip - grid layout for mobile to show all 7 days */}
         <div 
           ref={scrollRef}
-          className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+          className="grid grid-cols-7 gap-1 sm:gap-2"
         >
           {days.map((day) => (
             <button
               key={day.date.toISOString()}
               onClick={() => handleSelectDay(day)}
               className={cn(
-                "flex flex-col items-center min-w-[52px] py-3 px-2 rounded-2xl transition-all duration-200",
+                "flex flex-col items-center py-2 sm:py-3 px-1 sm:px-2 rounded-xl sm:rounded-2xl transition-all duration-200",
                 day.isSelected
                   ? "bg-primary text-primary-foreground shadow-lg scale-105"
                   : day.isToday
@@ -529,13 +529,13 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
               )}
             >
               <span className={cn(
-                "text-xs font-bold",
+                "text-[10px] sm:text-xs font-bold",
                 day.isSelected ? "text-primary-foreground" : "text-foreground"
               )}>
                 {day.dayName}
               </span>
               <span className={cn(
-                "text-[10px] mt-1",
+                "text-[9px] sm:text-[10px] mt-0.5 sm:mt-1",
                 day.isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
               )}>
                 {day.dayNumber}
