@@ -224,7 +224,7 @@ export default function FavoriteRecipes() {
             size="icon"
             onClick={() => {
               soundFeedback.buttonClick();
-              navigate('/dieta');
+              navigate('/przepisy');
             }}
             className="rounded-full -ml-2"
           >
