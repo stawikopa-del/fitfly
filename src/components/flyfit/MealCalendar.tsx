@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, PlayCircle, RefreshCw, Loader2, UtensilsCrossed, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlayCircle, RefreshCw, Loader2, UtensilsCrossed, Heart, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +20,7 @@ interface MealItem {
   name: string;
   calories: number;
   description: string;
-  type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  type: 'breakfast' | 'secondBreakfast' | 'lunch' | 'dinner' | 'snack' | 'snacks' | 'afternoonSnack';
   ingredients?: string[];
   preparationTime?: number;
   macros?: {
@@ -30,6 +30,11 @@ interface MealItem {
   };
 }
 
+interface MealScheduleItem {
+  name: string;
+  time: string;
+}
+
 interface SavedDietPlan {
   id: string;
   name: string;
@@ -37,10 +42,13 @@ interface SavedDietPlan {
   daily_calories: number;
   plan_data: {
     dailyMeals: {
-      breakfast: MealItem[];
-      lunch: MealItem[];
-      dinner: MealItem[];
-      snacks: MealItem[];
+      breakfast?: MealItem[];
+      secondBreakfast?: MealItem[];
+      lunch?: MealItem[];
+      dinner?: MealItem[];
+      snacks?: MealItem[];
+      afternoonSnack?: MealItem[];
+      [key: string]: MealItem[] | undefined;
     };
     weeklySchedule: {
       day: string;
@@ -88,16 +96,20 @@ const getCalories = (meal: MealItem): number => {
   return defaults[meal.type] || 350;
 };
 
-const mealTypeLabels = {
+const mealTypeLabels: Record<string, { label: string; emoji: string; bgClass: string; textClass: string }> = {
   breakfast: { label: 'Śniadanie', emoji: '🌅', bgClass: 'bg-amber-500/10', textClass: 'text-amber-700 dark:text-amber-400' },
+  secondBreakfast: { label: 'Drugie śniadanie', emoji: '🥐', bgClass: 'bg-orange-500/10', textClass: 'text-orange-700 dark:text-orange-400' },
   lunch: { label: 'Obiad', emoji: '🍽️', bgClass: 'bg-blue-500/10', textClass: 'text-blue-700 dark:text-blue-400' },
   dinner: { label: 'Kolacja', emoji: '🌙', bgClass: 'bg-indigo-500/10', textClass: 'text-indigo-700 dark:text-indigo-400' },
   snack: { label: 'Przekąska', emoji: '🍪', bgClass: 'bg-pink-500/10', textClass: 'text-pink-700 dark:text-pink-400' },
+  snacks: { label: 'Przekąska', emoji: '🍪', bgClass: 'bg-pink-500/10', textClass: 'text-pink-700 dark:text-pink-400' },
+  afternoonSnack: { label: 'Podwieczorek', emoji: '🍎', bgClass: 'bg-green-500/10', textClass: 'text-green-700 dark:text-green-400' },
 };
 
 export function MealCalendar({ onStartCooking }: MealCalendarProps) {
   const { user } = useAuth();
   const [savedPlan, setSavedPlan] = useState<SavedDietPlan | null>(null);
+  const [allPlans, setAllPlans] = useState<SavedDietPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0);
@@ -105,6 +117,8 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
   const [swappedMeals, setSwappedMeals] = useState<SwappedMeals>({});
   const [favoriteNames, setFavoriteNames] = useState<Set<string>>(new Set());
   const [savingFavorite, setSavingFavorite] = useState<string | null>(null);
+  const [mealSchedule, setMealSchedule] = useState<MealScheduleItem[]>([]);
+  const [showDietPicker, setShowDietPicker] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(true);
 
@@ -113,9 +127,34 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
     return () => { mountedRef.current = false; };
   }, []);
 
-  // Fetch the most recent saved diet plan
+  // Fetch meal schedule from profile
   useEffect(() => {
-    const fetchPlan = async () => {
+    const fetchMealSchedule = async () => {
+      if (!user) return;
+      
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('meal_schedule')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (!mountedRef.current) return;
+        
+        if (data?.meal_schedule && Array.isArray(data.meal_schedule)) {
+          setMealSchedule(data.meal_schedule as unknown as MealScheduleItem[]);
+        }
+      } catch (error) {
+        console.error('Error fetching meal schedule:', error);
+      }
+    };
+    
+    fetchMealSchedule();
+  }, [user]);
+
+  // Fetch all saved diet plans
+  useEffect(() => {
+    const fetchPlans = async () => {
       if (!user) return;
       
       try {
@@ -123,24 +162,24 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
           .from('saved_diet_plans')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .order('created_at', { ascending: false });
         
         if (!mountedRef.current) return;
         
-        if (!error && data) {
-          setSavedPlan({
-            id: data.id,
-            name: data.name,
-            diet_type: data.diet_type,
-            daily_calories: data.daily_calories,
-            plan_data: data.plan_data as unknown as SavedDietPlan['plan_data'],
-            preferences: data.preferences as unknown as SavedDietPlan['preferences'],
-          });
+        if (!error && data && data.length > 0) {
+          const plans = data.map(d => ({
+            id: d.id,
+            name: d.name,
+            diet_type: d.diet_type,
+            daily_calories: d.daily_calories,
+            plan_data: d.plan_data as unknown as SavedDietPlan['plan_data'],
+            preferences: d.preferences as unknown as SavedDietPlan['preferences'],
+          }));
+          setAllPlans(plans);
+          setSavedPlan(plans[0]); // Set first (most recent) as default
         }
       } catch (error) {
-        console.error('Error fetching diet plan:', error);
+        console.error('Error fetching diet plans:', error);
       } finally {
         if (mountedRef.current) {
           setLoading(false);
@@ -148,7 +187,7 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
       }
     };
     
-    fetchPlan();
+    fetchPlans();
   }, [user]);
 
   // Fetch favorite recipe names
@@ -225,39 +264,56 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
     return `${date.toISOString().split('T')[0]}-${mealType}`;
   };
 
+  // Get meal time from schedule by index
+  const getMealTime = (index: number): string => {
+    if (mealSchedule[index]) {
+      return mealSchedule[index].time;
+    }
+    // Default times
+    const defaultTimes = ['07:00', '10:00', '12:00', '15:00', '17:00', '19:00'];
+    return defaultTimes[index] || '12:00';
+  };
+
   // Get meals for selected day based on day of week from weekly schedule
-  const getMealsForDay = (): MealItem[] => {
+  const getMealsForDay = (): (MealItem & { time: string })[] => {
     if (!savedPlan?.plan_data?.dailyMeals) return [];
     
     const dayOfWeek = selectedDate.getDay();
     const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert Sunday=0 to index 6
     
     const { dailyMeals } = savedPlan.plan_data;
-    const meals: MealItem[] = [];
+    const meals: (MealItem & { time: string })[] = [];
     
-    // Check for swapped meals first, then use default from plan
-    const mealTypes: Array<{ key: keyof typeof dailyMeals; type: MealItem['type'] }> = [
-      { key: 'breakfast', type: 'breakfast' },
-      { key: 'lunch', type: 'lunch' },
-      { key: 'dinner', type: 'dinner' },
-      { key: 'snacks', type: 'snack' },
-    ];
+    // Dynamically get all available meal types from the plan
+    const availableMealTypes = Object.keys(dailyMeals).filter(key => {
+      const mealArray = dailyMeals[key];
+      return mealArray && mealArray.length > 0;
+    });
 
-    for (const { key, type } of mealTypes) {
-      const swapKey = getDateMealKey(selectedDate, type);
+    // Order meal types logically
+    const mealTypeOrder = ['breakfast', 'secondBreakfast', 'lunch', 'snacks', 'afternoonSnack', 'dinner'];
+    const orderedMealTypes = mealTypeOrder.filter(t => availableMealTypes.includes(t));
+    // Add any remaining meal types not in the order
+    availableMealTypes.forEach(t => {
+      if (!orderedMealTypes.includes(t)) orderedMealTypes.push(t);
+    });
+
+    orderedMealTypes.forEach((key, index) => {
+      const mealType = key as MealItem['type'];
+      const swapKey = getDateMealKey(selectedDate, mealType);
       
       // Check if there's a swapped meal for this date and type
       if (swappedMeals[swapKey]) {
-        meals.push(swappedMeals[swapKey]);
+        meals.push({ ...swappedMeals[swapKey], time: getMealTime(index) });
       } else {
         // Use meal from plan based on day index
         const mealArray = dailyMeals[key];
         const idx = dayIndex % (mealArray?.length || 1);
         if (mealArray?.[idx]) {
-          meals.push({ ...mealArray[idx], type });
+          meals.push({ ...mealArray[idx], type: mealType, time: getMealTime(index) });
         }
       }
-    }
+    });
     
     return meals;
   };
@@ -468,12 +524,70 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
     );
   }
 
+  // Handle selecting a different diet plan
+  const handleSelectDiet = (plan: SavedDietPlan) => {
+    soundFeedback.buttonClick();
+    setSavedPlan(plan);
+    setShowDietPicker(false);
+    setSwappedMeals({}); // Clear swapped meals when changing diet
+    toast.success(`Wybrano: ${plan.name}`);
+  };
+
   return (
     <section className="space-y-4">
-      <h2 className="font-bold font-display text-foreground text-lg flex items-center gap-2">
-        Twoje posiłki
-        <span>📅</span>
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold font-display text-foreground text-lg flex items-center gap-2">
+          Twoje posiłki
+          <span>📅</span>
+        </h2>
+        
+        {/* Diet picker button */}
+        {allPlans.length > 1 && (
+          <button
+            onClick={() => {
+              soundFeedback.buttonClick();
+              setShowDietPicker(!showDietPicker);
+            }}
+            className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors flex items-center gap-1"
+          >
+            <span className="truncate max-w-[120px]">{savedPlan.name}</span>
+            <ChevronRight className={cn("w-3 h-3 transition-transform", showDietPicker && "rotate-90")} />
+          </button>
+        )}
+      </div>
+
+      {/* Diet picker dropdown */}
+      {showDietPicker && allPlans.length > 1 && (
+        <div className="bg-card rounded-2xl p-3 border-2 border-border/50 shadow-card-playful space-y-2">
+          <p className="text-xs text-muted-foreground font-medium mb-2">Wybierz dietę:</p>
+          {allPlans.map(plan => (
+            <button
+              key={plan.id}
+              onClick={() => handleSelectDiet(plan)}
+              className={cn(
+                "w-full text-left p-3 rounded-xl transition-all",
+                plan.id === savedPlan.id
+                  ? "bg-primary/10 border-2 border-primary/30"
+                  : "bg-muted/50 border-2 border-transparent hover:bg-muted"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-sm text-foreground">{plan.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {plan.daily_calories} kcal • {plan.preferences?.mealsPerDay || 4} posiłki
+                  </p>
+                </div>
+                {plan.id === savedPlan.id && (
+                  <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                    aktywna
+                  </span>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Calendar strip */}
       <div className="bg-card rounded-3xl p-4 border-2 border-border/50 shadow-card-playful">
@@ -569,14 +683,17 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
                 className={cn(
                   "rounded-2xl p-4 border-2 transition-all duration-200 hover:-translate-y-0.5",
                   isSwapped ? "border-secondary/50" : "border-border/30",
-                  mealConfig.bgClass
+                  mealConfig?.bgClass || 'bg-muted/10'
                 )}
               >
                 <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{mealConfig.emoji}</span>
-                    <span className={cn("text-xs font-bold uppercase", mealConfig.textClass)}>
-                      {mealConfig.label}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-lg">{mealConfig?.emoji || '🍴'}</span>
+                    <span className={cn("text-xs font-bold uppercase", mealConfig?.textClass || 'text-foreground')}>
+                      {mealConfig?.label || meal.type}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-medium">
+                      {meal.time}
                     </span>
                     {isSwapped && (
                       <span className="text-[10px] bg-secondary/20 text-secondary px-1.5 py-0.5 rounded-full">
