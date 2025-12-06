@@ -70,11 +70,11 @@ export default function DirectChat() {
 
     const fetchProfile = async () => {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('display_name, username, avatar_url')
-          .eq('user_id', odgerId)
-          .maybeSingle();
+        // Use RPC function for secure friend profile access
+        const { data: rpcData, error } = await supabase
+          .rpc('get_friend_profile', { friend_user_id: odgerId });
+        
+        const data = rpcData?.[0] || null;
 
         if (!mounted) return;
 

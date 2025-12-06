@@ -62,15 +62,15 @@ export function useFriends() {
         f.sender_id === user.id ? f.receiver_id : f.sender_id
       );
 
-      // Fetch profiles - now allowed by RLS policy for friends
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('user_id, username, display_name, avatar_url')
-        .in('user_id', friendIds);
-
-      if (profilesError) {
-        console.error('Error fetching friend profiles:', profilesError);
-      }
+      // Fetch profiles using RPC function for secure friend access
+      const profilesPromises = friendIds.map(id => 
+        supabase.rpc('get_friend_profile', { friend_user_id: id })
+      );
+      const profilesResults = await Promise.all(profilesPromises);
+      
+      const profiles = profilesResults
+        .filter(r => !r.error && r.data?.length > 0)
+        .map(r => r.data[0]);
 
       // Get today's date safely
       let today: string;
@@ -143,10 +143,14 @@ export function useFriends() {
       } else {
         const senderIds = requests.map(r => r.sender_id);
         
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, username, display_name, avatar_url')
-          .in('user_id', senderIds);
+        // Use RPC function for profile access
+        const profilesPromises = senderIds.map(id => 
+          supabase.rpc('get_friend_profile', { friend_user_id: id })
+        );
+        const profilesResults = await Promise.all(profilesPromises);
+        const profiles = profilesResults
+          .filter(r => !r.error && r.data?.length > 0)
+          .map(r => r.data[0]);
 
         if (!mountedRef.current) return;
 

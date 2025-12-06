@@ -94,10 +94,14 @@ export function useDirectMessages(friendId?: string) {
         return;
       }
 
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, display_name, username, avatar_url')
-        .in('user_id', partnerIds);
+      // Use RPC function for secure profile access
+      const profilesPromises = partnerIds.map(id => 
+        supabase.rpc('get_friend_profile', { friend_user_id: id })
+      );
+      const profilesResults = await Promise.all(profilesPromises);
+      const profiles = profilesResults
+        .filter(r => !r.error && r.data?.length > 0)
+        .map(r => r.data[0]);
 
       if (!mountedRef.current) return;
 
