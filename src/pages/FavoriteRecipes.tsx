@@ -35,6 +35,33 @@ const mealTypeLabels: Record<string, { label: string; emoji: string }> = {
   snack: { label: 'Przekąska', emoji: '🍪' },
 };
 
+// Słowa kluczowe do rozpoznawania typu posiłku
+const breakfastKeywords = ['owsianka', 'jajecznic', 'tosty', 'naleśnik', 'śniadani', 'mleko', 'płatki', 'musli', 'granola', 'kanapk', 'bagietk', 'croissant', 'jogurt', 'smoothie', 'koktajl', 'kawa', 'herbat'];
+const snackKeywords = ['marchew', 'hummus', 'orzechy', 'migdał', 'baton', 'owoc', 'jabłk', 'banan', 'przekąsk', 'ciastk', 'herbatnik', 'krakersy', 'chipsy', 'popcorn', 'żelki', 'czekolad', 'jogurt', 'ser', 'paluszki', 'sałatka owocowa'];
+const dinnerKeywords = ['kolacj', 'sałatk', 'lekk', 'wieczor', 'sandwich', 'wrapy', 'tortill'];
+
+// Inteligentna funkcja do określania typu posiłku na podstawie nazwy i kalorii
+const detectMealType = (name: string, calories: number, savedType?: string): 'breakfast' | 'lunch' | 'dinner' | 'snack' => {
+  // Jeśli mamy zapisany typ, użyj go
+  if (savedType && ['breakfast', 'lunch', 'dinner', 'snack'].includes(savedType)) {
+    return savedType as 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  }
+  
+  const nameLower = name.toLowerCase();
+  
+  // Sprawdź słowa kluczowe
+  if (breakfastKeywords.some(kw => nameLower.includes(kw))) return 'breakfast';
+  if (snackKeywords.some(kw => nameLower.includes(kw))) return 'snack';
+  if (dinnerKeywords.some(kw => nameLower.includes(kw))) return 'dinner';
+  
+  // Analiza na podstawie kalorii
+  if (calories < 200) return 'snack';       // Małe kalorie = przekąska
+  if (calories < 350) return 'breakfast';   // Średnie = śniadanie
+  if (calories > 500) return 'lunch';       // Duże = obiad
+  
+  return 'dinner'; // Domyślnie kolacja dla średnich wartości
+};
+
 // Helper function to calculate calories from macros if missing
 const getCalories = (recipe: DetailedRecipe & { mealType?: string }): number => {
   if (recipe.macros?.calories && recipe.macros.calories > 0) {
@@ -258,7 +285,11 @@ export default function FavoriteRecipes() {
             </p>
           </div>
         ) : (
-          favorites.map((fav) => (
+          favorites.map((fav) => {
+            const calories = getCalories(fav.recipe_data);
+            const mealType = detectMealType(fav.recipe_name, calories, fav.recipe_data.mealType);
+            
+            return (
             <div
               key={fav.id}
               className="rounded-2xl p-4 border-2 border-red-400/20 bg-gradient-to-br from-red-500/5 to-pink-500/5 transition-all duration-200 hover:-translate-y-0.5 relative"
@@ -266,10 +297,10 @@ export default function FavoriteRecipes() {
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">
-                    {mealTypeLabels[fav.recipe_data.mealType || 'lunch']?.emoji || '🍽️'}
+                    {mealTypeLabels[mealType]?.emoji || '🍽️'}
                   </span>
                   <span className="text-xs font-bold uppercase text-red-600 dark:text-red-400">
-                    {mealTypeLabels[fav.recipe_data.mealType || 'lunch']?.label || 'Posiłek'}
+                    {mealTypeLabels[mealType]?.label || 'Posiłek'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -281,7 +312,7 @@ export default function FavoriteRecipes() {
                     <Heart className="w-4 h-4 fill-current" />
                   </button>
                   <span className="text-xs font-bold text-foreground bg-card px-2 py-1 rounded-full shadow-sm">
-                    {getCalories(fav.recipe_data)} kcal
+                    {calories} kcal
                   </span>
                 </div>
               </div>
@@ -344,7 +375,8 @@ export default function FavoriteRecipes() {
                 </div>
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
 
