@@ -1154,6 +1154,7 @@ export default function ShoppingList() {
   const [customItems, setCustomItems] = useState<CustomItem[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showCreateListDialog, setShowCreateListDialog] = useState(false);
+  const [showDietListSection, setShowDietListSection] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('inne');
   const [newItemAmount, setNewItemAmount] = useState('1');
@@ -1850,20 +1851,14 @@ export default function ShoppingList() {
             <button
               onClick={() => {
                 try { soundFeedback.buttonClick(); } catch {}
-                // Auto-select 7 days starting from today
+                // Auto-select 7 days starting from today and show list section
                 const today = new Date();
                 const weekLater = addDays(today, 6);
                 setStartDate(today);
                 setEndDate(weekLater);
                 setSelectingStart(true);
-                // Scroll to calendar section
-                setTimeout(() => {
-                  const calendarSection = document.getElementById('calendar-section');
-                  if (calendarSection) {
-                    calendarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
-                }, 100);
-                toast.success('Wybrano tydzień od dziś! Lista zakupów wygenerowana.');
+                setShowDietListSection(true);
+                toast.success('Lista zakupów na tydzień wygenerowana!');
               }}
               className="w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 border-secondary/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
             >
@@ -1881,6 +1876,96 @@ export default function ShoppingList() {
                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
             </button>
+          )}
+
+          {/* Diet List Section - appears after clicking "Twoja dieta" */}
+          {showDietListSection && dietPlan && startDate && endDate && (
+            <div className="bg-card rounded-2xl border-2 border-secondary/50 p-4 shadow-card-playful space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold font-display text-foreground flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5 text-secondary" />
+                  Lista z diety
+                </h3>
+                <button
+                  onClick={() => {
+                    try { soundFeedback.buttonClick(); } catch {}
+                    setShowDietListSection(false);
+                    setStartDate(null);
+                    setEndDate(null);
+                  }}
+                  className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-xl p-2">
+                <Calendar className="w-4 h-4" />
+                <span>
+                  {format(startDate, 'd MMMM', { locale: pl })} — {format(endDate, 'd MMMM yyyy', { locale: pl })}
+                </span>
+              </div>
+
+              {/* Progress */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground">Postęp zakupów</span>
+                  <span className="text-xs font-medium text-primary">{checkedCount}/{ingredients.length}</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-secondary to-fitfly-green transition-all" style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+
+              {/* Quick actions */}
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1" onClick={copyToClipboard}>
+                  <Copy className="w-4 h-4 mr-1" />
+                  Kopiuj
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowShareDialog(true)}>
+                  <Users className="w-4 h-4 mr-1" />
+                  Wyślij
+                </Button>
+                <Button variant="outline" size="sm" onClick={saveToFavorites}>
+                  <Heart className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Ingredients list */}
+              {ingredients.length > 0 ? (
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {ingredients.map((item, idx) => (
+                    <div
+                      key={`${item.name}-${idx}`}
+                      onClick={() => toggleItem(item.name)}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all",
+                        item.checked ? "bg-secondary/20 opacity-60" : "bg-muted/50 hover:bg-muted"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                        item.checked ? "bg-secondary border-secondary" : "border-muted-foreground/30"
+                      )}>
+                        {item.checked && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className={cn(
+                        "flex-1 text-sm",
+                        item.checked && "line-through text-muted-foreground"
+                      )}>
+                        {item.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{item.displayAmount}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Brak produktów do wyświetlenia
+                </p>
+              )}
+            </div>
           )}
           
           {/* Create custom list button */}
