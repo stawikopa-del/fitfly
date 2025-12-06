@@ -255,7 +255,7 @@ export default function Goals() {
             className="w-full p-8 rounded-3xl bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-all group"
           >
             <div className="flex flex-col items-center gap-4">
-              <div className="w-28 h-28 rounded-full bg-white/90 dark:bg-card shadow-lg border border-border/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-28 h-28 rounded-full bg-muted/80 shadow-lg border border-border/30 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <img 
                   src={fitekCel} 
                   alt="FITEK przy celu" 

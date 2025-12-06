@@ -23,7 +23,7 @@ export function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
         <div className="flex items-center gap-3">
           <div className={cn(
             'w-14 h-14 rounded-2xl flex items-center justify-center transition-all overflow-hidden border border-border/30',
-            'bg-white/90 dark:bg-card shadow-sm'
+            'bg-muted/80 shadow-sm'
           )}>
             <img 
               src={fitekWoda} 
