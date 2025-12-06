@@ -832,6 +832,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_measurements: {
+        Row: {
+          created_at: string
+          energy: number | null
+          id: string
+          measurement_date: string
+          mood: number | null
+          notes: string | null
+          sleep_hours: number | null
+          sleep_quality: number | null
+          stress: number | null
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          energy?: number | null
+          id?: string
+          measurement_date?: string
+          mood?: number | null
+          notes?: string | null
+          sleep_hours?: number | null
+          sleep_quality?: number | null
+          stress?: number | null
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          energy?: number | null
+          id?: string
+          measurement_date?: string
+          mood?: number | null
+          notes?: string | null
+          sleep_hours?: number | null
+          sleep_quality?: number | null
+          stress?: number | null
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           created_at: string
