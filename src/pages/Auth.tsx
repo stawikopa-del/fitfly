@@ -801,11 +801,11 @@ export default function Auth() {
       </div>
 
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-extrabold font-display bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2 flex items-center justify-center gap-2">
+        <h1 className="text-5xl font-extrabold font-display bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-3 flex items-center justify-center gap-3">
           {mode === 'forgot' ? 'Reset hasła' : 'FITFLY'}
-          <Sparkles className="w-6 h-6 text-fitfly-yellow" />
+          <Sparkles className="w-8 h-8 text-fitfly-yellow" />
         </h1>
-        <p className="text-muted-foreground font-medium">
+        <p className="text-lg text-muted-foreground font-semibold">
           {mode === 'forgot' ? 'Wyślemy Ci link do zmiany hasła' : 'Witaj ponownie, przyjacielu!'}
         </p>
       </div>
