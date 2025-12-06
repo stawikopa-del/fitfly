@@ -11,13 +11,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { soundFeedback } from '@/utils/soundFeedback';
 
-type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'snack2' | 'snack3';
 type MethodType = 'select' | 'diet' | 'scan' | 'describe' | 'manual';
 
 interface AddMealDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mealType: MealType;
+  mealLabel?: string;
   onAddMeal: (meal: Omit<Meal, 'id'>) => void;
 }
 
@@ -45,6 +46,8 @@ const mealTypeLabels: Record<MealType, string> = {
   lunch: 'Obiad',
   dinner: 'Kolacja',
   snack: 'Przekąska',
+  snack2: 'Przekąska 2',
+  snack3: 'Przekąska 3',
 };
 
 const mealTypeToSlot: Record<MealType, string> = {
@@ -52,9 +55,11 @@ const mealTypeToSlot: Record<MealType, string> = {
   lunch: 'lunch',
   dinner: 'dinner',
   snack: 'snack',
+  snack2: 'snack',
+  snack3: 'snack',
 };
 
-export function AddMealDialog({ open, onOpenChange, mealType, onAddMeal }: AddMealDialogProps) {
+export function AddMealDialog({ open, onOpenChange, mealType, mealLabel, onAddMeal }: AddMealDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [method, setMethod] = useState<MethodType>('select');
@@ -394,7 +399,7 @@ export function AddMealDialog({ open, onOpenChange, mealType, onAddMeal }: AddMe
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            Dodaj {mealTypeLabels[mealType].toLowerCase()}
+            Dodaj {(mealLabel || mealTypeLabels[mealType]).toLowerCase()}
             <span>🍴</span>
           </DialogTitle>
         </DialogHeader>

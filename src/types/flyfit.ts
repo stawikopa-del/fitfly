@@ -20,13 +20,13 @@ export interface DailyProgress {
 
 export interface Meal {
   id: string;
-  type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  type: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'snack2' | 'snack3';
   name: string;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
-  time: string;
+  time?: string;
 }
 
 export interface Workout {
