@@ -21,6 +21,16 @@ interface CalendarEvent {
   type: string;
 }
 
+interface DayPlan {
+  id: string;
+  name: string;
+  plan_date: string;
+  time: string | null;
+  category: string;
+  priority: string;
+  is_completed: boolean;
+}
+
 type PredefinedType = 'workout' | 'meal' | 'challenge' | 'habit' | 'other';
 
 const eventTypeConfig: Record<string, { icon: any; color: string; textColor: string; dotColor: string; label: string; emoji: string }> = {
@@ -53,6 +63,7 @@ export default function CalendarPage() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [dayPlans, setDayPlans] = useState<DayPlan[]>([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -92,16 +103,40 @@ export default function CalendarPage() {
       })));
     };
 
+    const fetchDayPlans = async () => {
+      const { data, error } = await supabase
+        .from('day_plans')
+        .select('id, name, plan_date, time, category, priority, is_completed')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching day plans:', error);
+        return;
+      }
+
+      setDayPlans(data || []);
+    };
+
     fetchEvents();
+    fetchDayPlans();
   }, [user]);
 
   const selectedDateEvents = events.filter((event) =>
     isSameDay(parseISO(event.event_date), selectedDate)
   );
 
+  const selectedDatePlans = dayPlans.filter((plan) =>
+    isSameDay(parseISO(plan.plan_date), selectedDate)
+  );
+
   const getEventsForDate = (date: Date) => {
     return events.filter((event) => isSameDay(parseISO(event.event_date), date));
   };
+
+  const getPlansForDate = (date: Date) => {
+    return dayPlans.filter((plan) => isSameDay(parseISO(plan.plan_date), date));
+  };
+
 
   const weekDays = eachDayOfInterval({
     start: weekStart,
@@ -377,6 +412,8 @@ export default function CalendarPage() {
                 for (let day = 1; day <= daysInMonth; day++) {
                   const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day);
                   const dayEvents = getEventsForDate(date);
+                  const dayPlansForDate = getPlansForDate(date);
+                  const totalItems = dayEvents.length + dayPlansForDate.length;
                   const isSelected = isSameDay(date, selectedDate);
                   const isTodayDate = isToday(date);
                   
@@ -400,14 +437,25 @@ export default function CalendarPage() {
                         {day}
                       </span>
                       
-                      {/* Event Dots */}
-                      {dayEvents.length > 0 && (
+                      {/* Event and Plan Dots */}
+                      {totalItems > 0 && (
                         <div className="flex flex-wrap gap-0.5 justify-center mt-0.5">
-                          {dayEvents.slice(0, 2).map((event, idx) => {
+                          {/* Plan dots (blue) */}
+                          {dayPlansForDate.slice(0, 2).map((_, idx) => (
+                            <div
+                              key={`plan-${idx}`}
+                              className={cn(
+                                "w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full",
+                                isSelected ? "bg-primary-foreground/80" : "bg-blue-500"
+                              )}
+                            />
+                          ))}
+                          {/* Event dots */}
+                          {dayEvents.slice(0, Math.max(0, 2 - dayPlansForDate.length)).map((event, idx) => {
                             const config = getEventConfig(event.type);
                             return (
                               <div
-                                key={idx}
+                                key={`event-${idx}`}
                                 className={cn(
                                   "w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full",
                                   isSelected ? "bg-primary-foreground/80" : config.dotColor
@@ -415,12 +463,12 @@ export default function CalendarPage() {
                               />
                             );
                           })}
-                          {dayEvents.length > 2 && (
+                          {totalItems > 2 && (
                             <span className={cn(
                               "text-[6px] sm:text-[7px] font-bold",
                               isSelected ? "text-primary-foreground" : "text-muted-foreground"
                             )}>
-                              +{dayEvents.length - 2}
+                              +{totalItems - 2}
                             </span>
                           )}
                         </div>
@@ -564,20 +612,12 @@ export default function CalendarPage() {
           </h2>
           <Button
             size="sm"
-            variant={isAddingEvent ? 'outline' : 'default'}
-            onClick={() => setIsAddingEvent(!isAddingEvent)}
+            variant="default"
+            onClick={() => navigate(`/planowanie?date=${format(selectedDate, 'yyyy-MM-dd')}`)}
             className="rounded-xl gap-1"
             disabled={!user}
           >
-            {isAddingEvent ? (
-              <>
-                <X className="w-4 h-4" /> Anuluj
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4" /> Dodaj plan
-              </>
-            )}
+            <Plus className="w-4 h-4" /> Dodaj plan
           </Button>
         </div>
 
@@ -589,235 +629,220 @@ export default function CalendarPage() {
           </div>
         )}
 
-        {/* Add event form */}
-        {isAddingEvent && user && (
-          <div className="bg-card rounded-3xl p-5 space-y-4 animate-fade-in border-2 border-border/50 shadow-card-playful">
-            <div className="space-y-2">
-              <Label className="font-bold text-sm">Nazwa planu</Label>
-              <Input
-                placeholder="np. Trening siłowy"
-                value={newEvent.title}
-                onChange={(e) =>
-                  setNewEvent({ ...newEvent, title: e.target.value })
-                }
-                className="rounded-2xl h-12"
-              />
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="font-bold text-sm">Godzina</Label>
-                <Input
-                  type="time"
-                  value={newEvent.time}
-                  onChange={(e) =>
-                    setNewEvent({ ...newEvent, time: e.target.value })
-                  }
-                  className="rounded-2xl h-12"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-bold text-sm">Typ</Label>
-                <select
-                  value={newEvent.type}
-                  onChange={(e) =>
-                    setNewEvent({
-                      ...newEvent,
-                      type: e.target.value,
-                      customType: e.target.value === 'other' ? newEvent.customType : '',
-                    })
-                  }
-                  className="w-full h-12 px-4 rounded-2xl border border-input bg-background text-sm font-medium"
-                >
-                  {predefinedTypes.map((key) => (
-                    <option key={key} value={key}>
-                      {eventTypeConfig[key].emoji} {eventTypeConfig[key].label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {newEvent.type === 'other' && (
-              <div className="space-y-2 animate-fade-in">
-                <Label className="font-bold text-sm">Nazwa własnego typu</Label>
-                <Input
-                  placeholder="np. Medytacja, Spacer, Spotkanie..."
-                  value={newEvent.customType}
-                  onChange={(e) =>
-                    setNewEvent({ ...newEvent, customType: e.target.value })
-                  }
-                  className="rounded-2xl h-12"
-                  maxLength={30}
-                />
-              </div>
-            )}
-
-            <Button
-              onClick={handleAddEvent}
-              disabled={!newEvent.title.trim() || isLoading}
-              className="w-full rounded-2xl h-12"
-            >
-              <Plus className="w-4 h-4 mr-2" /> 
-              {isLoading ? 'Dodawanie...' : 'Dodaj do kalendarza'}
-            </Button>
-          </div>
-        )}
-
-        {/* Events list */}
+        {/* Events and Plans list */}
         <div className="space-y-3">
           <h3 className="font-bold font-display text-foreground text-center">
             Plany na ten dzień 📅
           </h3>
           
-          {selectedDateEvents.length === 0 ? (
+          {selectedDateEvents.length === 0 && selectedDatePlans.length === 0 ? (
             <div className="text-center py-12 bg-card rounded-3xl border-2 border-dashed border-border">
               <CalendarIcon className="w-14 h-14 mx-auto mb-3 text-muted-foreground opacity-30" />
               <p className="font-display font-bold text-lg text-muted-foreground">Brak planów na ten dzień</p>
               <p className="text-sm text-muted-foreground mt-1">Kliknij "Dodaj plan" aby zaplanować</p>
             </div>
           ) : (
-            selectedDateEvents
-              .sort((a, b) => a.event_time.localeCompare(b.event_time))
-              .map((event) => {
-                const config = getEventConfig(event.type);
-                const Icon = config.icon;
-                const isEditing = editingEventId === event.id;
+            <>
+              {/* Day Plans from /planowanie */}
+              {selectedDatePlans
+                .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+                .map((plan) => {
+                  const categoryIcons: Record<string, string> = {
+                    praca: '💼',
+                    zdrowie: '🏃',
+                    rodzina: '👨‍👩‍👧',
+                    zakupy: '🛒',
+                    nauka: '📚',
+                    hobby: '🎨',
+                    spotkanie: '🤝',
+                    inne: '📌',
+                  };
+                  const icon = categoryIcons[plan.category] || '📌';
+                  
+                  return (
+                    <div
+                      key={`plan-${plan.id}`}
+                      onClick={() => navigate(`/planowanie?date=${format(selectedDate, 'yyyy-MM-dd')}`)}
+                      className={cn(
+                        "flex items-center gap-4 p-4 bg-card rounded-3xl border-2 border-border/50 group animate-fade-in shadow-card-playful hover:-translate-y-0.5 transition-all cursor-pointer",
+                        plan.is_completed && "opacity-60"
+                      )}
+                    >
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-secondary text-2xl">
+                        {icon}
+                      </div>
 
-                if (isEditing) {
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "font-bold text-foreground",
+                          plan.is_completed && "line-through text-muted-foreground"
+                        )}>
+                          {plan.name}
+                        </p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                          {plan.time && (
+                            <>
+                              <Clock className="w-4 h-4" />
+                              <span>{plan.time}</span>
+                            </>
+                          )}
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5 rounded-full">
+                            📋 Plan dnia
+                          </Badge>
+                          {plan.is_completed && (
+                            <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full text-green-600">
+                              ✓ Ukończone
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {/* Calendar Events */}
+              {selectedDateEvents
+                .sort((a, b) => a.event_time.localeCompare(b.event_time))
+                .map((event) => {
+                  const config = getEventConfig(event.type);
+                  const Icon = config.icon;
+                  const isEditing = editingEventId === event.id;
+
+                  if (isEditing) {
+                    return (
+                      <div
+                        key={event.id}
+                        className="p-4 bg-card rounded-3xl border-2 border-primary/50 animate-fade-in shadow-card-playful space-y-3"
+                      >
+                        <div className="space-y-2">
+                          <Label className="font-bold text-sm">Nazwa</Label>
+                          <Input
+                            value={editForm.title}
+                            onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                            className="rounded-2xl h-10"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label className="font-bold text-sm">Godzina</Label>
+                            <Input
+                              type="time"
+                              value={editForm.time}
+                              onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
+                              className="rounded-2xl h-10"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="font-bold text-sm">Typ</Label>
+                            <select
+                              value={editForm.type}
+                              onChange={(e) => setEditForm({ 
+                                ...editForm, 
+                                type: e.target.value,
+                                customType: e.target.value === 'other' ? editForm.customType : ''
+                              })}
+                              className="w-full h-10 px-3 rounded-2xl border border-input bg-background text-sm font-medium"
+                            >
+                              {predefinedTypes.map((key) => (
+                                <option key={key} value={key}>
+                                  {eventTypeConfig[key].emoji} {eventTypeConfig[key].label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        {editForm.type === 'other' && (
+                          <div className="space-y-2 animate-fade-in">
+                            <Label className="font-bold text-sm">Nazwa własnego typu</Label>
+                            <Input
+                              placeholder="np. Medytacja, Spacer, Spotkanie..."
+                              value={editForm.customType}
+                              onChange={(e) => setEditForm({ ...editForm, customType: e.target.value })}
+                              className="rounded-2xl h-10"
+                              maxLength={30}
+                            />
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={handleSaveEdit}
+                            disabled={!editForm.title.trim() || isLoading}
+                            className="flex-1 rounded-2xl h-10"
+                            size="sm"
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            {isLoading ? 'Zapisywanie...' : 'Zapisz'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={handleCancelEdit}
+                            className="rounded-2xl h-10"
+                            size="sm"
+                          >
+                            Anuluj
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div
                       key={event.id}
-                      className="p-4 bg-card rounded-3xl border-2 border-primary/50 animate-fade-in shadow-card-playful space-y-3"
+                      className="flex items-center gap-4 p-4 bg-card rounded-3xl border-2 border-border/50 group animate-fade-in shadow-card-playful hover:-translate-y-0.5 transition-all"
                     >
-                      <div className="space-y-2">
-                        <Label className="font-bold text-sm">Nazwa</Label>
-                        <Input
-                          value={editForm.title}
-                          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                          className="rounded-2xl h-10"
-                        />
+                      <div
+                        className={cn(
+                          'w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-sm',
+                          config.color
+                        )}
+                      >
+                        <Icon className="w-6 h-6" />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="font-bold text-sm">Godzina</Label>
-                          <Input
-                            type="time"
-                            value={editForm.time}
-                            onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
-                            className="rounded-2xl h-10"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="font-bold text-sm">Typ</Label>
-                          <select
-                            value={editForm.type}
-                            onChange={(e) => setEditForm({ 
-                              ...editForm, 
-                              type: e.target.value,
-                              customType: e.target.value === 'other' ? editForm.customType : ''
-                            })}
-                            className="w-full h-10 px-3 rounded-2xl border border-input bg-background text-sm font-medium"
+
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-foreground">
+                          {event.title}
+                        </p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                          <Clock className="w-4 h-4" />
+                          <span>{event.event_time}</span>
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "text-xs px-2 py-0.5 rounded-full",
+                              config.textColor
+                            )}
                           >
-                            {predefinedTypes.map((key) => (
-                              <option key={key} value={key}>
-                                {eventTypeConfig[key].emoji} {eventTypeConfig[key].label}
-                              </option>
-                            ))}
-                          </select>
+                            <span className={cn("w-1.5 h-1.5 rounded-full mr-1.5 inline-block", config.dotColor)} />
+                            {config.label}
+                          </Badge>
                         </div>
                       </div>
-                      {editForm.type === 'other' && (
-                        <div className="space-y-2 animate-fade-in">
-                          <Label className="font-bold text-sm">Nazwa własnego typu</Label>
-                          <Input
-                            placeholder="np. Medytacja, Spacer, Spotkanie..."
-                            value={editForm.customType}
-                            onChange={(e) => setEditForm({ ...editForm, customType: e.target.value })}
-                            className="rounded-2xl h-10"
-                            maxLength={30}
-                          />
-                        </div>
-                      )}
-                      <div className="flex gap-2">
+
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
-                          onClick={handleSaveEdit}
-                          disabled={!editForm.title.trim() || isLoading}
-                          className="flex-1 rounded-2xl h-10"
-                          size="sm"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditEvent(event)}
+                          className="rounded-xl text-primary hover:text-primary hover:bg-primary/10"
                         >
-                          <Check className="w-4 h-4 mr-1" />
-                          {isLoading ? 'Zapisywanie...' : 'Zapisz'}
+                          <Pencil className="w-4 h-4" />
                         </Button>
                         <Button
-                          variant="outline"
-                          onClick={handleCancelEdit}
-                          className="rounded-2xl h-10"
-                          size="sm"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteEvent(event.id)}
+                          className="rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
-                          Anuluj
+                          <X className="w-5 h-5" />
                         </Button>
                       </div>
                     </div>
                   );
-                }
-
-                return (
-                  <div
-                    key={event.id}
-                    className="flex items-center gap-4 p-4 bg-card rounded-3xl border-2 border-border/50 group animate-fade-in shadow-card-playful hover:-translate-y-0.5 transition-all"
-                  >
-                    <div
-                      className={cn(
-                        'w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-sm',
-                        config.color
-                      )}
-                    >
-                      <Icon className="w-6 h-6" />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-foreground">
-                        {event.title}
-                      </p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{event.event_time}</span>
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "text-xs px-2 py-0.5 rounded-full",
-                            config.textColor
-                          )}
-                        >
-                          <span className={cn("w-1.5 h-1.5 rounded-full mr-1.5 inline-block", config.dotColor)} />
-                          {config.label}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEditEvent(event)}
-                        className="rounded-xl text-primary hover:text-primary hover:bg-primary/10"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteEvent(event.id)}
-                        className="rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <X className="w-5 h-5" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })
+                })}
+            </>
           )}
         </div>
 

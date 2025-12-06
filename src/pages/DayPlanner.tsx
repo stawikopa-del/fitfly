@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map, X, ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,6 +69,7 @@ const RECURRENCE_OPTIONS = [
 
 export default function DayPlanner() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [mode, setMode] = useState<'loose' | 'template'>('loose');
   const [plans, setPlans] = useState<DayPlan[]>([]);
@@ -94,11 +95,24 @@ export default function DayPlanner() {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const dragOverId = useRef<string | null>(null);
 
-  // Date state
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  // Date state - initialize from URL if present
+  const urlDate = searchParams.get('date');
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    if (urlDate) {
+      const parsed = new Date(urlDate);
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    }
+    return new Date();
+  });
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [plansCountByDate, setPlansCountByDate] = useState<Record<string, number>>({});
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => {
+    if (urlDate) {
+      const parsed = new Date(urlDate);
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    }
+    return new Date();
+  });
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
 
