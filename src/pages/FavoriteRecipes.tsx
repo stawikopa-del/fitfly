@@ -24,9 +24,39 @@ interface CookingRecipe {
 interface FavoriteRecipe {
   id: string;
   recipe_name: string;
-  recipe_data: DetailedRecipe;
+  recipe_data: DetailedRecipe & { mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack' };
   created_at: string;
 }
+
+const mealTypeLabels: Record<string, { label: string; emoji: string }> = {
+  breakfast: { label: 'Śniadanie', emoji: '🌅' },
+  lunch: { label: 'Obiad', emoji: '🍽️' },
+  dinner: { label: 'Kolacja', emoji: '🌙' },
+  snack: { label: 'Przekąska', emoji: '🍪' },
+};
+
+// Helper function to calculate calories from macros if missing
+const getCalories = (recipe: DetailedRecipe & { mealType?: string }): number => {
+  if (recipe.macros?.calories && recipe.macros.calories > 0) {
+    return recipe.macros.calories;
+  }
+  // Calculate from macros if available
+  if (recipe.macros) {
+    const protein = recipe.macros.protein || 0;
+    const carbs = recipe.macros.carbs || 0;
+    const fat = recipe.macros.fat || 0;
+    const calculated = (protein * 4) + (carbs * 4) + (fat * 9);
+    if (calculated > 0) return Math.round(calculated);
+  }
+  // Default fallback based on meal type
+  const defaults: Record<string, number> = {
+    breakfast: 400,
+    lunch: 500,
+    dinner: 450,
+    snack: 200,
+  };
+  return defaults[recipe.mealType || 'lunch'] || 350;
+};
 
 export default function FavoriteRecipes() {
   const navigate = useNavigate();
@@ -235,9 +265,11 @@ export default function FavoriteRecipes() {
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">🍽️</span>
+                  <span className="text-lg">
+                    {mealTypeLabels[fav.recipe_data.mealType || 'lunch']?.emoji || '🍽️'}
+                  </span>
                   <span className="text-xs font-bold uppercase text-red-600 dark:text-red-400">
-                    Ulubione
+                    {mealTypeLabels[fav.recipe_data.mealType || 'lunch']?.label || 'Posiłek'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

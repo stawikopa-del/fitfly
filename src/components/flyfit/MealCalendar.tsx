@@ -398,13 +398,14 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
         const recipeData = {
           name: meal.name,
           description: meal.description,
-          calories: meal.calories,
+          calories: getCalories(meal),
           ingredients: meal.ingredients || [],
           preparationTime: meal.preparationTime || 30,
+          mealType: meal.type, // breakfast, lunch, dinner, snack
           macros: meal.macros || {
-            protein: Math.round(meal.calories * 0.25 / 4),
-            carbs: Math.round(meal.calories * 0.5 / 4),
-            fat: Math.round(meal.calories * 0.25 / 9),
+            protein: Math.round(getCalories(meal) * 0.25 / 4),
+            carbs: Math.round(getCalories(meal) * 0.5 / 4),
+            fat: Math.round(getCalories(meal) * 0.25 / 9),
           },
         };
         
