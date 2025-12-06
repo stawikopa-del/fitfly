@@ -173,6 +173,7 @@ export type Database = {
           created_at: string
           id: string
           message_type: string
+          reactions: Json | null
           read_at: string | null
           receiver_id: string
           recipe_data: Json | null
@@ -184,6 +185,7 @@ export type Database = {
           created_at?: string
           id?: string
           message_type?: string
+          reactions?: Json | null
           read_at?: string | null
           receiver_id: string
           recipe_data?: Json | null
@@ -195,6 +197,7 @@ export type Database = {
           created_at?: string
           id?: string
           message_type?: string
+          reactions?: Json | null
           read_at?: string | null
           receiver_id?: string
           recipe_data?: Json | null
