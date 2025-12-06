@@ -12,6 +12,7 @@ import { format, addDays, startOfWeek, isSameDay, isWithinInterval } from 'date-
 import { pl } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useFriends } from '@/hooks/useFriends';
+import { CreateCustomListDialog } from '@/components/flyfit/CreateCustomListDialog';
 
 interface Ingredient {
   name: string;
@@ -1152,6 +1153,7 @@ export default function ShoppingList() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [customItems, setCustomItems] = useState<CustomItem[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showCreateListDialog, setShowCreateListDialog] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('inne');
   const [newItemAmount, setNewItemAmount] = useState('1');
@@ -1253,34 +1255,35 @@ export default function ShoppingList() {
   const [loadingFavorites, setLoadingFavorites] = useState(false);
 
   // Load favorite shopping lists
+  const fetchFavorites = useCallback(async () => {
+    if (!user) return;
+    
+    setLoadingFavorites(true);
+    try {
+      const { data, error } = await supabase
+        .from('favorite_shopping_lists')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setFavoriteLists((data || []).map(d => ({
+        id: d.id,
+        name: d.name,
+        items: d.items as any[],
+        created_at: d.created_at,
+      })));
+    } catch (err) {
+      console.error('Error fetching favorite lists:', err);
+    } finally {
+      setLoadingFavorites(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!isInitialized || !user) return;
-
-    const fetchFavorites = async () => {
-      setLoadingFavorites(true);
-      try {
-        const { data, error } = await supabase
-          .from('favorite_shopping_lists')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setFavoriteLists((data || []).map(d => ({
-          id: d.id,
-          name: d.name,
-          items: d.items as any[],
-          created_at: d.created_at,
-        })));
-      } catch (err) {
-        console.error('Error fetching favorite lists:', err);
-      } finally {
-        setLoadingFavorites(false);
-      }
-    };
-
     fetchFavorites();
-  }, [user, isInitialized]);
+  }, [user, isInitialized, fetchFavorites]);
 
   // Load shared lists from friends
   useEffect(() => {
@@ -1765,9 +1768,55 @@ export default function ShoppingList() {
         </div>
       </header>
 
-      <div className="px-4 space-y-6 py-0">
-        {/* Add Product Button - Before Calendar */}
-        
+      <div className="px-4 space-y-6 py-4">
+        {/* Moje listy Section Header */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-extrabold font-display text-foreground">
+            Moje listy
+          </h2>
+          
+          {/* Twoja dieta button - only show if user has a diet plan */}
+          {dietPlan && (
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3"
+              onClick={() => {
+                try { soundFeedback.buttonClick(); } catch {}
+                // Scroll to calendar section or highlight it
+                setSelectingStart(true);
+                setStartDate(null);
+                setEndDate(null);
+              }}
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-medium text-foreground">Twoja dieta</p>
+                <p className="text-xs text-muted-foreground">Generuj listę z planu diety</p>
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          )}
+          
+          {/* Create custom list button */}
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-3 h-auto py-3 border-dashed"
+            onClick={() => {
+              try { soundFeedback.buttonClick(); } catch {}
+              setShowCreateListDialog(true);
+            }}
+          >
+            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+              <Plus className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-medium text-foreground">Utwórz swoją listę</p>
+              <p className="text-xs text-muted-foreground">Dodaj produkty, notatki i udostępnij</p>
+            </div>
+          </Button>
+        </div>
 
         {/* Custom Items Notice */}
         {customItems.length > 0 && (!startDate || !endDate) && <div className="bg-primary/10 rounded-2xl p-4 text-center">
@@ -1775,6 +1824,7 @@ export default function ShoppingList() {
               Masz {customItems.length} własnych produktów na liście
             </p>
           </div>}
+
 
         {/* Calendar Date Range Selector */}
         <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-card-playful py-[8px]">
@@ -2291,5 +2341,48 @@ lub dodaj własne produkty</p>
           </Button>
         </DialogContent>
       </Dialog>
+
+      {/* Create Custom List Dialog */}
+      <CreateCustomListDialog
+        open={showCreateListDialog}
+        onOpenChange={setShowCreateListDialog}
+        onListCreated={() => {
+          fetchFavorites();
+          // Also refresh shared lists
+          if (user) {
+            supabase
+              .from('shared_shopping_lists')
+              .select('*')
+              .eq('owner_id', user.id)
+              .order('created_at', { ascending: false })
+              .then(async ({ data: mySentLists }) => {
+                if (mySentLists && mySentLists.length > 0) {
+                  const recipientIds = [...new Set(mySentLists.map(s => s.shared_with_id))];
+                  const recipientsMap: Record<string, string> = {};
+                  
+                  for (const recipientId of recipientIds) {
+                    try {
+                      const { data: profileData } = await supabase
+                        .rpc('get_friend_profile', { friend_user_id: recipientId });
+                      if (profileData && profileData.length > 0) {
+                        recipientsMap[recipientId] = profileData[0].display_name || 'Znajomy';
+                      }
+                    } catch (e) {}
+                  }
+
+                  setSentLists(mySentLists.map(s => ({
+                    id: s.id,
+                    owner_id: s.owner_id,
+                    owner_name: recipientsMap[s.shared_with_id] || 'Znajomy',
+                    items: (s.items as any) || [],
+                    date_range_start: s.date_range_start,
+                    date_range_end: s.date_range_end,
+                    created_at: s.created_at
+                  })));
+                }
+              });
+          }
+        }}
+      />
     </div>;
 }
