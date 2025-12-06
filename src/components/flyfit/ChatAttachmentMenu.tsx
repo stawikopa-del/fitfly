@@ -27,6 +27,7 @@ interface PendingAttachment {
   previewUrl?: string;
   duration?: number;
   isFlipped?: boolean;
+  mimeType?: string;
 }
 
 interface ChatAttachmentMenuProps {
@@ -146,12 +147,43 @@ export function ChatAttachmentMenu({
     }
   };
 
-  // Voice recording
+  // Voice recording - use mp4/aac for iOS compatibility
+  const getSupportedMimeType = () => {
+    const types = [
+      'audio/mp4',
+      'audio/aac', 
+      'audio/mpeg',
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+    ];
+    for (const type of types) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        return type;
+      }
+    }
+    return 'audio/webm'; // fallback
+  };
+
+  const getFileExtension = (mimeType: string) => {
+    if (mimeType.includes('mp4') || mimeType.includes('aac') || mimeType.includes('mpeg')) {
+      return 'm4a';
+    }
+    if (mimeType.includes('ogg')) {
+      return 'ogg';
+    }
+    return 'webm';
+  };
+
   const startRecording = async () => {
     try {
       soundFeedback.buttonClick();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      
+      const mimeType = getSupportedMimeType();
+      const options = MediaRecorder.isTypeSupported(mimeType) ? { mimeType } : {};
+      const mediaRecorder = new MediaRecorder(stream, options);
+      
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
       setRecordingDuration(0);
@@ -167,7 +199,8 @@ export function ChatAttachmentMenu({
         
         if (audioChunksRef.current.length === 0) return;
 
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const actualMimeType = mediaRecorder.mimeType || mimeType;
+        const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
         const previewUrl = URL.createObjectURL(audioBlob);
         
         // Set pending attachment for preview instead of uploading immediately
@@ -176,6 +209,7 @@ export function ChatAttachmentMenu({
           blob: audioBlob,
           previewUrl,
           duration: recordingDuration,
+          mimeType: actualMimeType,
         });
       };
 

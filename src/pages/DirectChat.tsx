@@ -1089,7 +1089,16 @@ export default function DirectChat() {
                     await sendImageMessage(data.publicUrl);
                     toast.success('Zdjęcie wysłane');
                   } else if (pendingAttachment.type === 'voice' && pendingAttachment.blob) {
-                    const fileName = `${Date.now()}.webm`;
+                    // Determine file extension based on mime type for iOS compatibility
+                    const getVoiceFileExtension = (mimeType?: string) => {
+                      if (!mimeType) return 'webm';
+                      if (mimeType.includes('mp4') || mimeType.includes('aac') || mimeType.includes('mpeg')) return 'm4a';
+                      if (mimeType.includes('ogg')) return 'ogg';
+                      return 'webm';
+                    };
+                    
+                    const fileExt = getVoiceFileExtension(pendingAttachment.mimeType);
+                    const fileName = `${Date.now()}.${fileExt}`;
                     const filePath = `${user?.id}/${fileName}`;
                     
                     const { error: uploadError } = await supabase.storage
