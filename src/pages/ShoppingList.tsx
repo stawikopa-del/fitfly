@@ -2408,6 +2408,13 @@ lub dodaj własne produkty</p>
                   </p>
                 )}
               </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowShareDialog(true)}
+              >
+                <Share2 className="w-5 h-5" />
+              </Button>
             </div>
           </header>
           
