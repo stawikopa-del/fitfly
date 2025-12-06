@@ -873,7 +873,7 @@ export default function DirectChat() {
                     'flex items-center gap-1 mt-1 flex-wrap',
                     isOwn ? 'justify-end' : 'justify-start'
                   )}>
-                    {Object.entries(message.reactions).map(([emoji, usersRaw]) => {
+                    {Object.entries(message.reactions).map(([emoji, usersRaw], idx) => {
                       const users = usersRaw as Array<{ odgerId: string; name: string }>;
                       if (!users || users.length === 0) return null;
                       const hasReacted = users.some(u => u.odgerId === user?.id);
@@ -889,9 +889,11 @@ export default function DirectChat() {
                           className={cn(
                             'text-sm px-2 py-0.5 rounded-full flex items-center gap-1',
                             'bg-card border border-border/50 shadow-sm',
-                            'transition-all duration-200 hover:scale-105 active:scale-95',
+                            'hover:scale-105 active:scale-95',
+                            'animate-bounce-in',
                             hasReacted && 'border-primary bg-primary/10'
                           )}
+                          style={{ animationDelay: `${idx * 0.05}s` }}
                         >
                           <span className="text-base">{emoji}</span>
                           {users.length > 1 && (
