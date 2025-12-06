@@ -456,7 +456,7 @@ export default function DayPlanner() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
             <Clock className="w-4 h-4 text-muted-foreground" />
