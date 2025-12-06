@@ -10,6 +10,31 @@ import { Meal } from '@/types/flyfit';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { soundFeedback } from '@/utils/soundFeedback';
+import { z } from 'zod';
+
+// Zod schema for manual meal validation
+const manualMealSchema = z.object({
+  name: z.string()
+    .trim()
+    .min(2, { message: 'Nazwa musi mieć min. 2 znaki' })
+    .max(100, { message: 'Nazwa może mieć max. 100 znaków' }),
+  calories: z.number()
+    .int({ message: 'Kalorie muszą być liczbą całkowitą' })
+    .min(0, { message: 'Kalorie nie mogą być ujemne' })
+    .max(10000, { message: 'Maksymalnie 10000 kcal' }),
+  protein: z.number()
+    .int({ message: 'Białko musi być liczbą całkowitą' })
+    .min(0, { message: 'Białko nie może być ujemne' })
+    .max(1000, { message: 'Maksymalnie 1000g białka' }),
+  carbs: z.number()
+    .int({ message: 'Węglowodany muszą być liczbą całkowitą' })
+    .min(0, { message: 'Węglowodany nie mogą być ujemne' })
+    .max(1000, { message: 'Maksymalnie 1000g węglowodanów' }),
+  fat: z.number()
+    .int({ message: 'Tłuszcz musi być liczbą całkowitą' })
+    .min(0, { message: 'Tłuszcz nie może być ujemny' })
+    .max(1000, { message: 'Maksymalnie 1000g tłuszczu' }),
+});
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'snack2' | 'snack3';
 type MethodType = 'select' | 'diet' | 'scan' | 'describe' | 'manual';
@@ -307,10 +332,24 @@ export function AddMealDialog({ open, onOpenChange, mealType, mealLabel, onAddMe
   };
 
   const handleAddManual = () => {
-    if (!manualName.trim()) {
+    // Parse values for validation
+    const mealData = {
+      name: manualName.trim(),
+      calories: parseInt(manualCalories) || 0,
+      protein: parseInt(manualProtein) || 0,
+      carbs: parseInt(manualCarbs) || 0,
+      fat: parseInt(manualFat) || 0,
+    };
+
+    // Validate with Zod
+    const result = manualMealSchema.safeParse(mealData);
+    
+    if (!result.success) {
+      const firstError = result.error.errors[0];
+      soundFeedback.error();
       toast({
-        title: "Brak nazwy",
-        description: "Wpisz nazwę posiłku",
+        title: "Błąd walidacji",
+        description: firstError.message,
         variant: "destructive"
       });
       return;
@@ -319,18 +358,18 @@ export function AddMealDialog({ open, onOpenChange, mealType, mealLabel, onAddMe
     soundFeedback.success();
     onAddMeal({
       type: mealType,
-      name: manualName.trim(),
-      calories: parseInt(manualCalories) || 0,
-      protein: parseInt(manualProtein) || 0,
-      carbs: parseInt(manualCarbs) || 0,
-      fat: parseInt(manualFat) || 0,
+      name: result.data.name,
+      calories: result.data.calories,
+      protein: result.data.protein,
+      carbs: result.data.carbs,
+      fat: result.data.fat,
       time: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
     });
     
     handleClose();
     toast({
       title: "Posiłek dodany! 🍽️",
-      description: `${manualName} zapisany`,
+      description: `${result.data.name} zapisany`,
     });
   };
 
