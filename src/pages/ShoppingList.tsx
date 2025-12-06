@@ -2338,7 +2338,7 @@ lub dodaj własne produkty</p>
 
       {/* Diet Selection Dialog */}
       <Dialog open={showDietSelectDialog} onOpenChange={setShowDietSelectDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               🥗 Wybierz dietę
@@ -2384,7 +2384,7 @@ lub dodaj własne produkty</p>
 
       {/* Generated Shopping List Dialog/Modal */}
       <Dialog open={showGeneratedList} onOpenChange={setShowGeneratedList}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col rounded-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5" />
