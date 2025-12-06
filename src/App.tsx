@@ -49,6 +49,7 @@ const ShoppingList = lazy(() => import("./pages/ShoppingList"));
 const SharedShoppingList = lazy(() => import("./pages/SharedShoppingList"));
 const DietShoppingList = lazy(() => import("./pages/DietShoppingList"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const FavoriteRecipes = lazy(() => import("./pages/FavoriteRecipes"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -395,6 +396,14 @@ const AppRoutes = () => (
         element={
           <ProtectedRoute>
             <DietShoppingList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ulubione-przepisy"
+        element={
+          <ProtectedRoute>
+            <FavoriteRecipes />
           </ProtectedRoute>
         }
       />
