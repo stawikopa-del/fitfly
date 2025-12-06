@@ -288,7 +288,7 @@ export default function LocationPickerMap({ onSelectLocation, onClose }: Locatio
       </div>
 
       {/* Bottom panel - with safe area for mobile */}
-      <div className="p-4 pb-24 border-t border-border bg-card space-y-3">
+      <div className="p-4 pb-32 border-t border-border bg-card space-y-3">
         {position ? (
           <>
             <div className="bg-muted/50 rounded-xl p-3">
