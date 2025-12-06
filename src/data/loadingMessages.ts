@@ -1,0 +1,117 @@
+// 100 śmiesznych hasełek ładowania dla FITFLY
+
+export const loadingMessages: string[] = [
+  // O FITKU (mascot)
+  "FITEK robi rozgrzewkę... 🏃",
+  "FITEK szuka Twoich danych... 🔍",
+  "FITEK pompuje mięśnie... 💪",
+  "FITEK pije kawę na energię... ☕",
+  "FITEK liczy Twoje kalorie... 🧮",
+  "FITEK robi pompki... jedna, dwie... 💪",
+  "FITEK sprawdza czy piłeś wodę... 💧",
+  "FITEK motywuje się przed pracą... 🎵",
+  "FITEK ćwiczy skrzydełka... 🐦",
+  "FITEK medytuje chwilkę... 🧘",
+  "FITEK szuka Twojego przepisu... 📖",
+  "FITEK robi stretching... 🙆",
+  "FITEK skacze z radości... 🦘",
+  "FITEK odmawia poranną mantry... 🙏",
+  "FITEK czyści skrzydła przed lotem... ✨",
+  "FITEK robi sobie selfie na siłowni... 📸",
+  "FITEK bije rekord w bieganiu... 🏅",
+  "FITEK przygotowuje smoothie... 🥤",
+  "FITEK sprawdza Twoje postępy... 📊",
+  "FITEK tańczy z radości... 💃",
+  
+  // O FITFLY (aplikacja)
+  "FITFLY się budzi... ☀️",
+  "FITFLY ładuje mega funkcje... 🚀",
+  "FITFLY przygotowuje coś fajnego... 🎁",
+  "FITFLY synchronizuje dane... 🔄",
+  "FITFLY liczy Twoje kroki... 👣",
+  "FITFLY optymalizuje trening... 🏋️",
+  "FITFLY sprawdza pogodę na jogę... 🌤️",
+  "FITFLY planuje Twój dzień... 📅",
+  "FITFLY ładuje inspiracje... 💡",
+  "FITFLY buduje Twoją formę... 🏗️",
+  "FITFLY analizuje Twoje nawyki... 🧠",
+  "FITFLY przygotowuje nagrody... 🏆",
+  "FITFLY sprawdza Twój streak... 🔥",
+  "FITFLY ładuje motywację... ⚡",
+  "FITFLY szykuje wyzwania... 🎯",
+  
+  // Śmieszne motywacyjne
+  "Spokojnie, Twoje mięśnie nie uciekną... 🏃‍♂️",
+  "Każda sekunda to dodatkowy krok... 👟",
+  "Dziś też będzie super dzień! 🌟",
+  "Trening się nie zrobi sam... chyba że FITFLY! 😎",
+  "Za chwilę zaczynamy akcję! 🎬",
+  "Twoja forma jest na dobrej drodze... 🛤️",
+  "Ładujemy Twoją mega energię... ⚡",
+  "Cierpliwość to cnota sportowca... 🧘‍♂️",
+  "Jeszcze tylko chwilka maratonu... 🏃",
+  "Twoje ciało Ci podziękuje! 💖",
+  "Zdrowie = szczęście, a my już prawie... 😊",
+  "Ładujemy Twój sukces... 🏅",
+  "Motywacja jest w drodze... 🚗",
+  "Za momencik eksplodujemy energią! 💥",
+  "Przygotuj się na formę życia... 💪",
+  
+  // Humorystyczne
+  "Nie zjedliśmy Twoich danych, obiecujemy... 😅",
+  "FITEK szuka hasła do WiFi... 📶",
+  "Liczymy kalorie w ciastku... tym jednym... 🍪",
+  "Sprawdzamy czy lodówka jest zamknięta... 🧊",
+  "Ładujemy wymówki na niedzielę... 🛋️",
+  "FITEK zgubił stopera... 🔍",
+  "Zamówiliśmy pizzę... dla motywacji... 🍕",
+  "Szukamy sensu porannych ćwiczeń... 🌅",
+  "FITEK debatuje z kaloriami... 🤔",
+  "Ładujemy super moce... niewidzialne... 🦸",
+  "FITEK zapomniał gdzie schował wodę... 💧",
+  "Trenujemy palce do scrollowania... 📱",
+  "Czekamy aż mięśnie się obudzą... 😴",
+  "FITEK robi sobie drzemkę... ups... 💤",
+  "Szukamy motywacji pod łóżkiem... 🛏️",
+  
+  // Kulinarne
+  "FITEK miksuje smoothie... 🥤",
+  "Liczymy białko w jajeczku... 🥚",
+  "Sprawdzamy czy jabłko jest zdrowe... 🍎",
+  "FITEK smaży omlet... zdrowy! 🍳",
+  "Przygotowujemy Twoje śniadanie... 🥞",
+  "FITEK degustuje przepisy... 👨‍🍳",
+  "Sprawdzamy kalorie w powietrzu... 💨",
+  "FITEK ukradł marchewkę... 🥕",
+  "Liczymy witaminy w sałatce... 🥗",
+  "FITEK pije zielony koktajl... bleee... 🥬",
+  
+  // Aktywność fizyczna
+  "FITEK robi przysiady... 🏋️",
+  "Liczymy Twoje kroki od zeszłego roku... 👣",
+  "FITEK biega w kółko z radości... 🔄",
+  "Sprawdzamy czy buty są zawiązane... 👟",
+  "FITEK robi pajacyki... 🤸",
+  "Trenujemy bieg przez myśl... 🏃‍♀️",
+  "FITEK rozciąga się przed startem... 🙆‍♂️",
+  "Liczymy pot z wczorajszego treningu... 💦",
+  "FITEK skacze na skakance... 🎀",
+  "Sprawdzamy puls... wciąż bijemy! 💓",
+  
+  // Codzienne
+  "FITEK nastawia budzik na jutro... ⏰",
+  "Planujemy Twój super dzień... 📋",
+  "FITEK sprawdza kalendarz... 📆",
+  "Ładujemy dobre nawyki... ✅",
+  "FITEK organizuje chaos w głowie... 🧠",
+  "Sprawdzamy Twoje cele... 🎯",
+  "FITEK robi listę zadań... 📝",
+  "Ładujemy pozytywne wibracje... 🌈",
+  "FITEK przygotowuje motywację... 🔥",
+  "Sprawdzamy stan Twojej formy... 📈",
+];
+
+// Funkcja do losowego wyboru hasełka
+export const getRandomLoadingMessage = (): string => {
+  return loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+};

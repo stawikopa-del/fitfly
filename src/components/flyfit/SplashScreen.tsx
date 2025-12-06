@@ -1,19 +1,30 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import fitekAvatar from '@/assets/fitek-avatar.png';
+import fitekLoading from '@/assets/fitek-loading.png';
+import { getRandomLoadingMessage } from '@/data/loadingMessages';
 
 interface SplashScreenProps {
   onComplete: () => void;
   minDuration?: number;
 }
 
-export function SplashScreen({ onComplete, minDuration = 2000 }: SplashScreenProps) {
+export function SplashScreen({ onComplete, minDuration = 2500 }: SplashScreenProps) {
   const [isExiting, setIsExiting] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState(getRandomLoadingMessage);
+
+  // Zmiana hasełka co 2 sekundy
+  useEffect(() => {
+    const messageInterval = setInterval(() => {
+      setLoadingMessage(getRandomLoadingMessage());
+    }, 2000);
+
+    return () => clearInterval(messageInterval);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsExiting(true);
-      setTimeout(onComplete, 500); // Wait for exit animation
+      setTimeout(onComplete, 500);
     }, minDuration);
 
     return () => clearTimeout(timer);
@@ -28,59 +39,65 @@ export function SplashScreen({ onComplete, minDuration = 2000 }: SplashScreenPro
         isExiting ? 'opacity-0' : 'opacity-100'
       )}
     >
-      {/* FITEK mascot */}
+      {/* FITEK mascot z animacją */}
       <div className={cn(
-        'relative mb-6 transition-all duration-700',
+        'relative mb-8 transition-all duration-700',
         isExiting ? 'scale-110 opacity-0' : 'scale-100 opacity-100'
       )}>
-        <div className="w-40 h-40 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 p-2 shadow-playful-lg animate-float">
+        {/* Świetliste tło za FITKIEM */}
+        <div className="absolute inset-0 -m-4 rounded-full bg-gradient-to-br from-primary/30 via-secondary/20 to-primary/10 blur-2xl animate-pulse" />
+        
+        <div className="relative w-48 h-48 animate-float">
           <img
-            src={fitekAvatar}
+            src={fitekLoading}
             alt="FITEK"
-            className="w-full h-full object-contain rounded-full"
+            className="w-full h-full object-contain drop-shadow-2xl"
           />
         </div>
         
-        {/* Sparkles around mascot */}
-        <div className="absolute -top-2 -right-2 text-2xl animate-bounce" style={{ animationDelay: '0.2s' }}>✨</div>
-        <div className="absolute -bottom-1 -left-3 text-xl animate-bounce" style={{ animationDelay: '0.5s' }}>💪</div>
-        <div className="absolute top-1/2 -right-6 text-lg animate-bounce" style={{ animationDelay: '0.8s' }}>🌟</div>
+        {/* Delikatne iskierki */}
+        <div className="absolute -top-2 -right-2 text-xl animate-bounce" style={{ animationDelay: '0.2s' }}>✨</div>
+        <div className="absolute -bottom-1 -left-3 text-lg animate-bounce" style={{ animationDelay: '0.6s' }}>💪</div>
+        <div className="absolute top-1/2 -right-6 text-lg animate-bounce" style={{ animationDelay: '1s' }}>🌟</div>
       </div>
 
       {/* App name */}
       <h1 className={cn(
-        'text-5xl font-extrabold font-display text-foreground mb-2',
+        'text-5xl font-extrabold font-display text-foreground mb-3',
         'bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent',
         'transition-all duration-500',
         isExiting ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'
       )}>
         FITFLY
       </h1>
-      
-      <p className={cn(
-        'text-muted-foreground font-medium text-lg',
+
+      {/* Skaczące kropki ładowania */}
+      <div className={cn(
+        'flex gap-2 mb-6',
         'transition-all duration-500 delay-100',
         isExiting ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'
       )}>
-        Twój fitness companion 💚
-      </p>
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="w-3 h-3 rounded-full bg-primary shadow-lg"
+            style={{
+              animation: 'bounce 0.6s ease-in-out infinite',
+              animationDelay: `${i * 0.15}s`
+            }}
+          />
+        ))}
+      </div>
 
-      {/* Loading indicator */}
+      {/* Losowe hasełko ładowania */}
       <div className={cn(
-        'mt-10 flex flex-col items-center gap-3',
+        'px-6 max-w-sm text-center',
         'transition-all duration-500 delay-200',
         isExiting ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'
       )}>
-        <div className="flex gap-2">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="w-3 h-3 rounded-full bg-primary animate-bounce"
-              style={{ animationDelay: `${i * 0.15}s` }}
-            />
-          ))}
-        </div>
-        <span className="text-sm text-muted-foreground">Ładowanie...</span>
+        <p className="text-muted-foreground font-medium text-base animate-fade-in">
+          {loadingMessage}
+        </p>
       </div>
     </div>
   );
