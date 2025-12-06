@@ -263,7 +263,7 @@ export function CreateCustomListDialog({
                 <select value={newItemUnit} onChange={e => setNewItemUnit(e.target.value)} className="h-9 px-3 rounded-xl border-2 border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary">
                   {AVAILABLE_UNITS.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                 </select>
-                <Button onClick={handleAddItem} disabled={!newItemName.trim()} size="sm" className="h-8 text-[10px] px-2 rounded-xl">
+                <Button onClick={handleAddItem} disabled={!newItemName.trim()} size="sm" className="h-8 text-[12px] px-2 rounded-xl">
                   <Plus className="w-3 h-3 mr-0.5" />
                   Dodaj
                 </Button>
