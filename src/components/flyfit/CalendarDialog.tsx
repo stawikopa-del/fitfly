@@ -131,7 +131,8 @@ export function CalendarDialog({ trigger }: CalendarDialogProps) {
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border-2 border-border/50">
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold font-display flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent/40 to-orange-400/30 shadow-sm flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent/20 to-orange-400/20 shadow-sm flex items-center justify-center shrink-0 relative overflow-hidden">
+              <div className="absolute inset-0 bg-accent/20 blur-xl" />
               <img src={fitekDzwoni} alt="FITEK z dzwonkiem" className="w-7 h-7 object-contain" />
             </div>
             Twój Kalendarz

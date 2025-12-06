@@ -44,7 +44,8 @@ export default function Achievements() {
       <div className="p-4 space-y-6 pb-24">
 
         <div className="flex items-center justify-center py-2">
-          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-accent/40 to-yellow-400/30 shadow-lg flex items-center justify-center">
+          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-accent/20 to-yellow-400/20 shadow-lg flex items-center justify-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-accent/20 blur-2xl" />
             <img 
               src={fitekPuchar} 
               alt="FITEK z pucharem" 

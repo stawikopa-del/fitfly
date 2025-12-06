@@ -333,7 +333,8 @@ export default function Nutrition() {
         className="w-full bg-gradient-to-r from-accent/20 via-yellow-400/20 to-orange-400/20 rounded-3xl p-5 border-2 border-accent/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
       >
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent/40 to-yellow-400/30 shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent/20 to-yellow-400/20 shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden shrink-0 relative">
+            <div className="absolute inset-0 bg-accent/20 blur-xl" />
             <img src={fitekJablko} alt="FITEK z jabłkiem" className="w-11 h-11 object-contain" />
           </div>
           <div className="text-left flex-1">
@@ -356,7 +357,8 @@ export default function Nutrition() {
         className="w-full bg-gradient-to-br from-accent/30 via-primary/20 to-secondary/30 rounded-3xl p-5 border-2 border-accent/40 hover:border-accent/60 transition-all duration-300 hover:-translate-y-1 shadow-card-playful relative z-10 group"
       >
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent/40 to-primary/30 shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden shrink-0 relative">
+            <div className="absolute inset-0 bg-accent/20 blur-xl" />
             <img src={fitekObiad} alt="FITEK je obiad" className="w-11 h-11 object-contain" />
           </div>
           <div className="text-left flex-1">
@@ -379,7 +381,8 @@ export default function Nutrition() {
         className="w-full bg-gradient-to-r from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-3xl p-5 border-2 border-violet-500/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
       >
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden shrink-0 relative">
+            <div className="absolute inset-0 bg-violet-500/20 blur-xl" />
             <img src={fitekDetektyw} alt="FITEK detektyw" className="w-11 h-11 object-contain" />
           </div>
           <div className="text-left flex-1">

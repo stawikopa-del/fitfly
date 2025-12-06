@@ -321,7 +321,8 @@ export default function More() {
       {/* Pakiety Premium */}
       <div className="space-y-5">
         <div className="text-center">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/30 to-orange-500/30 shadow-lg flex items-center justify-center mx-auto mb-2">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 shadow-lg flex items-center justify-center mx-auto mb-2 relative overflow-hidden">
+            <div className="absolute inset-0 bg-amber-500/15 blur-2xl" />
             <img 
               src={fitekKasa} 
               alt="FITEK z pieniędzmi" 
