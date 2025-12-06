@@ -33,6 +33,7 @@ export function useFriends() {
   const [sentRequests, setSentRequests] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const operationInProgress = useRef(false);
+  const mountedRef = useRef(true);
 
   const fetchFriends = useCallback(async () => {
     if (!user) {
@@ -47,10 +48,13 @@ export function useFriends() {
         .eq('status', 'accepted')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching friendships:', error);
+        return;
+      }
 
       if (!friendships || friendships.length === 0) {
-        setFriends([]);
+        if (mountedRef.current) setFriends([]);
         return;
       }
 
@@ -68,12 +72,21 @@ export function useFriends() {
         console.error('Error fetching friend profiles:', profilesError);
       }
 
-      const today = new Date().toISOString().split('T')[0];
+      // Get today's date safely
+      let today: string;
+      try {
+        today = new Date().toISOString().split('T')[0];
+      } catch {
+        today = new Date().toLocaleDateString('en-CA');
+      }
+
       const { data: progressData } = await supabase
         .from('daily_progress')
         .select('user_id, steps, water, active_minutes')
         .in('user_id', friendIds)
         .eq('progress_date', today);
+
+      if (!mountedRef.current) return;
 
       const friendsList: Friend[] = friendIds.map(friendId => {
         const friendship = friendships.find(f => 
@@ -90,17 +103,19 @@ export function useFriends() {
           displayName: profile?.display_name || null,
           avatarUrl: profile?.avatar_url || null,
           progress: progress ? {
-            steps: progress.steps,
-            water: progress.water,
-            activeMinutes: progress.active_minutes
+            steps: progress.steps || 0,
+            water: progress.water || 0,
+            activeMinutes: progress.active_minutes || 0
           } : undefined
         };
       });
 
-      setFriends(friendsList);
+      if (mountedRef.current) {
+        setFriends(friendsList);
+      }
     } catch (error) {
       console.error('Error fetching friends:', error);
-      setFriends([]);
+      if (mountedRef.current) setFriends([]);
     }
   }, [user]);
 
@@ -118,10 +133,13 @@ export function useFriends() {
         .eq('receiver_id', user.id)
         .eq('status', 'pending');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching pending requests:', error);
+        return;
+      }
 
       if (!requests || requests.length === 0) {
-        setPendingRequests([]);
+        if (mountedRef.current) setPendingRequests([]);
       } else {
         const senderIds = requests.map(r => r.sender_id);
         
@@ -129,6 +147,8 @@ export function useFriends() {
           .from('profiles')
           .select('user_id, username, display_name, avatar_url')
           .in('user_id', senderIds);
+
+        if (!mountedRef.current) return;
 
         const pendingList: FriendRequest[] = requests.map(req => {
           const profile = profiles?.find(p => p.user_id === req.sender_id);
@@ -142,7 +162,7 @@ export function useFriends() {
           };
         });
 
-        setPendingRequests(pendingList);
+        if (mountedRef.current) setPendingRequests(pendingList);
       }
 
       const { data: sent } = await supabase
@@ -151,20 +171,25 @@ export function useFriends() {
         .eq('sender_id', user.id)
         .eq('status', 'pending');
 
-      setSentRequests(sent?.map(s => s.receiver_id) || []);
+      if (mountedRef.current) {
+        setSentRequests(sent?.map(s => s.receiver_id) || []);
+      }
     } catch (error) {
       console.error('Error fetching pending requests:', error);
     }
   }, [user]);
 
   const searchUsers = useCallback(async (query: string) => {
-    if (!user || !query.trim()) return [];
+    if (!user || !query?.trim()) return [];
 
     try {
       const { data, error } = await supabase
         .rpc('search_profiles', { search_term: query });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error searching users:', error);
+        return [];
+      }
 
       const filtered = (data || []).filter((p: { user_id: string }) => p.user_id !== user.id);
       return filtered.slice(0, 10);
@@ -191,13 +216,16 @@ export function useFriends() {
         if (error.code === '23505') {
           toast.error('Zaproszenie już zostało wysłane');
         } else {
-          throw error;
+          console.error('Error sending friend request:', error);
+          toast.error('Nie udało się wysłać zaproszenia');
         }
         return false;
       }
 
       toast.success('Zaproszenie wysłane!');
-      setSentRequests(prev => [...prev, receiverId]);
+      if (mountedRef.current) {
+        setSentRequests(prev => [...prev, receiverId]);
+      }
       return true;
     } catch (error) {
       console.error('Error sending friend request:', error);
@@ -218,7 +246,11 @@ export function useFriends() {
         .update({ status: 'accepted', updated_at: new Date().toISOString() })
         .eq('id', requestId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error accepting request:', error);
+        toast.error('Nie udało się zaakceptować zaproszenia');
+        return false;
+      }
 
       toast.success('Zaproszenie zaakceptowane!');
       await Promise.all([fetchFriends(), fetchPendingRequests()]);
@@ -242,7 +274,11 @@ export function useFriends() {
         .update({ status: 'rejected', updated_at: new Date().toISOString() })
         .eq('id', requestId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error rejecting request:', error);
+        toast.error('Nie udało się odrzucić zaproszenia');
+        return false;
+      }
 
       toast.success('Zaproszenie odrzucone');
       await fetchPendingRequests();
@@ -266,10 +302,16 @@ export function useFriends() {
         .delete()
         .eq('id', friendshipId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error removing friend:', error);
+        toast.error('Nie udało się usunąć znajomego');
+        return false;
+      }
 
       toast.success('Znajomy usunięty');
-      setFriends(prev => prev.filter(f => f.friendshipId !== friendshipId));
+      if (mountedRef.current) {
+        setFriends(prev => prev.filter(f => f.friendshipId !== friendshipId));
+      }
       return true;
     } catch (error) {
       console.error('Error removing friend:', error);
@@ -281,6 +323,8 @@ export function useFriends() {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (!isInitialized) return;
     
     if (!user) {
@@ -293,7 +337,9 @@ export function useFriends() {
 
     setIsLoading(true);
     Promise.all([fetchFriends(), fetchPendingRequests()])
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        if (mountedRef.current) setIsLoading(false);
+      });
 
     const channel = supabase
       .channel('friendships-changes')
@@ -306,8 +352,10 @@ export function useFriends() {
           filter: `sender_id=eq.${user.id}`
         },
         () => {
-          fetchFriends();
-          fetchPendingRequests();
+          if (mountedRef.current) {
+            fetchFriends();
+            fetchPendingRequests();
+          }
         }
       )
       .on(
@@ -319,26 +367,38 @@ export function useFriends() {
           filter: `receiver_id=eq.${user.id}`
         },
         () => {
-          fetchFriends();
-          fetchPendingRequests();
+          if (mountedRef.current) {
+            fetchFriends();
+            fetchPendingRequests();
+          }
         }
       )
       .subscribe();
 
     return () => {
+      mountedRef.current = false;
       supabase.removeChannel(channel);
     };
   }, [user, isInitialized, fetchFriends, fetchPendingRequests]);
 
   const getInviteLink = useCallback(() => {
-    if (typeof window === 'undefined') return '';
-    return `${window.location.origin}/invite/${user?.id || ''}`;
+    if (typeof window === 'undefined' || !user?.id) return '';
+    try {
+      return `${window.location.origin}/invite/${user.id}`;
+    } catch {
+      return '';
+    }
   }, [user]);
 
   const shareInviteLink = useCallback(async () => {
     if (!user) return;
 
     const inviteLink = getInviteLink();
+    if (!inviteLink) {
+      toast.error('Nie udało się utworzyć linku');
+      return;
+    }
+
     const shareData = {
       title: 'Dołącz do FITFLY!',
       text: 'Hej! Dodaj mnie do znajomych w FITFLY! 💪',
@@ -352,12 +412,16 @@ export function useFriends() {
       } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(inviteLink);
         toast.success('Link skopiowany do schowka!');
+      } else {
+        toast.error('Nie można udostępnić linku');
       }
     } catch (error) {
       if ((error as Error).name !== 'AbortError') {
         try {
-          await navigator.clipboard.writeText(inviteLink);
-          toast.success('Link skopiowany do schowka!');
+          if (typeof navigator !== 'undefined' && navigator.clipboard) {
+            await navigator.clipboard.writeText(inviteLink);
+            toast.success('Link skopiowany do schowka!');
+          }
         } catch {
           toast.error('Nie udało się skopiować linku');
         }

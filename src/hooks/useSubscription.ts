@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -62,6 +62,8 @@ export function useSubscription() {
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+  const fetchedRef = useRef(false);
 
   const fetchSubscription = useCallback(async () => {
     if (!user) {
@@ -70,7 +72,13 @@ export function useSubscription() {
       return;
     }
 
+    // Prevent duplicate fetches
+    if (fetchedRef.current) {
+      return;
+    }
+
     try {
+      fetchedRef.current = true;
       setLoading(true);
       setError(null);
       
@@ -79,6 +87,8 @@ export function useSubscription() {
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      if (!mountedRef.current) return;
 
       if (fetchError) {
         console.error('Error fetching subscription:', fetchError);
@@ -90,23 +100,43 @@ export function useSubscription() {
       setSubscription(data as UserSubscription | null);
     } catch (err) {
       console.error('Subscription fetch error:', err);
-      setError(err instanceof Error ? err.message : 'Nieznany błąd');
+      if (mountedRef.current) {
+        setError(err instanceof Error ? err.message : 'Nieznany błąd');
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [user]);
 
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (isInitialized) {
+      fetchedRef.current = false;
       fetchSubscription();
     }
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [isInitialized, fetchSubscription]);
 
   const currentTier: SubscriptionTier = subscription?.tier || 'start';
-  const isActive = subscription?.status === 'active' && 
-    (!subscription.ends_at || new Date(subscription.ends_at) > new Date());
+  
+  // Safe date comparison
+  const isActive = (() => {
+    if (!subscription || subscription.status !== 'active') return false;
+    if (!subscription.ends_at) return true;
+    try {
+      return new Date(subscription.ends_at) > new Date();
+    } catch {
+      return false;
+    }
+  })();
 
-  const tierInfo = TIER_FEATURES[currentTier];
+  const tierInfo = TIER_FEATURES[currentTier] || TIER_FEATURES.start;
 
   return {
     subscription,
@@ -115,6 +145,9 @@ export function useSubscription() {
     currentTier,
     isActive,
     tierInfo,
-    refresh: fetchSubscription,
+    refresh: () => {
+      fetchedRef.current = false;
+      return fetchSubscription();
+    },
   };
 }

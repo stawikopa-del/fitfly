@@ -50,6 +50,7 @@ export function useDirectMessages(friendId?: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const mountedRef = useRef(true);
 
   const fetchChatPreviews = useCallback(async () => {
     if (!user) {
@@ -64,7 +65,12 @@ export function useDirectMessages(friendId?: string) {
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        return;
+      }
+
+      if (!mountedRef.current) return;
 
       const conversationsMap = new Map<string, {
         messages: any[];
@@ -72,6 +78,7 @@ export function useDirectMessages(friendId?: string) {
       }>();
 
       (messagesData || []).forEach(msg => {
+        if (!msg) return;
         const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
         
         if (!conversationsMap.has(partnerId)) {
@@ -83,7 +90,7 @@ export function useDirectMessages(friendId?: string) {
       const partnerIds = Array.from(conversationsMap.keys());
       
       if (partnerIds.length === 0) {
-        setChatPreviews([]);
+        if (mountedRef.current) setChatPreviews([]);
         return;
       }
 
@@ -91,6 +98,8 @@ export function useDirectMessages(friendId?: string) {
         .from('profiles')
         .select('user_id, display_name, username, avatar_url')
         .in('user_id', partnerIds);
+
+      if (!mountedRef.current) return;
 
       const previews: ChatPreview[] = [];
 
@@ -103,18 +112,21 @@ export function useDirectMessages(friendId?: string) {
           m => m.receiver_id === user.id && !m.read_at
         ).length;
 
+        let lastMessageText = latestMsg.content || '';
+        if (latestMsg.message_type === 'recipe') {
+          lastMessageText = '📖 Udostępniono przepis';
+        } else if (latestMsg.message_type === 'shopping_list') {
+          lastMessageText = '🛒 Udostępniono listę zakupów';
+        } else if (latestMsg.message_type === 'shopping_list_activity') {
+          lastMessageText = latestMsg.content || '🛒 Aktywność na liście zakupów';
+        }
+
         previews.push({
           odgerId: partnerId,
           displayName: profile?.display_name || 'Użytkownik',
           username: profile?.username || null,
           avatarUrl: profile?.avatar_url || null,
-          lastMessage: latestMsg.message_type === 'recipe' 
-            ? '📖 Udostępniono przepis' 
-            : latestMsg.message_type === 'shopping_list'
-            ? '🛒 Udostępniono listę zakupów'
-            : latestMsg.message_type === 'shopping_list_activity'
-            ? latestMsg.content || '🛒 Aktywność na liście zakupów'
-            : latestMsg.content || '',
+          lastMessage: lastMessageText,
           lastMessageTime: latestMsg.created_at,
           unreadCount,
         });
@@ -124,10 +136,12 @@ export function useDirectMessages(friendId?: string) {
         new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
       );
 
-      setChatPreviews(previews);
+      if (mountedRef.current) {
+        setChatPreviews(previews);
+      }
     } catch (error) {
       console.error('Error fetching chat previews:', error);
-      setChatPreviews([]);
+      if (mountedRef.current) setChatPreviews([]);
     }
   }, [user]);
 
@@ -147,16 +161,26 @@ export function useDirectMessages(friendId?: string) {
         )
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        if (mountedRef.current) {
+          setMessages([]);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      if (!mountedRef.current) return;
 
       const messagesWithReplies = (data || []).map(m => {
-        const replyToMsg = m.reply_to_id ? data.find(r => r.id === m.reply_to_id) : null;
+        if (!m) return null;
+        const replyToMsg = m.reply_to_id ? data.find(r => r?.id === m.reply_to_id) : null;
         return {
           id: m.id,
           senderId: m.sender_id,
           receiverId: m.receiver_id,
           content: m.content || '',
-          messageType: (m.message_type || 'text') as 'text' | 'recipe' | 'shopping_list' | 'shopping_list_activity',
+          messageType: (m.message_type || 'text') as DirectMessage['messageType'],
           recipeData: m.recipe_data,
           shoppingListId: (m.recipe_data as any)?.shoppingListId,
           createdAt: m.created_at,
@@ -169,33 +193,39 @@ export function useDirectMessages(friendId?: string) {
             senderName: replyToMsg.sender_id === user.id ? 'Ty' : 'Znajomy',
           } : null,
         };
-      });
+      }).filter(Boolean) as DirectMessage[];
 
-      setMessages(messagesWithReplies);
+      if (mountedRef.current) {
+        setMessages(messagesWithReplies);
+      }
 
       // Mark messages as read
-      await supabase
-        .from('direct_messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('receiver_id', user.id)
-        .eq('sender_id', friendId)
-        .is('read_at', null);
+      try {
+        await supabase
+          .from('direct_messages')
+          .update({ read_at: new Date().toISOString() })
+          .eq('receiver_id', user.id)
+          .eq('sender_id', friendId)
+          .is('read_at', null);
+      } catch (err) {
+        console.error('Error marking messages as read:', err);
+      }
 
     } catch (error) {
       console.error('Error fetching messages:', error);
-      setMessages([]);
+      if (mountedRef.current) setMessages([]);
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) setIsLoading(false);
     }
   }, [user, friendId]);
 
   const sendMessage = useCallback(async (
     content: string, 
-    type: 'text' | 'recipe' | 'shopping_list' | 'image' | 'voice' = 'text', 
+    type: DirectMessage['messageType'] = 'text', 
     recipeData?: any,
     replyToId?: string | null
   ) => {
-    if (!user || !friendId || !content.trim()) return false;
+    if (!user || !friendId || !content?.trim()) return false;
 
     setIsSending(true);
     try {
@@ -215,7 +245,10 @@ export function useDirectMessages(friendId?: string) {
         .from('direct_messages')
         .insert(insertData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        return false;
+      }
       return true;
     } catch (error) {
       console.error('Error sending message:', error);
@@ -227,22 +260,25 @@ export function useDirectMessages(friendId?: string) {
 
   // Send image message
   const sendImageMessage = useCallback(async (imageUrl: string) => {
+    if (!imageUrl) return false;
     return sendMessage(imageUrl, 'image');
   }, [sendMessage]);
 
   // Send voice message
   const sendVoiceMessage = useCallback(async (audioUrl: string, duration: number) => {
+    if (!audioUrl) return false;
     return sendMessage(audioUrl, 'voice', { duration });
   }, [sendMessage]);
 
   // Send shopping list
   const sendShoppingListMessage = useCallback(async (listId: string) => {
+    if (!listId) return false;
     return sendMessage('🛒 Udostępniono Ci listę zakupów!', 'shopping_list', { shoppingListId: listId });
   }, [sendMessage]);
 
   // Delete a message
   const deleteMessage = useCallback(async (messageId: string) => {
-    if (!user) return false;
+    if (!user || !messageId) return false;
 
     try {
       const { error } = await supabase
@@ -251,9 +287,14 @@ export function useDirectMessages(friendId?: string) {
         .eq('id', messageId)
         .eq('sender_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting message:', error);
+        return false;
+      }
 
-      setMessages(prev => prev.filter(m => m.id !== messageId));
+      if (mountedRef.current) {
+        setMessages(prev => prev.filter(m => m.id !== messageId));
+      }
       return true;
     } catch (error) {
       console.error('Error deleting message:', error);
@@ -263,7 +304,7 @@ export function useDirectMessages(friendId?: string) {
 
   // Toggle reaction on a message
   const toggleReaction = useCallback(async (messageId: string, emoji: string, userName: string) => {
-    if (!user) return false;
+    if (!user || !messageId || !emoji) return false;
 
     try {
       // Get current message
@@ -273,7 +314,10 @@ export function useDirectMessages(friendId?: string) {
         .eq('id', messageId)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching message:', fetchError);
+        return false;
+      }
 
       const currentReactions: MessageReactions = (msgData as any)?.reactions || {};
       const emojiReactions = currentReactions[emoji] || [];
@@ -293,7 +337,7 @@ export function useDirectMessages(friendId?: string) {
         // Add reaction
         newReactions = {
           ...currentReactions,
-          [emoji]: [...emojiReactions, { odgerId: user.id, name: userName }]
+          [emoji]: [...emojiReactions, { odgerId: user.id, name: userName || 'Ty' }]
         };
       }
 
@@ -303,12 +347,17 @@ export function useDirectMessages(friendId?: string) {
         .update({ reactions: newReactions } as any)
         .eq('id', messageId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating reaction:', error);
+        return false;
+      }
 
       // Update local state
-      setMessages(prev => prev.map(m => 
-        m.id === messageId ? { ...m, reactions: newReactions } : m
-      ));
+      if (mountedRef.current) {
+        setMessages(prev => prev.map(m => 
+          m.id === messageId ? { ...m, reactions: newReactions } : m
+        ));
+      }
 
       return true;
     } catch (error) {
@@ -319,6 +368,8 @@ export function useDirectMessages(friendId?: string) {
 
   // Subscribe to realtime updates
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (!isInitialized || !user) return;
 
     // Cleanup previous channel
@@ -336,6 +387,8 @@ export function useDirectMessages(friendId?: string) {
           table: 'direct_messages',
         },
         (payload) => {
+          if (!mountedRef.current) return;
+          
           const newRecord = payload.new as any;
           const oldRecord = payload.old as any;
           
@@ -360,6 +413,7 @@ export function useDirectMessages(friendId?: string) {
     channelRef.current = channel;
 
     return () => {
+      mountedRef.current = false;
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;

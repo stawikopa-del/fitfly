@@ -11,12 +11,15 @@ interface State {
   hasError: boolean;
   error?: Error;
   errorInfo?: React.ErrorInfo;
+  errorCount: number;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
+  private resetTimeoutId: NodeJS.Timeout | null = null;
+
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, errorCount: 0 };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -25,22 +28,54 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    this.setState({ errorInfo });
+    this.setState(prev => ({ 
+      errorInfo, 
+      errorCount: prev.errorCount + 1 
+    }));
+
+    // Auto-reset after 10 seconds if user doesn't interact
+    if (this.resetTimeoutId) {
+      clearTimeout(this.resetTimeoutId);
+    }
+    this.resetTimeoutId = setTimeout(() => {
+      this.handleReset();
+    }, 10000);
+  }
+
+  componentWillUnmount() {
+    if (this.resetTimeoutId) {
+      clearTimeout(this.resetTimeoutId);
+    }
   }
 
   handleReset = () => {
+    if (this.resetTimeoutId) {
+      clearTimeout(this.resetTimeoutId);
+    }
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 
   handleReload = () => {
     if (typeof window !== 'undefined') {
+      try {
+        // Clear session storage to prevent infinite error loops
+        sessionStorage.clear();
+      } catch {
+        // Ignore storage errors
+      }
       window.location.reload();
     }
   };
 
   handleGoHome = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined, errorCount: 0 });
     if (typeof window !== 'undefined') {
+      try {
+        // Clear session storage
+        sessionStorage.clear();
+      } catch {
+        // Ignore storage errors
+      }
       window.location.href = '/';
     }
   };
@@ -49,6 +84,21 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
+      }
+
+      // If too many errors, force reload
+      if (this.state.errorCount > 3) {
+        if (typeof window !== 'undefined') {
+          setTimeout(() => {
+            try {
+              sessionStorage.clear();
+            } catch {
+              // Ignore
+            }
+            window.location.href = '/';
+          }, 100);
+        }
+        return null;
       }
 
       return (
@@ -99,4 +149,18 @@ export class ErrorBoundary extends Component<Props, State> {
 // Wrapper component for catching async errors in hooks
 export function SafeComponent({ children }: { children: ReactNode }) {
   return <ErrorBoundary>{children}</ErrorBoundary>;
+}
+
+// HOC for wrapping components with error boundary
+export function withErrorBoundary<P extends object>(
+  WrappedComponent: React.ComponentType<P>,
+  fallback?: ReactNode
+) {
+  return function WithErrorBoundaryWrapper(props: P) {
+    return (
+      <ErrorBoundary fallback={fallback}>
+        <WrappedComponent {...props} />
+      </ErrorBoundary>
+    );
+  };
 }

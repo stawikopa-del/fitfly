@@ -21,9 +21,16 @@ export function useGamification() {
   const operationInProgressRef = useRef(false);
   const pendingXPRef = useRef<Array<{ amount: number; source: string; description?: string }>>([]);
   const fetchedRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const fetchGamification = useCallback(async () => {
-    if (!user || fetchedRef.current) {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    // Prevent duplicate fetches
+    if (fetchedRef.current) {
       setLoading(false);
       return;
     }
@@ -38,78 +45,104 @@ export function useGamification() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (gamError) throw gamError;
+      if (!mountedRef.current) return;
+      
+      if (gamError) {
+        console.error('Error fetching gamification:', gamError);
+        setLoading(false);
+        return;
+      }
 
       if (!gamData) {
         // Create initial gamification record
-        const { data: newData, error: insertError } = await supabase
-          .from('user_gamification')
-          .upsert({ 
-            user_id: user.id,
-            total_xp: 0,
-            current_level: 1,
-            daily_login_streak: 0
-          }, { 
-            onConflict: 'user_id',
-            ignoreDuplicates: false 
-          })
-          .select()
-          .single();
+        try {
+          const { data: newData, error: insertError } = await supabase
+            .from('user_gamification')
+            .upsert({ 
+              user_id: user.id,
+              total_xp: 0,
+              current_level: 1,
+              daily_login_streak: 0
+            }, { 
+              onConflict: 'user_id',
+              ignoreDuplicates: false 
+            })
+            .select()
+            .single();
 
-        if (insertError && insertError.code !== '23505') {
-          throw insertError;
-        }
-        
-        if (newData) {
-          setGamification(newData);
+          if (!mountedRef.current) return;
+
+          if (insertError && insertError.code !== '23505') {
+            console.error('Error creating gamification:', insertError);
+          } else if (newData) {
+            setGamification(newData);
+          }
+        } catch (err) {
+          console.error('Error creating gamification record:', err);
         }
       } else {
         setGamification(gamData);
         
         // Check and update daily login streak
-        const today = new Date().toISOString().split('T')[0];
-        if (gamData.last_login_date !== today) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
-          
-          const newStreak = gamData.last_login_date === yesterdayStr 
-            ? gamData.daily_login_streak + 1 
-            : 1;
+        try {
+          const today = new Date().toISOString().split('T')[0];
+          if (gamData.last_login_date !== today) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            const newStreak = gamData.last_login_date === yesterdayStr 
+              ? gamData.daily_login_streak + 1 
+              : 1;
 
-          await supabase
-            .from('user_gamification')
-            .update({ 
-              last_login_date: today,
-              daily_login_streak: newStreak,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', user.id);
+            await supabase
+              .from('user_gamification')
+              .update({ 
+                last_login_date: today,
+                daily_login_streak: newStreak,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', user.id);
 
-          setGamification(prev => prev ? { 
-            ...prev, 
-            last_login_date: today,
-            daily_login_streak: newStreak
-          } : null);
+            if (mountedRef.current) {
+              setGamification(prev => prev ? { 
+                ...prev, 
+                last_login_date: today,
+                daily_login_streak: newStreak
+              } : null);
+            }
+          }
+        } catch (err) {
+          console.error('Error updating login streak:', err);
         }
       }
 
       // Fetch badges
-      const { data: badgeData } = await supabase
-        .from('user_badges')
-        .select('*')
-        .eq('user_id', user.id);
+      try {
+        const { data: badgeData } = await supabase
+          .from('user_badges')
+          .select('*')
+          .eq('user_id', user.id);
 
-      setBadges(badgeData || []);
+        if (mountedRef.current) {
+          setBadges(badgeData || []);
+        }
+      } catch (err) {
+        console.error('Error fetching badges:', err);
+      }
 
     } catch (error) {
       console.error('Error fetching gamification:', error);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [user]);
 
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (isInitialized && user) {
       fetchedRef.current = false;
       fetchGamification();
@@ -119,10 +152,14 @@ export function useGamification() {
       setLoading(false);
       fetchedRef.current = false;
     }
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [isInitialized, user, fetchGamification]);
 
   const addXP = useCallback(async (amount: number, source: string, description?: string) => {
-    if (!user || !gamification) return;
+    if (!user || !gamification || !mountedRef.current) return;
     
     if (operationInProgressRef.current) {
       pendingXPRef.current.push({ amount, source, description });
@@ -156,9 +193,12 @@ export function useGamification() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating XP:', error);
+        return;
+      }
 
-      if (updatedData) {
+      if (updatedData && mountedRef.current) {
         setGamification(updatedData);
       }
 
@@ -168,7 +208,11 @@ export function useGamification() {
       });
 
       if (leveledUp) {
-        triggerLevelUpConfetti();
+        try {
+          triggerLevelUpConfetti();
+        } catch {
+          // Confetti might fail in some environments
+        }
         toast.success(`🎉 Nowy poziom: ${newLevel}!`, {
           description: 'Gratulacje!',
           duration: 4000
@@ -180,7 +224,7 @@ export function useGamification() {
     } finally {
       operationInProgressRef.current = false;
 
-      if (pendingXPRef.current.length > 0) {
+      if (pendingXPRef.current.length > 0 && mountedRef.current) {
         const pending = pendingXPRef.current.shift();
         if (pending) {
           addXP(pending.amount, pending.source, pending.description);
@@ -190,7 +234,7 @@ export function useGamification() {
   }, [user, gamification]);
 
   const awardBadge = useCallback(async (badgeType: BadgeType) => {
-    if (!user) return;
+    if (!user || !mountedRef.current) return;
     
     if (badges.some(b => b.badge_type === badgeType)) return;
 
@@ -206,14 +250,21 @@ export function useGamification() {
 
       if (error) {
         if (error.code === '23505') return;
-        throw error;
+        console.error('Error awarding badge:', error);
+        return;
       }
 
-      setBadges(prev => [...prev, data]);
+      if (mountedRef.current) {
+        setBadges(prev => [...prev, data]);
+      }
 
       const badge = BADGE_DEFINITIONS.find(b => b.type === badgeType);
       if (badge) {
-        triggerBadgeConfetti();
+        try {
+          triggerBadgeConfetti();
+        } catch {
+          // Confetti might fail
+        }
         toast.success(`🏆 Nowa odznaka: ${badge.name}!`, {
           description: badge.description,
           duration: 5000
