@@ -35,39 +35,11 @@ const mealTypeLabels: Record<string, { label: string; emoji: string }> = {
   snack: { label: 'Przekąska', emoji: '🍪' },
 };
 
-// Słowa kluczowe do rozpoznawania typu posiłku
-const breakfastKeywords = ['owsianka', 'jajecznic', 'tosty', 'naleśnik', 'śniadani', 'mleko', 'płatki', 'musli', 'granola', 'kanapk', 'bagietk', 'croissant', 'jogurt', 'smoothie', 'koktajl', 'kawa', 'herbat'];
-const snackKeywords = ['marchew', 'hummus', 'orzechy', 'migdał', 'baton', 'owoc', 'jabłk', 'banan', 'przekąsk', 'ciastk', 'herbatnik', 'krakersy', 'chipsy', 'popcorn', 'żelki', 'czekolad', 'jogurt', 'ser', 'paluszki', 'sałatka owocowa'];
-const dinnerKeywords = ['kolacj', 'sałatk', 'lekk', 'wieczor', 'sandwich', 'wrapy', 'tortill'];
-
-// Inteligentna funkcja do określania typu posiłku na podstawie nazwy i kalorii
-const detectMealType = (name: string, calories: number, savedType?: string): 'breakfast' | 'lunch' | 'dinner' | 'snack' => {
-  // Jeśli mamy zapisany typ, użyj go
-  if (savedType && ['breakfast', 'lunch', 'dinner', 'snack'].includes(savedType)) {
-    return savedType as 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  }
-  
-  const nameLower = name.toLowerCase();
-  
-  // Sprawdź słowa kluczowe
-  if (breakfastKeywords.some(kw => nameLower.includes(kw))) return 'breakfast';
-  if (snackKeywords.some(kw => nameLower.includes(kw))) return 'snack';
-  if (dinnerKeywords.some(kw => nameLower.includes(kw))) return 'dinner';
-  
-  // Analiza na podstawie kalorii
-  if (calories < 200) return 'snack';       // Małe kalorie = przekąska
-  if (calories < 350) return 'breakfast';   // Średnie = śniadanie
-  if (calories > 500) return 'lunch';       // Duże = obiad
-  
-  return 'dinner'; // Domyślnie kolacja dla średnich wartości
-};
-
 // Helper function to calculate calories from macros if missing
 const getCalories = (recipe: DetailedRecipe & { mealType?: string }): number => {
   if (recipe.macros?.calories && recipe.macros.calories > 0) {
     return recipe.macros.calories;
   }
-  // Calculate from macros if available
   if (recipe.macros) {
     const protein = recipe.macros.protein || 0;
     const carbs = recipe.macros.carbs || 0;
@@ -75,14 +47,7 @@ const getCalories = (recipe: DetailedRecipe & { mealType?: string }): number => 
     const calculated = (protein * 4) + (carbs * 4) + (fat * 9);
     if (calculated > 0) return Math.round(calculated);
   }
-  // Default fallback based on meal type
-  const defaults: Record<string, number> = {
-    breakfast: 400,
-    lunch: 500,
-    dinner: 450,
-    snack: 200,
-  };
-  return defaults[recipe.mealType || 'lunch'] || 350;
+  return 350;
 };
 
 export default function FavoriteRecipes() {
@@ -287,7 +252,7 @@ export default function FavoriteRecipes() {
         ) : (
           favorites.map((fav) => {
             const calories = getCalories(fav.recipe_data);
-            const mealType = detectMealType(fav.recipe_name, calories, fav.recipe_data.mealType);
+            const mealType = fav.recipe_data.mealType || 'lunch';
             
             return (
             <div
