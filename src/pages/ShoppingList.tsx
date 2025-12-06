@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Check, Send, Calendar, ChevronLeft, ChevronRight, ChevronDown, Trash2, Copy, Users, Plus, X, Gift, User, Heart } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Check, Send, Calendar, ChevronLeft, ChevronRight, ChevronDown, Trash2, Copy, Users, Plus, X, Gift, User, Heart, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ import { pl } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useFriends } from '@/hooks/useFriends';
 import { CreateCustomListDialog } from '@/components/flyfit/CreateCustomListDialog';
+import { MyShoppingListsSection } from '@/components/flyfit/MyShoppingListsSection';
 interface Ingredient {
   name: string;
   amount: number;
@@ -1159,6 +1160,8 @@ export default function ShoppingList() {
   const [newItemAmount, setNewItemAmount] = useState('1');
   const [newItemUnit, setNewItemUnit] = useState('szt');
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [showMyLists, setShowMyLists] = useState(false);
+  const [selectedSavedList, setSelectedSavedList] = useState<any>(null);
 
   // Date range selection
   const [weekOffset, setWeekOffset] = useState(0);
@@ -1821,15 +1824,14 @@ export default function ShoppingList() {
               } catch {}
               if (!startDate || !endDate) {
                 toast.error('Najpierw wybierz okres w kalendarzu powyżej');
-                // Scroll to calendar
                 document.getElementById('calendar-section')?.scrollIntoView({ behavior: 'smooth' });
                 return;
               }
               setShowDietSelectDialog(true);
             }} 
             className={cn(
-              "w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group",
-              (!startDate || !endDate) ? "border-secondary/20 opacity-70" : "border-secondary/30"
+              "w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group",
+              (!startDate || !endDate) ? "border-secondary/30 opacity-70" : "border-secondary/50"
             )}
           >
               <div className="flex items-center gap-4">
@@ -1854,22 +1856,40 @@ export default function ShoppingList() {
           
           {/* Create custom list button */}
           <button onClick={() => {
-          try {
-            soundFeedback.buttonClick();
-          } catch {}
-          setShowCreateListDialog(true);
-        }} className="w-full bg-gradient-to-r from-primary/20 via-fitfly-blue/20 to-fitfly-blue-light/20 rounded-3xl p-5 border-2 border-primary/30 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group">
+            try { soundFeedback.buttonClick(); } catch {}
+            setShowCreateListDialog(true);
+          }} className="w-full bg-gradient-to-r from-primary/20 via-fitfly-blue/20 to-fitfly-blue-light/20 rounded-3xl p-5 border-2 border-primary/30 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-dark flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
                 <Plus className="w-7 h-7 text-white" />
               </div>
               <div className="text-left flex-1">
                 <h3 className="font-extrabold font-display text-foreground flex items-center gap-2 text-left">
-                  Utwórz swoją
-listę zakupów 📝  
-                  
+                  Utwórz swoją listę zakupów 📝
                 </h3>
-                <p className="text-sm text-muted-foreground">Dodaj produkty, notatki oraz udostępnij znajomym  </p>
+                <p className="text-sm text-muted-foreground">Dodaj produkty, notatki oraz udostępnij znajomym</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+            </div>
+          </button>
+
+          {/* My Shopping Lists button - prominent */}
+          <button 
+            onClick={() => {
+              try { soundFeedback.buttonClick(); } catch {}
+              setShowMyLists(true);
+            }} 
+            className="w-full bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-rose-500/20 rounded-3xl p-5 border-2 border-amber-500/40 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                <FolderOpen className="w-7 h-7 text-white" />
+              </div>
+              <div className="text-left flex-1">
+                <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+                  Moje listy zakupów 📁
+                </h3>
+                <p className="text-sm text-muted-foreground">Przeglądaj zapisane i udostępnione listy</p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
             </div>
@@ -2431,6 +2451,52 @@ lub dodaj własne produkty</p>
           </div>
         </div>
       )}
+
+      {/* My Shopping Lists Section */}
+      <MyShoppingListsSection 
+        isOpen={showMyLists}
+        onClose={() => setShowMyLists(false)}
+        onSelectList={(list) => {
+          setSelectedSavedList(list);
+          setShowMyLists(false);
+        }}
+        user={user}
+      />
+
+      {/* Selected Saved List View */}
+      {selectedSavedList && (
+        <div className="fixed inset-0 z-50 bg-background">
+          <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
+            <div className="px-4 py-4 flex items-center gap-4">
+              <button 
+                onClick={() => {
+                  try { soundFeedback.navTap(); } catch {}
+                  setSelectedSavedList(null);
+                }} 
+                className="p-2 rounded-xl hover:bg-muted transition-colors"
+              >
+                <ArrowLeft className="w-6 h-6 text-foreground" />
+              </button>
+              <div className="flex-1">
+                <h1 className="text-xl font-extrabold font-display text-foreground flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5" />
+                  {selectedSavedList.name}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {selectedSavedList.items?.length || 0} produktów
+                </p>
+              </div>
+            </div>
+          </header>
+          
+          <div className="px-4 py-4 pb-24 overflow-y-auto h-[calc(100vh-80px)]">
+            <SavedListView 
+              list={selectedSavedList}
+              onClose={() => setSelectedSavedList(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>;
 }
 
@@ -2662,6 +2728,194 @@ function GeneratedShoppingList({ dietPlan, startDate, endDate, checkedItems, onT
                     <button
                       key={`${item.name}-${idx}`}
                       onClick={() => onToggleItem(item.name)}
+                      className={cn(
+                        "w-full px-3 py-2 flex items-center gap-3 transition-all text-left",
+                        isChecked && "bg-primary/5"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0",
+                        isChecked ? "bg-primary border-primary" : "border-border"
+                      )}>
+                        {isChecked && <Check className="w-3 h-3 text-primary-foreground" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "text-sm font-medium transition-all",
+                          isChecked ? "text-muted-foreground line-through" : "text-foreground"
+                        )}>
+                          {item.name}
+                        </p>
+                        <p className={cn(
+                          "text-xs",
+                          isChecked ? "text-muted-foreground/50" : "text-muted-foreground"
+                        )}>
+                          {item.displayAmount}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Component for viewing a saved shopping list
+interface SavedListViewProps {
+  list: {
+    id: string;
+    name: string;
+    items: Array<{
+      name: string;
+      amount: number;
+      unit: string;
+      category: string;
+      displayAmount: string;
+      checked?: boolean;
+    }>;
+    source: string;
+  };
+  onClose: () => void;
+}
+
+function SavedListView({ list, onClose }: SavedListViewProps) {
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(() => {
+    const initial = new Set<string>();
+    list.items.forEach(item => {
+      if (item.checked) {
+        initial.add(item.name.toLowerCase());
+      }
+    });
+    return initial;
+  });
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+
+  const toggleItem = (name: string) => {
+    try { soundFeedback.buttonClick(); } catch {}
+    setCheckedItems(prev => {
+      const newSet = new Set(prev);
+      const key = name.toLowerCase();
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  };
+
+  const groupedItems = useMemo(() => {
+    const groups: Record<string, typeof list.items> = {};
+    list.items.forEach(item => {
+      const cat = item.category || 'inne';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(item);
+    });
+    return groups;
+  }, [list.items]);
+
+  const INGREDIENT_CATEGORIES: Record<string, { label: string; emoji: string }> = {
+    'pieczywo': { label: 'Pieczywo', emoji: '🍞' },
+    'nabial': { label: 'Nabiał', emoji: '🥛' },
+    'mieso': { label: 'Mięso i ryby', emoji: '🥩' },
+    'warzywa': { label: 'Warzywa', emoji: '🥬' },
+    'owoce': { label: 'Owoce', emoji: '🍎' },
+    'przyprawy': { label: 'Przyprawy', emoji: '🧂' },
+    'zboza': { label: 'Zboża i makarony', emoji: '🍝' },
+    'napoje': { label: 'Napoje', emoji: '🥤' },
+    'slodycze': { label: 'Słodycze', emoji: '🍫' },
+    'inne': { label: 'Inne', emoji: '📦' },
+  };
+
+  const checkedCount = list.items.filter(i => checkedItems.has(i.name.toLowerCase())).length;
+  const progress = list.items.length > 0 ? (checkedCount / list.items.length) * 100 : 0;
+
+  if (list.items.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+        <p className="text-muted-foreground">Lista jest pusta</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Progress */}
+      <div className="bg-muted/50 rounded-xl p-3">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-foreground">Postęp zakupów</span>
+          <span className="text-sm font-bold text-primary">{checkedCount}/{list.items.length}</span>
+        </div>
+        <div className="h-2 bg-background rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" 
+            style={{ width: `${progress}%` }} 
+          />
+        </div>
+      </div>
+
+      {/* Categories */}
+      <div className="space-y-3">
+        {Object.entries(groupedItems).map(([category, items]) => {
+          const catConfig = INGREDIENT_CATEGORIES[category] || { label: category, emoji: '📦' };
+          const categoryChecked = items.filter(i => checkedItems.has(i.name.toLowerCase())).length;
+          const isCollapsed = collapsedCategories.has(category);
+          const allChecked = categoryChecked === items.length;
+
+          return (
+            <div key={category} className="bg-card rounded-xl border border-border/50 overflow-hidden">
+              <button
+                onClick={() => {
+                  try { soundFeedback.buttonClick(); } catch {}
+                  setCollapsedCategories(prev => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(category)) {
+                      newSet.delete(category);
+                    } else {
+                      newSet.add(category);
+                    }
+                    return newSet;
+                  });
+                }}
+                className="w-full px-3 py-2 bg-muted/50 flex items-center justify-between hover:bg-muted/70 transition-colors"
+              >
+                <span className={cn(
+                  "font-bold text-sm flex items-center gap-2 transition-colors",
+                  allChecked ? "text-muted-foreground" : "text-foreground"
+                )}>
+                  <span>{catConfig.emoji}</span>
+                  {catConfig.label}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    "text-xs px-2 py-0.5 rounded-full",
+                    allChecked ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    {categoryChecked}/{items.length}
+                  </span>
+                  <ChevronDown className={cn(
+                    "w-4 h-4 text-muted-foreground transition-transform duration-200",
+                    isCollapsed && "-rotate-90"
+                  )} />
+                </div>
+              </button>
+
+              <div className={cn(
+                "divide-y divide-border/30 transition-all duration-200 overflow-hidden",
+                isCollapsed ? "max-h-0" : "max-h-[1000px]"
+              )}>
+                {items.map((item, idx) => {
+                  const isChecked = checkedItems.has(item.name.toLowerCase());
+                  return (
+                    <button
+                      key={`${item.name}-${idx}`}
+                      onClick={() => toggleItem(item.name)}
                       className={cn(
                         "w-full px-3 py-2 flex items-center gap-3 transition-all text-left",
                         isChecked && "bg-primary/5"
