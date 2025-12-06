@@ -181,6 +181,7 @@ export type Database = {
           order_index: number
           plan_date: string
           priority: string
+          recurrence: string | null
           time: string | null
           time_of_day: string | null
           updated_at: string
@@ -199,6 +200,7 @@ export type Database = {
           order_index?: number
           plan_date?: string
           priority?: string
+          recurrence?: string | null
           time?: string | null
           time_of_day?: string | null
           updated_at?: string
@@ -217,6 +219,7 @@ export type Database = {
           order_index?: number
           plan_date?: string
           priority?: string
+          recurrence?: string | null
           time?: string | null
           time_of_day?: string | null
           updated_at?: string

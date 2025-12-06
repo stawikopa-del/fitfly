@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map, X, ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -59,6 +59,13 @@ const TIME_SECTIONS = [
   { id: 'evening', label: 'Wieczór', icon: Moon, time: '18:00 - 24:00', color: 'from-indigo-400/20 to-purple-300/10' },
 ];
 
+const RECURRENCE_OPTIONS = [
+  { id: null, label: 'Bez powtarzania', icon: '📌' },
+  { id: 'daily', label: 'Codziennie', icon: '📅' },
+  { id: 'weekly', label: 'Co tydzień', icon: '🗓️' },
+  { id: 'monthly', label: 'Co miesiąc', icon: '📆' },
+];
+
 export default function DayPlanner() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -80,6 +87,7 @@ export default function DayPlanner() {
   const [customCategory, setCustomCategory] = useState('');
   const [planPriority, setPlanPriority] = useState('normal');
   const [planNotes, setPlanNotes] = useState('');
+  const [planRecurrence, setPlanRecurrence] = useState<string | null>(null);
 
   // Drag state
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -125,6 +133,7 @@ export default function DayPlanner() {
     setCustomCategory('');
     setPlanPriority('normal');
     setPlanNotes('');
+    setPlanRecurrence(null);
     setEditingTimeOfDay(null);
     setEditingPlan(null);
   };
@@ -208,10 +217,9 @@ export default function DayPlanner() {
         if (error) throw error;
         toast.success('Plan zaktualizowany!');
       } else {
-        // Insert new plan
-        const { error } = await supabase.from('day_plans').insert({
+        // Insert new plan(s)
+        const basePlan = {
           user_id: user.id,
-          plan_date: planDate,
           name: planName.trim(),
           time: planTime || null,
           location: planLocation || null,
@@ -222,10 +230,46 @@ export default function DayPlanner() {
           notes: planNotes || null,
           time_of_day: timeOfDay,
           order_index: plans.length,
-        });
+          recurrence: planRecurrence,
+        };
+
+        // Generate dates based on recurrence
+        const datesToCreate: string[] = [planDate];
+        
+        if (planRecurrence) {
+          const startDate = new Date(planDate);
+          const iterations = planRecurrence === 'daily' ? 30 : planRecurrence === 'weekly' ? 12 : 6;
+          
+          for (let i = 1; i < iterations; i++) {
+            let nextDate: Date;
+            if (planRecurrence === 'daily') {
+              nextDate = addDays(startDate, i);
+            } else if (planRecurrence === 'weekly') {
+              nextDate = addDays(startDate, i * 7);
+            } else {
+              // monthly
+              nextDate = new Date(startDate);
+              nextDate.setMonth(nextDate.getMonth() + i);
+            }
+            datesToCreate.push(format(nextDate, 'yyyy-MM-dd'));
+          }
+        }
+
+        const plansToInsert = datesToCreate.map((date, idx) => ({
+          ...basePlan,
+          plan_date: date,
+          order_index: plans.length + idx,
+        }));
+
+        const { error } = await supabase.from('day_plans').insert(plansToInsert);
 
         if (error) throw error;
-        toast.success('Plan dodany!');
+        
+        if (planRecurrence) {
+          toast.success(`Dodano ${plansToInsert.length} planów!`);
+        } else {
+          toast.success('Plan dodany!');
+        }
       }
       
       resetForm();
@@ -616,6 +660,41 @@ export default function DayPlanner() {
           ))}
         </div>
       </div>
+
+      {/* Recurrence - only for new plans */}
+      {!editingPlan && (
+        <div>
+          <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+            <Repeat className="w-4 h-4 text-muted-foreground" />
+            Powtarzanie
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {RECURRENCE_OPTIONS.map((opt) => (
+              <button
+                key={opt.id || 'none'}
+                type="button"
+                onClick={() => setPlanRecurrence(opt.id)}
+                className={cn(
+                  'p-2 rounded-xl border text-center transition-all text-sm',
+                  planRecurrence === opt.id
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-background hover:border-primary/50'
+                )}
+              >
+                <span className="text-lg block mb-0.5">{opt.icon}</span>
+                <span className="text-xs">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+          {planRecurrence && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {planRecurrence === 'daily' && 'Plan zostanie utworzony na 30 kolejnych dni'}
+              {planRecurrence === 'weekly' && 'Plan zostanie utworzony na 12 tygodni'}
+              {planRecurrence === 'monthly' && 'Plan zostanie utworzony na 6 miesięcy'}
+            </p>
+          )}
+        </div>
+      )}
 
       <div>
         <label className="text-sm font-medium text-foreground mb-1.5 block">Notatki</label>
