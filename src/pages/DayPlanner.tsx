@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { format, addDays, subDays, isToday, isTomorrow, isYesterday } from 'date-fns';
+import { format, addDays, subDays, isToday, isTomorrow, isYesterday, startOfMonth, endOfMonth, isSameDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import fitekCel from '@/assets/fitek/fitek-cel.png';
 
@@ -96,12 +96,44 @@ export default function DayPlanner() {
   // Date state
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [datesWithPlans, setDatesWithPlans] = useState<Set<string>>(new Set());
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
 
   useEffect(() => {
-    if (user) fetchPlans();
+    if (user) {
+      fetchPlans();
+      fetchDatesWithPlans();
+    }
   }, [user, selectedDateStr]);
+
+  // Fetch dates with plans for calendar indicators
+  useEffect(() => {
+    if (user) fetchDatesWithPlans();
+  }, [user, calendarMonth]);
+
+  const fetchDatesWithPlans = async () => {
+    if (!user) return;
+    try {
+      const monthStart = format(startOfMonth(calendarMonth), 'yyyy-MM-dd');
+      const monthEnd = format(endOfMonth(calendarMonth), 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('day_plans')
+        .select('plan_date')
+        .eq('user_id', user.id)
+        .gte('plan_date', monthStart)
+        .lte('plan_date', monthEnd);
+      
+      if (error) throw error;
+      
+      const dates = new Set(data?.map(p => p.plan_date) || []);
+      setDatesWithPlans(dates);
+    } catch (err) {
+      console.error('Error fetching dates with plans:', err);
+    }
+  };
 
   const fetchPlans = async () => {
     if (!user) return;
@@ -275,6 +307,7 @@ export default function DayPlanner() {
       resetForm();
       setIsAddingPlan(false);
       fetchPlans();
+      fetchDatesWithPlans();
     } catch (err) {
       console.error('Error saving plan:', err);
       toast.error('Błąd podczas zapisywania planu');
@@ -307,6 +340,7 @@ export default function DayPlanner() {
       const { error } = await supabase.from('day_plans').delete().eq('id', id);
       if (error) throw error;
       setPlans(prev => prev.filter(p => p.id !== id));
+      fetchDatesWithPlans();
       toast.success('Plan usunięty');
     } catch (err) {
       console.error('Error deleting plan:', err);
@@ -774,9 +808,16 @@ export default function DayPlanner() {
                     setCalendarOpen(false);
                   }
                 }}
+                onMonthChange={setCalendarMonth}
                 initialFocus
                 className="p-3 pointer-events-auto"
                 locale={pl}
+                modifiers={{
+                  hasPlans: (date) => datesWithPlans.has(format(date, 'yyyy-MM-dd'))
+                }}
+                modifiersClassNames={{
+                  hasPlans: 'relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:bg-primary after:rounded-full'
+                }}
               />
             </PopoverContent>
           </Popover>
