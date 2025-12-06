@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 
 const navItems = [
-  { to: '/', icon: Home, label: 'Home' },
+  { to: '/', icon: Home, label: 'Główna' },
   { to: '/treningi', icon: Dumbbell, label: 'Treningi' },
   { to: '/czat', icon: MessageCircle, label: 'Chaty', isCenter: true },
   { to: '/odzywianie', icon: Utensils, label: 'Dieta' },
