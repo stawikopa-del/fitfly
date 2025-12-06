@@ -498,3 +498,17 @@
 .animate-slide-up-fade {
   animation: slide-up-fade 0.4s ease-out forwards;
 }
+
+/* Slow pulse animation for featured buttons */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}

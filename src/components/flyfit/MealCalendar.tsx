@@ -65,6 +65,29 @@ interface MealCalendarProps {
 }
 
 const dayNames = ['NIE', 'PON', 'WT', 'ŚR', 'CZW', 'PT', 'SOB'];
+// Helper function to calculate calories from macros if missing
+const getCalories = (meal: MealItem): number => {
+  if (meal.calories && meal.calories > 0) {
+    return meal.calories;
+  }
+  // Calculate from macros if available
+  if (meal.macros) {
+    const protein = meal.macros.protein || 0;
+    const carbs = meal.macros.carbs || 0;
+    const fat = meal.macros.fat || 0;
+    const calculated = (protein * 4) + (carbs * 4) + (fat * 9);
+    if (calculated > 0) return Math.round(calculated);
+  }
+  // Default fallback based on meal type
+  const defaults: Record<string, number> = {
+    breakfast: 400,
+    lunch: 500,
+    dinner: 450,
+    snack: 200,
+  };
+  return defaults[meal.type] || 350;
+};
+
 const mealTypeLabels = {
   breakfast: { label: 'Śniadanie', emoji: '🌅', bgClass: 'bg-amber-500/10', textClass: 'text-amber-700 dark:text-amber-400' },
   lunch: { label: 'Obiad', emoji: '🍽️', bgClass: 'bg-blue-500/10', textClass: 'text-blue-700 dark:text-blue-400' },
@@ -579,7 +602,7 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
                       )}
                     </button>
                     <span className="text-xs font-bold text-foreground bg-card px-2 py-1 rounded-full shadow-sm">
-                      {meal.calories} kcal
+                      {getCalories(meal)} kcal
                     </span>
                   </div>
                 </div>
