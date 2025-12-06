@@ -123,11 +123,10 @@ export default function DayPlanner() {
     setPlanLocation(address);
     setShowMapPicker(false);
     
-    // Close the sheet briefly then reopen it
-    setIsAddingPlan(false);
+    // Reopen sheet with saved location
     setTimeout(() => {
       setIsAddingPlan(true);
-    }, 100);
+    }, 150);
     
     toast.success('Lokalizacja zapisana!');
   };
@@ -467,7 +466,11 @@ export default function DayPlanner() {
         <Button
           type="button"
           variant="outline"
-          onClick={() => setShowMapPicker(true)}
+          onClick={() => {
+            // Close sheet first, then open map
+            setIsAddingPlan(false);
+            setTimeout(() => setShowMapPicker(true), 150);
+          }}
           className="w-full justify-start gap-2 h-11"
         >
           <Map className="w-4 h-4 text-primary" />
