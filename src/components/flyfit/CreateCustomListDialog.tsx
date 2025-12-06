@@ -296,7 +296,7 @@ export function CreateCustomListDialog({
 
             {/* Action buttons */}
             <div className="flex gap-2 pt-2">
-              <Button variant="outline" size="sm" className="flex-1 text-xs h-9" onClick={handleSaveToFavorites} disabled={items.length === 0 || saving}>
+              <Button variant="outline" size="sm" onClick={handleSaveToFavorites} disabled={items.length === 0 || saving} className="flex-2 text-xs h-10">
                 <Heart className="w-3 h-3 mr-1" />
                 Ulubione
               </Button>
