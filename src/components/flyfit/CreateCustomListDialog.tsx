@@ -191,45 +191,47 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[90vw] max-w-[340px] max-h-[80vh] overflow-y-auto overflow-x-hidden mx-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5" />
+        <DialogContent className="w-[85vw] max-w-[320px] max-h-[75vh] overflow-y-auto overflow-x-hidden mx-auto p-4">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <ShoppingCart className="w-4 h-4" />
               Utwórz swoją listę
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs">
               Stwórz własną listę zakupów
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 mt-4">
+          <div className="space-y-3">
             {/* List name */}
-            <div className="space-y-2">
-              <Label htmlFor="listName">Nazwa listy</Label>
+            <div className="space-y-1">
+              <Label htmlFor="listName" className="text-xs">Nazwa listy</Label>
               <Input
                 id="listName"
                 placeholder="np. Zakupy na weekend"
                 value={listName}
                 onChange={(e) => setListName(e.target.value)}
+                className="h-9 text-sm"
               />
             </div>
 
             {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notatki (opcjonalnie)</Label>
+            <div className="space-y-1">
+              <Label htmlFor="notes" className="text-xs">Notatki (opcjonalnie)</Label>
               <Textarea
                 id="notes"
                 placeholder="Dodaj notatki do listy..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
+                className="text-sm min-h-[60px]"
               />
             </div>
 
             {/* Add new item */}
-            <div className="space-y-2">
-              <Label>Dodaj produkt</Label>
-              <div className="flex gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Dodaj produkt</Label>
+              <div className="flex gap-1.5">
                 <Input
                   placeholder="Nazwa produktu"
                   value={newItemName}
@@ -240,17 +242,17 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
                       handleAddItem();
                     }
                   }}
-                  className="flex-1"
+                  className="flex-1 h-9 text-sm"
                 />
                 <div className="relative">
                   <button
                     onClick={() => setShowCategoryPicker(!showCategoryPicker)}
-                    className="h-10 w-10 flex items-center justify-center bg-muted rounded-lg hover:bg-muted/80 transition-colors text-lg"
+                    className="h-9 w-9 flex items-center justify-center bg-muted rounded-lg hover:bg-muted/80 transition-colors text-base"
                   >
                     {selectedCategoryEmoji}
                   </button>
                   {showCategoryPicker && (
-                    <div className="absolute top-full right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 p-2 min-w-[180px]">
+                    <div className="absolute top-full right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 p-1.5 min-w-[160px]">
                       {CATEGORY_OPTIONS.map(cat => (
                         <button
                           key={cat.key}
@@ -259,7 +261,7 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
                             setShowCategoryPicker(false);
                           }}
                           className={cn(
-                            "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                            "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors",
                             newItemCategory === cat.key ? "bg-primary/20 text-primary" : "hover:bg-muted"
                           )}
                         >
@@ -271,27 +273,27 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <Input
                   type="number"
                   placeholder="Ilość"
                   value={newItemAmount}
                   onChange={(e) => setNewItemAmount(e.target.value)}
-                  className="w-20"
+                  className="w-16 h-9 text-sm"
                   min="0"
                   step="0.1"
                 />
                 <select
                   value={newItemUnit}
                   onChange={(e) => setNewItemUnit(e.target.value)}
-                  className="h-10 px-3 rounded-lg border border-input bg-background text-sm"
+                  className="h-9 px-2 rounded-lg border border-input bg-background text-xs"
                 >
                   {AVAILABLE_UNITS.map(unit => (
                     <option key={unit} value={unit}>{unit}</option>
                   ))}
                 </select>
-                <Button onClick={handleAddItem} disabled={!newItemName.trim()}>
-                  <Plus className="w-4 h-4 mr-1" />
+                <Button onClick={handleAddItem} disabled={!newItemName.trim()} size="sm" className="h-9 text-xs px-3">
+                  <Plus className="w-3 h-3 mr-1" />
                   Dodaj
                 </Button>
               </div>
@@ -299,30 +301,30 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
 
             {/* Items list */}
             {items.length > 0 && (
-              <div className="space-y-2">
-                <Label>Produkty ({items.length})</Label>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              <div className="space-y-1">
+                <Label className="text-xs">Produkty ({items.length})</Label>
+                <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
                   {items.map(item => {
                     const cat = CATEGORY_OPTIONS.find(c => c.key === item.category);
                     return (
                       <div
                         key={item.id}
-                        className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl"
+                        className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg"
                       >
-                        <span className="text-lg">{cat?.emoji || '📦'}</span>
+                        <span className="text-sm">{cat?.emoji || '📦'}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
+                          <p className="text-xs font-medium text-foreground truncate">
                             {item.name}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-[10px] text-muted-foreground">
                             {item.amount} {item.unit}
                           </p>
                         </div>
                         <button
                           onClick={() => handleRemoveItem(item.id)}
-                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                          className="p-1 text-muted-foreground hover:text-destructive transition-colors"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     );
@@ -332,22 +334,24 @@ export function CreateCustomListDialog({ open, onOpenChange, onListCreated }: Cr
             )}
 
             {/* Action buttons */}
-            <div className="flex gap-2 pt-4">
+            <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
-                className="flex-1"
+                size="sm"
+                className="flex-1 text-xs h-9"
                 onClick={handleSaveToFavorites}
                 disabled={items.length === 0 || saving}
               >
-                <Heart className="w-4 h-4 mr-2" />
-                Zapisz do ulubionych
+                <Heart className="w-3 h-3 mr-1" />
+                Ulubione
               </Button>
               <Button
-                className="flex-1"
+                size="sm"
+                className="flex-1 text-xs h-9"
                 onClick={() => setShowShareDialog(true)}
                 disabled={items.length === 0 || saving}
               >
-                <Share2 className="w-4 h-4 mr-2" />
+                <Share2 className="w-3 h-3 mr-1" />
                 Udostępnij
               </Button>
             </div>
