@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map } from 'lucide-react';
+import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map, Search, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -65,7 +65,11 @@ export default function DayPlanner() {
   const [planTime, setPlanTime] = useState('');
   const [planLocation, setPlanLocation] = useState('');
   const [planCoords, setPlanCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [showAddressSearch, setShowAddressSearch] = useState(false);
+  const [addressQuery, setAddressQuery] = useState('');
+  const [addressResults, setAddressResults] = useState<Array<{ display_name: string; lat: string; lon: string }>>([]);
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [planCategory, setPlanCategory] = useState('inne');
   const [customCategory, setCustomCategory] = useState('');
   const [planPriority, setPlanPriority] = useState('normal');
@@ -105,6 +109,9 @@ export default function DayPlanner() {
     setPlanTime('');
     setPlanLocation('');
     setPlanCoords(null);
+    setShowAddressSearch(false);
+    setAddressQuery('');
+    setAddressResults([]);
     setPlanCategory('inne');
     setCustomCategory('');
     setPlanPriority('normal');
@@ -113,51 +120,50 @@ export default function DayPlanner() {
     setEditingPlan(null);
   };
 
-  const handleSelectOnMap = () => {
-    setIsGettingLocation(true);
-    
-    if (!navigator.geolocation) {
-      toast.error('Twoja przeglądarka nie obsługuje geolokalizacji');
-      setIsGettingLocation(false);
+  // Search for addresses using Nominatim API
+  const searchAddress = async (query: string) => {
+    if (query.length < 3) {
+      setAddressResults([]);
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        setPlanCoords({ lat: latitude, lng: longitude });
-        
-        // Try to get address from coordinates (reverse geocoding)
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=pl`
-          );
-          const data = await response.json();
-          
-          if (data.display_name) {
-            // Get shorter address
-            const shortAddress = data.address?.road 
-              ? `${data.address.road}${data.address.house_number ? ' ' + data.address.house_number : ''}, ${data.address.city || data.address.town || data.address.village || ''}`
-              : data.display_name.split(',').slice(0, 2).join(',');
-            
-            setPlanLocation(shortAddress);
-            toast.success('Lokalizacja zapisana!');
-          }
-        } catch (err) {
-          console.error('Reverse geocoding error:', err);
-          setPlanLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
-          toast.success('Lokalizacja zapisana!');
-        }
-        
-        setIsGettingLocation(false);
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        toast.error('Nie udało się pobrać lokalizacji. Sprawdź uprawnienia.');
-        setIsGettingLocation(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+    setIsSearchingAddress(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=pl&countrycodes=pl`
+      );
+      const data = await response.json();
+      setAddressResults(data || []);
+    } catch (err) {
+      console.error('Address search error:', err);
+      setAddressResults([]);
+    } finally {
+      setIsSearchingAddress(false);
+    }
+  };
+
+  // Debounced address search
+  const handleAddressQueryChange = (value: string) => {
+    setAddressQuery(value);
+    
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      searchAddress(value);
+    }, 300);
+  };
+
+  // Select address from search results
+  const selectAddress = (result: { display_name: string; lat: string; lon: string }) => {
+    const shortAddress = result.display_name.split(',').slice(0, 3).join(',').trim();
+    setPlanLocation(shortAddress);
+    setPlanCoords({ lat: parseFloat(result.lat), lng: parseFloat(result.lon) });
+    setShowAddressSearch(false);
+    setAddressQuery('');
+    setAddressResults([]);
+    toast.success('Lokalizacja zapisana!');
   };
 
   const openNavigationToLocation = () => {
@@ -492,33 +498,108 @@ export default function DayPlanner() {
 
       {/* Map location buttons */}
       <div className="space-y-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleSelectOnMap}
-          disabled={isGettingLocation}
-          className="w-full justify-start gap-2 h-11"
-        >
-          <Map className="w-4 h-4 text-primary" />
-          {isGettingLocation ? 'Pobieranie lokalizacji...' : 'Zaznacz na mapie (użyj mojej lokalizacji)'}
-        </Button>
-        
-        {planCoords && (
+        {!showAddressSearch ? (
           <Button
             type="button"
             variant="outline"
-            onClick={openNavigationToLocation}
-            className="w-full justify-start gap-2 h-11 border-secondary text-secondary hover:bg-secondary/10"
+            onClick={() => setShowAddressSearch(true)}
+            className="w-full justify-start gap-2 h-11"
           >
-            <Navigation className="w-4 h-4" />
-            Wyznacz trasę do tego miejsca
+            <Map className="w-4 h-4 text-primary" />
+            Wyszukaj adres na mapie
           </Button>
+        ) : (
+          <div className="space-y-2 p-3 bg-muted/30 rounded-xl border border-border">
+            <div className="flex items-center gap-2">
+              <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+              <Input
+                value={addressQuery}
+                onChange={(e) => handleAddressQueryChange(e.target.value)}
+                placeholder="Wpisz adres, np. ul. Marszałkowska 10, Warszawa"
+                className="bg-background flex-1"
+                autoFocus
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowAddressSearch(false);
+                  setAddressQuery('');
+                  setAddressResults([]);
+                }}
+                className="shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {isSearchingAddress && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground p-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Szukam...
+              </div>
+            )}
+            
+            {addressResults.length > 0 && (
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {addressResults.map((result, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => selectAddress(result)}
+                    className="w-full text-left p-2 rounded-lg hover:bg-primary/10 text-sm transition-colors"
+                  >
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                      <span className="line-clamp-2">{result.display_name}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            {addressQuery.length >= 3 && !isSearchingAddress && addressResults.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center p-2">
+                Brak wyników dla "{addressQuery}"
+              </p>
+            )}
+            
+            {addressQuery.length < 3 && addressQuery.length > 0 && (
+              <p className="text-xs text-muted-foreground text-center">
+                Wpisz min. 3 znaki...
+              </p>
+            )}
+          </div>
         )}
         
         {planCoords && (
-          <p className="text-xs text-muted-foreground text-center">
-            📍 Współrzędne: {planCoords.lat.toFixed(4)}, {planCoords.lng.toFixed(4)}
-          </p>
+          <>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/10 rounded-lg p-2">
+              <MapPin className="w-3 h-3 text-secondary" />
+              <span className="truncate flex-1">{planLocation}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setPlanCoords(null);
+                  setPlanLocation('');
+                }}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openNavigationToLocation}
+              className="w-full justify-start gap-2 h-11 border-secondary text-secondary hover:bg-secondary/10"
+            >
+              <Navigation className="w-4 h-4" />
+              Wyznacz trasę do tego miejsca
+            </Button>
+          </>
         )}
       </div>
 
