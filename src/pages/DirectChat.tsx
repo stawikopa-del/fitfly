@@ -840,41 +840,6 @@ export default function DirectChat() {
                     </>
                   )}
                   
-                  {/* Reactions with animation */}
-                  {message.reactions && Object.keys(message.reactions).length > 0 && (
-                    <div className={cn(
-                      'flex items-center gap-1 mt-2 flex-wrap',
-                      isOwn ? 'justify-end' : 'justify-start'
-                    )}>
-                      {Object.entries(message.reactions).map(([emoji, usersRaw]) => {
-                        const users = usersRaw as Array<{ odgerId: string; name: string }>;
-                        if (!users || users.length === 0) return null;
-                        const hasReacted = users.some(u => u.odgerId === user?.id);
-                        const names = users.map(u => u.name).join(', ');
-                        return (
-                          <button
-                            key={emoji}
-                            onClick={() => {
-                              try { soundFeedback.buttonClick(); } catch {}
-                              toggleReaction(message.id, emoji, 'Ty');
-                            }}
-                            title={names}
-                            className={cn(
-                              'text-xs px-1.5 py-0.5 rounded-full flex items-center gap-0.5',
-                              'transition-all duration-200 hover:scale-110',
-                              hasReacted 
-                                ? 'bg-primary/30 border border-primary animate-[bounce-in_0.3s_ease-out]' 
-                                : 'bg-muted/50 border border-transparent hover:bg-muted'
-                            )}
-                          >
-                            <span>{emoji}</span>
-                            <span className="text-[10px]">{users.length}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                  
                   {/* Reaction picker */}
                   {activeReactionMessageId === message.id && !isOptimistic && (
                     <div className={cn(
@@ -901,6 +866,42 @@ export default function DirectChat() {
                     </div>
                   )}
                 </div>
+
+                {/* Reactions displayed under message bubble */}
+                {message.reactions && Object.keys(message.reactions).length > 0 && (
+                  <div className={cn(
+                    'flex items-center gap-1 mt-1 flex-wrap',
+                    isOwn ? 'justify-end' : 'justify-start'
+                  )}>
+                    {Object.entries(message.reactions).map(([emoji, usersRaw]) => {
+                      const users = usersRaw as Array<{ odgerId: string; name: string }>;
+                      if (!users || users.length === 0) return null;
+                      const hasReacted = users.some(u => u.odgerId === user?.id);
+                      const names = users.map(u => u.name).join(', ');
+                      return (
+                        <button
+                          key={emoji}
+                          onClick={() => {
+                            try { soundFeedback.buttonClick(); } catch {}
+                            toggleReaction(message.id, emoji, 'Ty');
+                          }}
+                          title={names}
+                          className={cn(
+                            'text-sm px-2 py-0.5 rounded-full flex items-center gap-1',
+                            'bg-card border border-border/50 shadow-sm',
+                            'transition-all duration-200 hover:scale-105 active:scale-95',
+                            hasReacted && 'border-primary bg-primary/10'
+                          )}
+                        >
+                          <span className="text-base">{emoji}</span>
+                          {users.length > 1 && (
+                            <span className="text-xs text-muted-foreground">{users.length}</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 
                 <div className={cn(
                   'flex items-center gap-1 mt-1 px-2',
