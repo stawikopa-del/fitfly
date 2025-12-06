@@ -2382,34 +2382,48 @@ lub dodaj własne produkty</p>
         </DialogContent>
       </Dialog>
 
-      {/* Generated Shopping List Dialog/Modal */}
-      <Dialog open={showGeneratedList} onOpenChange={setShowGeneratedList}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col rounded-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5" />
-              Lista zakupów
-            </DialogTitle>
-            <DialogDescription>
-              {selectedDietPlan && startDate && endDate && (
-                <span className="text-sm">
-                  {selectedDietPlan.name} • {format(startDate, 'd.MM', { locale: pl })} - {format(endDate, 'd.MM.yyyy', { locale: pl })}
-                </span>
-              )}
-            </DialogDescription>
-          </DialogHeader>
+      {/* Generated Shopping List Section */}
+      {showGeneratedList && selectedDietPlan && (
+        <div className="fixed inset-0 z-50 bg-background">
+          {/* Header */}
+          <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
+            <div className="px-4 py-4 flex items-center gap-4">
+              <button 
+                onClick={() => {
+                  try { soundFeedback.navTap(); } catch {}
+                  setShowGeneratedList(false);
+                }} 
+                className="p-2 rounded-xl hover:bg-muted transition-colors"
+              >
+                <ArrowLeft className="w-6 h-6 text-foreground" />
+              </button>
+              <div className="flex-1">
+                <h1 className="text-xl font-extrabold font-display text-foreground flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5" />
+                  Lista zakupów
+                </h1>
+                {startDate && endDate && (
+                  <p className="text-sm text-muted-foreground">
+                    {selectedDietPlan.name} • {format(startDate, 'd.MM', { locale: pl })} - {format(endDate, 'd.MM.yyyy', { locale: pl })}
+                  </p>
+                )}
+              </div>
+            </div>
+          </header>
           
-          <GeneratedShoppingList 
-            dietPlan={selectedDietPlan}
-            startDate={startDate}
-            endDate={endDate}
-            checkedItems={checkedItems}
-            onToggleItem={toggleItem}
-            onClose={() => setShowGeneratedList(false)}
-            user={user}
-          />
-        </DialogContent>
-      </Dialog>
+          <div className="px-4 py-4 pb-24 overflow-y-auto h-[calc(100vh-80px)]">
+            <GeneratedShoppingList 
+              dietPlan={selectedDietPlan}
+              startDate={startDate}
+              endDate={endDate}
+              checkedItems={checkedItems}
+              onToggleItem={toggleItem}
+              onClose={() => setShowGeneratedList(false)}
+              user={user}
+            />
+          </div>
+        </div>
+      )}
     </div>;
 }
 
