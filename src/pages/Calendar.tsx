@@ -700,8 +700,13 @@ export default function CalendarPage() {
                               <span>{plan.time}</span>
                             </>
                           )}
-                          <Badge variant="secondary" className="text-xs px-2 py-0.5 rounded-full">
-                            📋 Plan dnia
+                          <Badge variant="secondary" className={cn(
+                            "text-xs px-2 py-0.5 rounded-full",
+                            plan.priority === 'high' && "bg-red-100 text-red-700",
+                            plan.priority === 'normal' && "bg-blue-100 text-blue-700",
+                            plan.priority === 'low' && "bg-gray-100 text-gray-600"
+                          )}>
+                            {plan.priority === 'high' ? '🔴 Wysoki' : plan.priority === 'low' ? '⚪ Niski' : '🔵 Normalny'}
                           </Badge>
                           {plan.is_completed && (
                             <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full text-green-600">
