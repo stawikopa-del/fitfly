@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X, ScanBarcode, ChevronRight, Salad, ChefHat, Zap } from 'lucide-react';
+import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X, ScanBarcode, ChevronRight, Salad, ChefHat, Zap, Apple, Croissant } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -14,14 +14,38 @@ import { useUserProgress } from '@/hooks/useUserProgress';
 import { useGamification } from '@/hooks/useGamification';
 import { soundFeedback } from '@/utils/soundFeedback';
 
-type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'snack2' | 'snack3';
 
-const mealConfig: Record<MealType, { label: string; icon: typeof Coffee; gradient: string; emoji: string }> = {
-  breakfast: { label: 'Śniadanie', icon: Coffee, gradient: 'from-accent/20 to-accent/5', emoji: '🌅' },
-  lunch: { label: 'Obiad', icon: UtensilsCrossed, gradient: 'from-secondary/20 to-secondary/5', emoji: '🍽️' },
-  dinner: { label: 'Kolacja', icon: Moon, gradient: 'from-primary/20 to-primary/5', emoji: '🌙' },
-  snack: { label: 'Przekąski', icon: Cookie, gradient: 'from-fitfly-purple/20 to-fitfly-purple/5', emoji: '🍪' },
+interface MealScheduleItem {
+  name: string;
+  time: string;
+}
+
+// Default config for fallback - now includes icons based on index
+const mealIconsAndGradients = [
+  { icon: Coffee, gradient: 'from-accent/20 to-accent/5', emoji: '🌅' },
+  { icon: UtensilsCrossed, gradient: 'from-secondary/20 to-secondary/5', emoji: '🍽️' },
+  { icon: Moon, gradient: 'from-primary/20 to-primary/5', emoji: '🌙' },
+  { icon: Cookie, gradient: 'from-fitfly-purple/20 to-fitfly-purple/5', emoji: '🍪' },
+  { icon: Apple, gradient: 'from-destructive/20 to-destructive/5', emoji: '🍎' },
+  { icon: Croissant, gradient: 'from-accent/30 to-accent/10', emoji: '🥐' },
+];
+
+const mealTypeMap: Record<number, MealType> = {
+  0: 'breakfast',
+  1: 'lunch',
+  2: 'dinner',
+  3: 'snack',
+  4: 'snack2',
+  5: 'snack3',
 };
+
+const defaultMealSchedule: MealScheduleItem[] = [
+  { name: 'Śniadanie', time: '07:00' },
+  { name: 'Obiad', time: '12:00' },
+  { name: 'Kolacja', time: '18:00' },
+  { name: 'Przekąska', time: '15:00' },
+];
 
 export default function Nutrition() {
   const navigate = useNavigate();
@@ -31,9 +55,44 @@ export default function Nutrition() {
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
+  const [selectedMealName, setSelectedMealName] = useState<string>('');
   const { user } = useAuth();
   const { progress } = useUserProgress();
   const { onMealLogged } = useGamification();
+  
+  // Meal schedule from user profile
+  const [mealSchedule, setMealSchedule] = useState<MealScheduleItem[]>(defaultMealSchedule);
+  const [mealsCount, setMealsCount] = useState(4);
+
+  // Pobierz ustawienia posiłków z profilu
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchMealSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('meals_count, meal_schedule')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error) throw error;
+        
+        if (data) {
+          if (data.meals_count) {
+            setMealsCount(data.meals_count);
+          }
+          if (data.meal_schedule && Array.isArray(data.meal_schedule)) {
+            setMealSchedule(data.meal_schedule as unknown as MealScheduleItem[]);
+          }
+        }
+      } catch (e) {
+        console.error('Error loading meal settings:', e);
+      }
+    };
+    
+    fetchMealSettings();
+  }, [user]);
 
   // Pobierz posiłki z bazy danych
   useEffect(() => {
@@ -100,8 +159,9 @@ export default function Nutrition() {
 
   const getMealsByType = (type: MealType) => meals.filter(m => m.type === type);
 
-  const handleOpenAddMeal = (type: MealType) => {
+  const handleOpenAddMeal = (type: MealType, name?: string) => {
     setSelectedMealType(type);
+    setSelectedMealName(name || '');
     setDialogOpen(true);
   };
 
@@ -360,19 +420,20 @@ export default function Nutrition() {
           <span className="text-xl">🍴</span>
         </h2>
         
-        {(Object.keys(mealConfig) as MealType[]).map((type) => {
-          const config = mealConfig[type];
-          const Icon = config.icon;
+        {mealSchedule.slice(0, mealsCount).map((scheduledMeal, index) => {
+          const type = mealTypeMap[index] || 'snack';
+          const iconConfig = mealIconsAndGradients[index % mealIconsAndGradients.length];
+          const Icon = iconConfig.icon;
           const typeMeals = getMealsByType(type);
           const typeCalories = typeMeals.reduce((sum, m) => sum + m.calories, 0);
 
           return (
             <div 
-              key={type}
+              key={`${type}-${index}`}
               className={cn(
                 'bg-gradient-to-r rounded-3xl p-5 border-2 border-border/50 shadow-card-playful',
                 'hover:-translate-y-1 transition-all duration-300',
-                config.gradient
+                iconConfig.gradient
               )}
             >
               <div className="flex items-center justify-between mb-3">
@@ -382,15 +443,17 @@ export default function Nutrition() {
                   </div>
                   <div>
                     <h3 className="font-bold font-display text-foreground flex items-center gap-2">
-                      {config.label}
-                      <span>{config.emoji}</span>
+                      {scheduledMeal.name}
+                      <span>{iconConfig.emoji}</span>
                     </h3>
-                    <p className="text-xs text-muted-foreground font-medium">{typeCalories} kcal</p>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      {scheduledMeal.time} • {typeCalories} kcal
+                    </p>
                   </div>
                 </div>
               <Button 
                   size="icon"
-                  onClick={() => handleOpenAddMeal(type)}
+                  onClick={() => handleOpenAddMeal(type, scheduledMeal.name)}
                   className="rounded-2xl w-10 h-10"
                 >
                   <Plus className="w-5 h-5" />
@@ -414,7 +477,7 @@ export default function Nutrition() {
                     </div>
                   ))}
                 </div>
-              ) : type === 'breakfast' ? (
+              ) : index === 0 ? (
                 <div 
                   onClick={() => handleOpenAddMeal(type)}
                   className="bg-card/60 rounded-2xl p-4 border-2 border-dashed border-accent/40 cursor-pointer hover:border-accent hover:bg-card/80 transition-all duration-300"
@@ -450,6 +513,7 @@ export default function Nutrition() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         mealType={selectedMealType}
+        mealLabel={selectedMealName}
         onAddMeal={handleAddMeal}
       />
     </div>
