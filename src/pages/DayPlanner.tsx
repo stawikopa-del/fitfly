@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star } from 'lucide-react';
+import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -64,6 +64,8 @@ export default function DayPlanner() {
   const [planName, setPlanName] = useState('');
   const [planTime, setPlanTime] = useState('');
   const [planLocation, setPlanLocation] = useState('');
+  const [planCoords, setPlanCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [planCategory, setPlanCategory] = useState('inne');
   const [customCategory, setCustomCategory] = useState('');
   const [planPriority, setPlanPriority] = useState('normal');
@@ -102,12 +104,80 @@ export default function DayPlanner() {
     setPlanName('');
     setPlanTime('');
     setPlanLocation('');
+    setPlanCoords(null);
     setPlanCategory('inne');
     setCustomCategory('');
     setPlanPriority('normal');
     setPlanNotes('');
     setEditingTimeOfDay(null);
     setEditingPlan(null);
+  };
+
+  const handleSelectOnMap = () => {
+    setIsGettingLocation(true);
+    
+    if (!navigator.geolocation) {
+      toast.error('Twoja przeglądarka nie obsługuje geolokalizacji');
+      setIsGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setPlanCoords({ lat: latitude, lng: longitude });
+        
+        // Try to get address from coordinates (reverse geocoding)
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=pl`
+          );
+          const data = await response.json();
+          
+          if (data.display_name) {
+            // Get shorter address
+            const shortAddress = data.address?.road 
+              ? `${data.address.road}${data.address.house_number ? ' ' + data.address.house_number : ''}, ${data.address.city || data.address.town || data.address.village || ''}`
+              : data.display_name.split(',').slice(0, 2).join(',');
+            
+            setPlanLocation(shortAddress);
+            toast.success('Lokalizacja zapisana!');
+          }
+        } catch (err) {
+          console.error('Reverse geocoding error:', err);
+          setPlanLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+          toast.success('Lokalizacja zapisana!');
+        }
+        
+        setIsGettingLocation(false);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        toast.error('Nie udało się pobrać lokalizacji. Sprawdź uprawnienia.');
+        setIsGettingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const openNavigationToLocation = () => {
+    if (!planCoords) {
+      toast.error('Najpierw zaznacz miejsce na mapie');
+      return;
+    }
+    
+    const { lat, lng } = planCoords;
+    
+    // Detect if iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (isIOS) {
+      // Apple Maps
+      window.open(`maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`, '_blank');
+    } else {
+      // Google Maps
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+    }
   };
 
   const openEditForm = (plan: DayPlan) => {
@@ -418,6 +488,38 @@ export default function DayPlanner() {
             className="bg-background"
           />
         </div>
+      </div>
+
+      {/* Map location buttons */}
+      <div className="space-y-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleSelectOnMap}
+          disabled={isGettingLocation}
+          className="w-full justify-start gap-2 h-11"
+        >
+          <Map className="w-4 h-4 text-primary" />
+          {isGettingLocation ? 'Pobieranie lokalizacji...' : 'Zaznacz na mapie (użyj mojej lokalizacji)'}
+        </Button>
+        
+        {planCoords && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={openNavigationToLocation}
+            className="w-full justify-start gap-2 h-11 border-secondary text-secondary hover:bg-secondary/10"
+          >
+            <Navigation className="w-4 h-4" />
+            Wyznacz trasę do tego miejsca
+          </Button>
+        )}
+        
+        {planCoords && (
+          <p className="text-xs text-muted-foreground text-center">
+            📍 Współrzędne: {planCoords.lat.toFixed(4)}, {planCoords.lng.toFixed(4)}
+          </p>
+        )}
       </div>
 
       <div>
