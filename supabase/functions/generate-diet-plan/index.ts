@@ -61,6 +61,16 @@ serve(async (req) => {
 
     const systemPrompt = `Jesteś ekspertem dietetyki i fitness. Twoim zadaniem jest stworzenie spersonalizowanego planu żywieniowego w języku polskim.
 
+KRYTYCZNE ZASADY CENOWE - ŚREDNIA PÓŁKA CENOWA:
+- PREFERUJ tanie, popularne produkty: kurczak, jajka, ser żółty, twaróg, jogurt naturalny, mleko, makaron, ryż, kasza gryczana/jaglana, pieczywo, warzywa sezonowe (marchew, cebula, ziemniaki, kapusta, pomidory, ogórki), jabłka, banany
+- UNIKAJ drogich składników: łosoś (max 1x w tygodniu), krewetki, awokado (max 2x w tygodniu), orzechy nerkowca/makadamia, stek wołowy, importowane owoce egzotyczne, drogi ser typu brie/camembert
+- DOPUSZCZALNE w umiarkowanych ilościach: tuńczyk w puszce, pierś z indyka, ser feta, orzechy włoskie/migdały, oliwa z oliwek
+
+RÓŻNORODNOŚĆ - KAŻDY DZIEŃ INNY:
+- Każdy dzień tygodnia MUSI mieć KOMPLETNIE INNE przepisy
+- NIE powtarzaj tych samych dań w różne dni
+- Zapewnij różnorodność smaków i składników przez cały tydzień
+
 ZAWSZE odpowiadaj w formacie JSON zgodnym ze strukturą:
 {
   "summary": "krótkie podsumowanie planu (2-3 zdania)",
@@ -72,8 +82,9 @@ ZAWSZE odpowiadaj w formacie JSON zgodnym ze strukturą:
   },
   "tips": ["wskazówka 1", "wskazówka 2", ...],
   "weeklySchedule": [
-    {"day": "Poniedziałek", "meals": ["posiłek 1", "posiłek 2", ...], "workoutSuggestion": "opcjonalnie"},
-    ...
+    {"day": "Poniedziałek", "meals": ["śniadanie: nazwa", "obiad: nazwa", "kolacja: nazwa", "przekąska: nazwa"]},
+    {"day": "Wtorek", "meals": ["śniadanie: INNA nazwa", "obiad: INNA nazwa", "kolacja: INNA nazwa", "przekąska: INNA nazwa"]},
+    ... (każdy dzień z INNYMI przepisami)
   ]
 }
 
@@ -81,10 +92,11 @@ Zasady:
 - Wszystkie teksty w języku polskim
 - Kalorie posiłków muszą sumować się do podanej dziennej normy
 - Dostosuj posiłki do typu diety
-- Podaj realistyczne, łatwe do przygotowania posiłki
+- Podaj realistyczne, łatwe do przygotowania posiłki ZE ŚREDNIEJ PÓŁKI CENOWEJ
 - Uwzględnij lokalne polskie produkty
 - Dodaj 5-7 praktycznych wskazówek
-- Plan tygodniowy na 7 dni`;
+- Plan tygodniowy na 7 dni - KAŻDY DZIEŃ INNE PRZEPISY
+- W dailyMeals podaj po 7 różnych opcji dla każdego typu posiłku (po jednej na każdy dzień tygodnia)`;
 
     const userPrompt = `Stwórz plan żywieniowy dla osoby o następujących parametrach:
 
