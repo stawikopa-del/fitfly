@@ -1,7 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import fitekLoading from '@/assets/fitek-loading.png';
 import { getRandomLoadingMessage } from '@/data/loadingMessages';
+
+// Losowe gradienty tła
+const backgroundGradients = [
+  'from-emerald-100 via-teal-50 to-cyan-100',
+  'from-amber-100 via-orange-50 to-yellow-100',
+  'from-violet-100 via-purple-50 to-fuchsia-100',
+  'from-sky-100 via-blue-50 to-indigo-100',
+  'from-rose-100 via-pink-50 to-red-100',
+  'from-lime-100 via-green-50 to-emerald-100',
+  'from-cyan-100 via-teal-50 to-green-100',
+  'from-fuchsia-100 via-pink-50 to-rose-100',
+  'from-indigo-100 via-violet-50 to-purple-100',
+  'from-orange-100 via-amber-50 to-yellow-100',
+];
+
+const getRandomGradient = () => {
+  return backgroundGradients[Math.floor(Math.random() * backgroundGradients.length)];
+};
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -11,6 +29,9 @@ interface SplashScreenProps {
 export function SplashScreen({ onComplete, minDuration = 2500 }: SplashScreenProps) {
   const [isExiting, setIsExiting] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(getRandomLoadingMessage);
+  
+  // Losowy gradient tylko raz przy renderowaniu
+  const randomGradient = useMemo(() => getRandomGradient(), []);
 
   // Zmiana hasełka co 2 sekundy
   useEffect(() => {
@@ -34,7 +55,8 @@ export function SplashScreen({ onComplete, minDuration = 2500 }: SplashScreenPro
     <div
       className={cn(
         'fixed inset-0 z-[9999] flex flex-col items-center justify-center',
-        'bg-gradient-to-b from-background via-background to-primary/10',
+        'bg-gradient-to-br',
+        randomGradient,
         'transition-opacity duration-500',
         isExiting ? 'opacity-0' : 'opacity-100'
       )}
