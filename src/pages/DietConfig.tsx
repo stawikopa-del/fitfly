@@ -79,13 +79,22 @@ const activityLevels = [
   { value: 5, label: 'Bardzo aktywny', emoji: '💪', description: 'Codzienne intensywne treningi' },
 ];
 
+interface MealItem {
+  name: string;
+  calories: number;
+  description: string;
+}
+
 interface GeneratedDietPlan {
   summary: string;
   dailyMeals: {
-    breakfast: { name: string; calories: number; description: string }[];
-    lunch: { name: string; calories: number; description: string }[];
-    dinner: { name: string; calories: number; description: string }[];
-    snacks: { name: string; calories: number; description: string }[];
+    breakfast?: MealItem[];
+    secondBreakfast?: MealItem[];
+    lunch?: MealItem[];
+    dinner?: MealItem[];
+    snacks?: MealItem[];
+    afternoonSnack?: MealItem[];
+    [key: string]: MealItem[] | undefined;
   };
   tips: string[];
   weeklySchedule: {
@@ -94,6 +103,15 @@ interface GeneratedDietPlan {
     workoutSuggestion?: string;
   }[];
 }
+
+const mealTypeLabels: Record<string, { label: string; emoji: string }> = {
+  breakfast: { label: 'Śniadanie', emoji: '🌅' },
+  secondBreakfast: { label: 'Drugie śniadanie', emoji: '🥐' },
+  lunch: { label: 'Obiad', emoji: '🍽️' },
+  dinner: { label: 'Kolacja', emoji: '🌙' },
+  snacks: { label: 'Przekąski', emoji: '🍪' },
+  afternoonSnack: { label: 'Podwieczorek', emoji: '🍎' },
+};
 
 export default function DietConfig() {
   const navigate = useNavigate();
@@ -492,29 +510,31 @@ export default function DietConfig() {
               Przykładowe posiłki <span>🍽️</span>
             </h3>
             
-            {Object.entries(generatedPlan.dailyMeals).map(([mealType, meals]) => (
-              <div key={mealType} className="bg-card rounded-2xl p-4 border border-border/50">
-                <h4 className="font-bold text-sm mb-3 capitalize">
-                  {mealType === 'breakfast' && '🌅 Śniadanie'}
-                  {mealType === 'lunch' && '🍽️ Obiad'}
-                  {mealType === 'dinner' && '🌙 Kolacja'}
-                  {mealType === 'snacks' && '🍪 Przekąski'}
-                </h4>
-                <div className="space-y-2">
-                  {meals.map((meal, idx) => (
-                    <div key={idx} className="flex justify-between items-start py-2 border-b border-border/30 last:border-0">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{meal.name}</p>
-                        <p className="text-xs text-muted-foreground">{meal.description}</p>
+            {Object.entries(generatedPlan.dailyMeals).map(([mealType, meals]) => {
+              if (!meals || meals.length === 0) return null;
+              const config = mealTypeLabels[mealType] || { label: mealType, emoji: '🍴' };
+              
+              return (
+                <div key={mealType} className="bg-card rounded-2xl p-4 border border-border/50">
+                  <h4 className="font-bold text-sm mb-3">
+                    {config.emoji} {config.label}
+                  </h4>
+                  <div className="space-y-2">
+                    {meals.map((meal, idx) => (
+                      <div key={idx} className="flex justify-between items-start py-2 border-b border-border/30 last:border-0">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{meal.name}</p>
+                          <p className="text-xs text-muted-foreground">{meal.description}</p>
+                        </div>
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full ml-2">
+                          {meal.calories} kcal
+                        </span>
                       </div>
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full ml-2">
-                        {meal.calories} kcal
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </section>
 
           {/* Weekly Schedule */}
