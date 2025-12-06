@@ -145,7 +145,7 @@ export default function DietConfig() {
           .from('profiles')
           .select('weight, height, age, gender, goal, daily_calories')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         
         if (profile) {
           if (profile.weight) setWeight(Number(profile.weight));

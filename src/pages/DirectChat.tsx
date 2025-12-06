@@ -1157,7 +1157,7 @@ export default function DirectChat() {
                     .from('favorite_shopping_lists')
                     .select('*')
                     .eq('id', listId)
-                    .single();
+                    .maybeSingle();
                   
                   if (!favList || !odgerId || !user) return false;
                   
