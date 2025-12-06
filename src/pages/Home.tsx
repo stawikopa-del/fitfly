@@ -124,19 +124,19 @@ export default function Home() {
   return (
     <div className="px-4 py-6 space-y-6">
       {/* Brand Banner */}
-      <section className="flex items-center gap-3 py-2">
+      <section className="flex flex-col items-center justify-center gap-2 py-4">
         <img 
           src={fitflyLogo} 
           alt="FITFLY Logo" 
-          className="w-14 h-14 object-contain drop-shadow-md"
+          className="w-24 h-24 object-contain drop-shadow-lg animate-float-slow"
         />
-        <div className="flex flex-col">
-          <h2 className="text-2xl font-extrabold font-display tracking-tight pr-2">
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        <div className="flex flex-col items-center text-center">
+          <h2 className="text-3xl font-extrabold font-display tracking-wide">
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent inline-block px-1">
               FITFLY
             </span>
           </h2>
-          <p className="text-xs text-muted-foreground font-medium">
+          <p className="text-sm text-muted-foreground font-medium mt-1">
             Twoja forma, Nasza misja 🍎
           </p>
         </div>
