@@ -287,26 +287,126 @@ export default function CalendarPage() {
           ))}
         </div>
 
-        {/* Month View */}
+        {/* Month View - custom tiles matching week view style */}
         {viewMode === 'month' && (
           <div className="bg-card rounded-3xl p-4 border-2 border-border/50 shadow-card-playful">
-            <CalendarComponent
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
-              locale={pl}
-              className="pointer-events-auto mx-auto"
-              modifiers={{
-                hasEvent: datesWithEvents,
-              }}
-              modifiersStyles={{
-                hasEvent: {
-                  fontWeight: 'bold',
-                  textDecoration: 'underline',
-                  textDecorationColor: 'hsl(var(--primary))',
-                },
-              }}
-            />
+            {/* Month Navigation */}
+            <div className="flex items-center justify-between mb-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setMonth(newDate.getMonth() - 1);
+                  setSelectedDate(newDate);
+                }}
+                className="rounded-xl w-8 h-8"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <h3 className="font-bold font-display text-foreground text-center text-sm">
+                {format(selectedDate, 'LLLL yyyy', { locale: pl })}
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setMonth(newDate.getMonth() + 1);
+                  setSelectedDate(newDate);
+                }}
+                className="rounded-xl w-8 h-8"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Day Headers */}
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map((day) => (
+                <div key={day} className="text-center text-[10px] sm:text-xs font-bold text-muted-foreground py-1">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Month Days Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {(() => {
+                const firstDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+                const lastDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+                const startDay = firstDayOfMonth.getDay() === 0 ? 6 : firstDayOfMonth.getDay() - 1; // Monday = 0
+                const daysInMonth = lastDayOfMonth.getDate();
+                const today = new Date();
+                
+                const cells = [];
+                
+                // Empty cells before first day
+                for (let i = 0; i < startDay; i++) {
+                  cells.push(
+                    <div key={`empty-${i}`} className="py-2 sm:py-3" />
+                  );
+                }
+                
+                // Day cells
+                for (let day = 1; day <= daysInMonth; day++) {
+                  const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day);
+                  const dayEvents = getEventsForDate(date);
+                  const isSelected = isSameDay(date, selectedDate);
+                  const isTodayDate = isToday(date);
+                  
+                  cells.push(
+                    <button
+                      key={day}
+                      onClick={() => setSelectedDate(date)}
+                      className={cn(
+                        "flex flex-col items-center py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-xl sm:rounded-2xl transition-all duration-200",
+                        isSelected
+                          ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                          : isTodayDate
+                          ? "bg-secondary/20 text-secondary-foreground border-2 border-secondary"
+                          : "bg-muted/50 text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <span className={cn(
+                        "text-[11px] sm:text-sm font-bold",
+                        isSelected ? "text-primary-foreground" : "text-foreground"
+                      )}>
+                        {day}
+                      </span>
+                      
+                      {/* Event Dots */}
+                      {dayEvents.length > 0 && (
+                        <div className="flex flex-wrap gap-0.5 justify-center mt-0.5">
+                          {dayEvents.slice(0, 2).map((event, idx) => {
+                            const config = getEventConfig(event.type);
+                            return (
+                              <div
+                                key={idx}
+                                className={cn(
+                                  "w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full",
+                                  isSelected ? "bg-primary-foreground/80" : config.dotColor
+                                )}
+                              />
+                            );
+                          })}
+                          {dayEvents.length > 2 && (
+                            <span className={cn(
+                              "text-[6px] sm:text-[7px] font-bold",
+                              isSelected ? "text-primary-foreground" : "text-muted-foreground"
+                            )}>
+                              +{dayEvents.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </button>
+                  );
+                }
+                
+                return cells;
+              })()}
+            </div>
           </div>
         )}
 
