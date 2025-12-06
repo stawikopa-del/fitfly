@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Image, Mic, ShoppingCart, X, Send, Square, Play, Pause, Trash2, FlipHorizontal } from 'lucide-react';
+import { Plus, Image, Mic, ShoppingCart, X, Send, Square, Play, Pause, Trash2, FlipHorizontal, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,17 +7,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { soundFeedback } from '@/utils/soundFeedback';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
 interface ShoppingListItem {
   id: string;
   dateRangeStart: string | null;
   dateRangeEnd: string | null;
   itemsCount: number;
+}
+
+interface FavoriteListItem {
+  id: string;
+  name: string;
+  itemsCount: number;
+  createdAt: string;
 }
 
 interface PendingAttachment {
@@ -34,6 +44,7 @@ interface ChatAttachmentMenuProps {
   onSendImage: (imageUrl: string) => Promise<boolean>;
   onSendVoice: (audioUrl: string, duration: number) => Promise<boolean>;
   onSendShoppingList: (listId: string) => Promise<boolean>;
+  onSendFavoriteList?: (listId: string) => Promise<boolean>;
   disabled?: boolean;
   pendingAttachment: PendingAttachment | null;
   setPendingAttachment: (attachment: PendingAttachment | null) => void;
@@ -43,6 +54,7 @@ export function ChatAttachmentMenu({
   onSendImage, 
   onSendVoice, 
   onSendShoppingList,
+  onSendFavoriteList,
   disabled,
   pendingAttachment,
   setPendingAttachment,
@@ -54,8 +66,10 @@ export function ChatAttachmentMenu({
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [showShoppingListDialog, setShowShoppingListDialog] = useState(false);
   const [shoppingLists, setShoppingLists] = useState<ShoppingListItem[]>([]);
+  const [favoriteLists, setFavoriteLists] = useState<FavoriteListItem[]>([]);
   const [loadingLists, setLoadingLists] = useState(false);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const [activeTab, setActiveTab] = useState<'shared' | 'favorites'>('favorites');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -327,23 +341,41 @@ export function ChatAttachmentMenu({
     setShowShoppingListDialog(true);
 
     try {
-      const { data, error } = await supabase
+      // Fetch shared lists
+      const { data: sharedData, error: sharedError } = await supabase
         .from('shared_shopping_lists')
         .select('id, date_range_start, date_range_end, items')
         .eq('owner_id', user?.id)
         .order('created_at', { ascending: false })
         .limit(10);
 
-      if (error) throw error;
+      if (sharedError) throw sharedError;
 
-      const lists = (data || []).map(list => ({
+      const lists = (sharedData || []).map(list => ({
         id: list.id,
         dateRangeStart: list.date_range_start,
         dateRangeEnd: list.date_range_end,
         itemsCount: Array.isArray(list.items) ? list.items.length : 0,
       }));
-
       setShoppingLists(lists);
+
+      // Fetch favorite lists
+      const { data: favData, error: favError } = await supabase
+        .from('favorite_shopping_lists')
+        .select('id, name, items, created_at')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (favError) throw favError;
+
+      const favLists = (favData || []).map(list => ({
+        id: list.id,
+        name: list.name,
+        itemsCount: Array.isArray(list.items) ? list.items.length : 0,
+        createdAt: list.created_at,
+      }));
+      setFavoriteLists(favLists);
     } catch (error) {
       console.error('Error fetching shopping lists:', error);
       toast.error('Nie udało się pobrać list zakupów');
@@ -356,6 +388,18 @@ export function ChatAttachmentMenu({
     const success = await onSendShoppingList(listId);
     if (success) {
       toast.success('Lista zakupów udostępniona');
+      setShowShoppingListDialog(false);
+    }
+  };
+
+  const handleSendFavoriteList = async (listId: string) => {
+    if (!onSendFavoriteList) {
+      toast.error('Funkcja niedostępna');
+      return;
+    }
+    const success = await onSendFavoriteList(listId);
+    if (success) {
+      toast.success('Ulubiona lista udostępniona');
       setShowShoppingListDialog(false);
     }
   };
@@ -459,37 +503,83 @@ export function ChatAttachmentMenu({
 
       {/* Shopping list dialog */}
       <Dialog open={showShoppingListDialog} onOpenChange={setShowShoppingListDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Wybierz listę zakupów</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2 max-h-[300px] overflow-y-auto">
-            {loadingLists ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-              </div>
-            ) : shoppingLists.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Nie masz jeszcze żadnych list zakupów
-              </p>
-            ) : (
-              shoppingLists.map(list => (
-                <button
-                  key={list.id}
-                  onClick={() => handleSendList(list.id)}
-                  className="w-full p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left flex items-center gap-3"
-                >
-                  <ShoppingCart className="h-5 w-5 text-secondary shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium">Lista zakupów</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDateRange(list.dateRangeStart, list.dateRangeEnd)} • {list.itemsCount} produktów
-                    </p>
+          
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'shared' | 'favorites')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="favorites" className="flex items-center gap-2">
+                <Heart className="w-4 h-4" />
+                Ulubione
+              </TabsTrigger>
+              <TabsTrigger value="shared" className="flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4" />
+                Wysłane
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="favorites" className="mt-4">
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {loadingLists ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
                   </div>
-                </button>
-              ))
-            )}
-          </div>
+                ) : favoriteLists.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Brak ulubionych list zakupów
+                  </p>
+                ) : (
+                  favoriteLists.map(list => (
+                    <button
+                      key={list.id}
+                      onClick={() => handleSendFavoriteList(list.id)}
+                      className="w-full p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left flex items-center gap-3"
+                    >
+                      <Heart className="h-5 w-5 text-destructive fill-destructive shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{list.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {list.itemsCount} produktów • {format(new Date(list.createdAt), 'd MMM', { locale: pl })}
+                        </p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="shared" className="mt-4">
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {loadingLists ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                  </div>
+                ) : shoppingLists.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Brak wysłanych list zakupów
+                  </p>
+                ) : (
+                  shoppingLists.map(list => (
+                    <button
+                      key={list.id}
+                      onClick={() => handleSendList(list.id)}
+                      className="w-full p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left flex items-center gap-3"
+                    >
+                      <ShoppingCart className="h-5 w-5 text-secondary shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium">Lista zakupów</p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatDateRange(list.dateRangeStart, list.dateRangeEnd)} • {list.itemsCount} produktów
+                        </p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </>

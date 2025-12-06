@@ -235,6 +235,30 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_shopping_lists: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          name?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           created_at: string

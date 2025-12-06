@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Check, Share2, Calendar, ChevronLeft, ChevronRight, ChevronDown, Trash2, Copy, Users, Plus, X, Gift, User } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Check, Share2, Calendar, ChevronLeft, ChevronRight, ChevronDown, Trash2, Copy, Users, Plus, X, Gift, User, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -1242,6 +1242,45 @@ export default function ShoppingList() {
   const [sharedLists, setSharedLists] = useState<SharedList[]>([]);
   const [sentLists, setSentLists] = useState<SharedList[]>([]); // Lists I sent to others
   const [loadingSharedLists, setLoadingSharedLists] = useState(false);
+  
+  // Favorite shopping lists
+  const [favoriteLists, setFavoriteLists] = useState<Array<{
+    id: string;
+    name: string;
+    items: any[];
+    created_at: string;
+  }>>([]);
+  const [loadingFavorites, setLoadingFavorites] = useState(false);
+
+  // Load favorite shopping lists
+  useEffect(() => {
+    if (!isInitialized || !user) return;
+
+    const fetchFavorites = async () => {
+      setLoadingFavorites(true);
+      try {
+        const { data, error } = await supabase
+          .from('favorite_shopping_lists')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setFavoriteLists((data || []).map(d => ({
+          id: d.id,
+          name: d.name,
+          items: d.items as any[],
+          created_at: d.created_at,
+        })));
+      } catch (err) {
+        console.error('Error fetching favorite lists:', err);
+      } finally {
+        setLoadingFavorites(false);
+      }
+    };
+
+    fetchFavorites();
+  }, [user, isInitialized]);
 
   // Load shared lists from friends
   useEffect(() => {
@@ -1473,6 +1512,74 @@ export default function ShoppingList() {
     });
     return sortedGroups;
   }, [ingredients]);
+  
+  // Save current list to favorites
+  const saveToFavorites = useCallback(async () => {
+    if (!user || ingredients.length === 0) return;
+
+    try {
+      soundFeedback.buttonClick();
+    } catch {}
+
+    const listName = startDate && endDate 
+      ? `Lista ${format(startDate, 'd.MM', { locale: pl })} - ${format(endDate, 'd.MM', { locale: pl })}`
+      : `Lista ${format(new Date(), 'd.MM.yyyy', { locale: pl })}`;
+
+    const itemsToSave = ingredients.map(ing => ({
+      name: ing.name,
+      amount: ing.amount,
+      unit: ing.unit,
+      category: ing.category,
+      displayAmount: ing.displayAmount,
+    }));
+
+    try {
+      const { data, error } = await supabase
+        .from('favorite_shopping_lists')
+        .insert({
+          user_id: user.id,
+          name: listName,
+          items: itemsToSave,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setFavoriteLists(prev => [{
+        id: data.id,
+        name: data.name,
+        items: data.items as any[],
+        created_at: data.created_at,
+      }, ...prev]);
+      toast.success('Zapisano do ulubionych! ❤️');
+    } catch (err) {
+      console.error('Error saving to favorites:', err);
+      toast.error('Nie udało się zapisać');
+    }
+  }, [user, ingredients, startDate, endDate]);
+
+  // Delete favorite list
+  const deleteFavorite = useCallback(async (id: string) => {
+    try {
+      soundFeedback.buttonClick();
+    } catch {}
+
+    try {
+      const { error } = await supabase
+        .from('favorite_shopping_lists')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setFavoriteLists(prev => prev.filter(l => l.id !== id));
+      toast.success('Usunięto z ulubionych');
+    } catch (err) {
+      console.error('Error deleting favorite:', err);
+      toast.error('Nie udało się usunąć');
+    }
+  }, []);
+
   const toggleItem = useCallback((name: string) => {
     try {
       soundFeedback.buttonClick();
@@ -1643,6 +1750,15 @@ export default function ShoppingList() {
           <Button variant="ghost" size="icon" onClick={() => setShowAddDialog(true)}>
             <Plus className="w-5 h-5" />
           </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={saveToFavorites} 
+            disabled={ingredients.length === 0}
+            title="Dodaj do ulubionych"
+          >
+            <Heart className="w-5 h-5" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={() => setShowShareDialog(true)} disabled={ingredients.length === 0}>
             <Share2 className="w-5 h-5" />
           </Button>
@@ -1720,6 +1836,63 @@ export default function ShoppingList() {
               </p>
             </div>}
         </div>
+
+        {/* Favorite Lists Section */}
+        {(loadingFavorites || favoriteLists.length > 0) && (
+          <div className="bg-card rounded-2xl border-2 border-destructive/30 p-4 shadow-card-playful">
+            <h2 className="font-bold font-display text-foreground mb-3 flex items-center gap-2">
+              <Heart className="w-5 h-5 text-destructive fill-destructive" />
+              Ulubione listy zakupów
+            </h2>
+            
+            {loadingFavorites ? (
+              <div className="flex items-center justify-center py-6">
+                <div className="animate-spin w-6 h-6 border-3 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : favoriteLists.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Brak ulubionych list
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {favoriteLists.map(list => (
+                  <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
+                    <div className="p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {list.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {list.items?.length || 0} produktów • {format(new Date(list.created_at), 'd MMM yyyy', { locale: pl })}
+                          </p>
+                        </div>
+                        <button 
+                          onClick={() => deleteFavorite(list.id)}
+                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          try { soundFeedback.buttonClick(); } catch {}
+                          navigate(`/lista-zakupow/fav/${list.id}`);
+                        }}
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        Otwórz listę
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Shared Lists from Friends */}
         {(loadingSharedLists || sharedLists.length > 0) && (

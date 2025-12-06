@@ -1150,6 +1150,37 @@ export default function DirectChat() {
               onSendImage={sendImageMessage}
               onSendVoice={sendVoiceMessage}
               onSendShoppingList={sendShoppingListMessage}
+              onSendFavoriteList={async (listId: string) => {
+                // For favorite lists, we create a shared list first then send it
+                try {
+                  const { data: favList } = await supabase
+                    .from('favorite_shopping_lists')
+                    .select('*')
+                    .eq('id', listId)
+                    .single();
+                  
+                  if (!favList || !odgerId || !user) return false;
+                  
+                  // Create shared list from favorite
+                  const { data: sharedList, error } = await supabase
+                    .from('shared_shopping_lists')
+                    .insert({
+                      owner_id: user.id,
+                      shared_with_id: odgerId,
+                      items: favList.items,
+                      notes: '',
+                    })
+                    .select()
+                    .single();
+                  
+                  if (error) throw error;
+                  
+                  return await sendShoppingListMessage(sharedList.id);
+                } catch (err) {
+                  console.error('Error sharing favorite list:', err);
+                  return false;
+                }
+              }}
               disabled={isSending}
               pendingAttachment={pendingAttachment}
               setPendingAttachment={setPendingAttachment}
