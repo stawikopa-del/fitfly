@@ -63,11 +63,13 @@ export default function Workouts() {
     <div className="px-4 py-6 space-y-6">
       {/* Header z FITEK */}
       <header className="relative z-10 flex items-center gap-4">
-        <img 
-          src={fitekPoranek} 
-          alt="FITEK poranny" 
-          className="w-16 h-16 object-contain animate-float"
-        />
+        <div className="w-18 h-18 rounded-full bg-white/90 dark:bg-card shadow-lg border border-border/30 flex items-center justify-center">
+          <img 
+            src={fitekPoranek} 
+            alt="FITEK poranny" 
+            className="w-14 h-14 object-contain animate-float"
+          />
+        </div>
         <div>
           <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent">
             Treningi

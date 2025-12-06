@@ -321,11 +321,13 @@ export default function More() {
       {/* Pakiety Premium */}
       <div className="space-y-5">
         <div className="text-center">
-          <img 
-            src={fitekKasa} 
-            alt="FITEK z pieniędzmi" 
-            className="w-20 h-20 object-contain mx-auto mb-2 animate-float"
-          />
+          <div className="w-24 h-24 rounded-full bg-white/90 dark:bg-card shadow-lg border border-border/30 flex items-center justify-center mx-auto mb-2">
+            <img 
+              src={fitekKasa} 
+              alt="FITEK z pieniędzmi" 
+              className="w-18 h-18 object-contain animate-float"
+            />
+          </div>
           <h2 className="text-lg font-extrabold font-display text-foreground">
             Pakiety FITFLY 💎
           </h2>

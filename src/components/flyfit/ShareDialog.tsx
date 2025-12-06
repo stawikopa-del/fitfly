@@ -73,7 +73,9 @@ export function ShareDialog({ open, onOpenChange, type, itemId, itemName }: Shar
       <DialogContent className="max-w-md bg-card">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <img src={fitekSamolot} alt="FITEK wysyła" className="w-8 h-8 object-contain" />
+            <div className="w-10 h-10 rounded-full bg-white/90 dark:bg-muted shadow-sm border border-border/30 flex items-center justify-center shrink-0">
+              <img src={fitekSamolot} alt="FITEK wysyła" className="w-7 h-7 object-contain" />
+            </div>
             Udostępnij {type === 'recipe' ? 'przepis' : 'wyzwanie'}
           </DialogTitle>
         </DialogHeader>

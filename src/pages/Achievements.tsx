@@ -45,11 +45,13 @@ export default function Achievements() {
 
         {/* FITEK z pucharem - hero */}
         <div className="flex items-center justify-center py-2">
-          <img 
-            src={fitekPuchar} 
-            alt="FITEK z pucharem" 
-            className="w-28 h-28 object-contain animate-float"
-          />
+          <div className="w-32 h-32 rounded-full bg-white/90 dark:bg-card shadow-lg border border-border/30 flex items-center justify-center">
+            <img 
+              src={fitekPuchar} 
+              alt="FITEK z pucharem" 
+              className="w-24 h-24 object-contain animate-float"
+            />
+          </div>
         </div>
 
         {/* Level Progress */}

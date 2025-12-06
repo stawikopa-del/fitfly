@@ -306,11 +306,13 @@ export default function Progress() {
       <div className="bg-gradient-to-br from-primary/20 via-accent/10 to-secondary/20 rounded-3xl p-6 border-2 border-primary/20 relative z-10 overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
         <div className="relative z-10 flex items-center gap-4">
-          <img 
-            src={fitekWykresy} 
-            alt="FITEK pokazuje wykresy" 
-            className="w-20 h-20 object-contain shrink-0 animate-float"
-          />
+          <div className="w-24 h-24 rounded-full bg-white/90 dark:bg-card shadow-lg border border-border/30 flex items-center justify-center shrink-0">
+            <img 
+              src={fitekWykresy} 
+              alt="FITEK pokazuje wykresy" 
+              className="w-18 h-18 object-contain animate-float"
+            />
+          </div>
           <div>
             <h3 className="font-bold font-display text-foreground mb-1">Tak trzymaj! 💪</h3>
             <p className="text-sm text-muted-foreground">

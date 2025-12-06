@@ -255,11 +255,13 @@ export default function Goals() {
             className="w-full p-8 rounded-3xl bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-all group"
           >
             <div className="flex flex-col items-center gap-4">
-              <img 
-                src={fitekCel} 
-                alt="FITEK przy celu" 
-                className="w-24 h-24 object-contain group-hover:scale-110 transition-transform"
-              />
+              <div className="w-28 h-28 rounded-full bg-white/90 dark:bg-card shadow-lg border border-border/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <img 
+                  src={fitekCel} 
+                  alt="FITEK przy celu" 
+                  className="w-20 h-20 object-contain"
+                />
+              </div>
               <div className="text-center">
                 <p className="font-bold text-foreground text-lg">Ustaw swój pierwszy cel!</p>
                 <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
