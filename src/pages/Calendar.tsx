@@ -330,7 +330,7 @@ export default function CalendarPage() {
               ))}
             </div>
 
-            {/* Month Days Grid */}
+            {/* Month Days Grid - 7x5 = 35 cells */}
             <div className="grid grid-cols-7 gap-1">
               {(() => {
                 const firstDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
@@ -340,15 +340,40 @@ export default function CalendarPage() {
                 const today = new Date();
                 
                 const cells = [];
+                const totalCells = 35; // 7 columns x 5 rows
                 
-                // Empty cells before first day
-                for (let i = 0; i < startDay; i++) {
+                // Previous month days
+                const prevMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 0);
+                const prevMonthDays = prevMonth.getDate();
+                for (let i = startDay - 1; i >= 0; i--) {
+                  const day = prevMonthDays - i;
+                  const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, day);
+                  const dayEvents = getEventsForDate(date);
+                  
                   cells.push(
-                    <div key={`empty-${i}`} className="py-2 sm:py-3" />
+                    <button
+                      key={`prev-${day}`}
+                      onClick={() => setSelectedDate(date)}
+                      className="flex flex-col items-center py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-xl sm:rounded-2xl transition-all duration-200 bg-muted/20 hover:bg-muted/40"
+                    >
+                      <span className="text-[11px] sm:text-sm font-medium text-muted-foreground/50">
+                        {day}
+                      </span>
+                      {dayEvents.length > 0 && (
+                        <div className="flex gap-0.5 justify-center mt-0.5">
+                          {dayEvents.slice(0, 2).map((event, idx) => {
+                            const config = getEventConfig(event.type);
+                            return (
+                              <div key={idx} className={cn("w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full opacity-40", config.dotColor)} />
+                            );
+                          })}
+                        </div>
+                      )}
+                    </button>
                   );
                 }
                 
-                // Day cells
+                // Current month days
                 for (let day = 1; day <= daysInMonth; day++) {
                   const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day);
                   const dayEvents = getEventsForDate(date);
@@ -398,6 +423,35 @@ export default function CalendarPage() {
                               +{dayEvents.length - 2}
                             </span>
                           )}
+                        </div>
+                      )}
+                    </button>
+                  );
+                }
+                
+                // Next month days to fill remaining cells
+                const remainingCells = totalCells - cells.length;
+                for (let day = 1; day <= remainingCells; day++) {
+                  const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, day);
+                  const dayEvents = getEventsForDate(date);
+                  
+                  cells.push(
+                    <button
+                      key={`next-${day}`}
+                      onClick={() => setSelectedDate(date)}
+                      className="flex flex-col items-center py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-xl sm:rounded-2xl transition-all duration-200 bg-muted/20 hover:bg-muted/40"
+                    >
+                      <span className="text-[11px] sm:text-sm font-medium text-muted-foreground/50">
+                        {day}
+                      </span>
+                      {dayEvents.length > 0 && (
+                        <div className="flex gap-0.5 justify-center mt-0.5">
+                          {dayEvents.slice(0, 2).map((event, idx) => {
+                            const config = getEventConfig(event.type);
+                            return (
+                              <div key={idx} className={cn("w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full opacity-40", config.dotColor)} />
+                            );
+                          })}
                         </div>
                       )}
                     </button>
