@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Moon, Sun, Palette, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2, Settings as SettingsIcon } from 'lucide-react';
+import { Bell, Moon, Sun, Palette, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2, Settings as SettingsIcon, Utensils, Clock, Plus, Minus } from 'lucide-react';
 import { useTheme, Theme } from '@/hooks/useTheme';
 import { PageHeader } from '@/components/flyfit/PageHeader';
 import {
@@ -16,12 +16,52 @@ import {
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useWebAuthn } from '@/hooks/useWebAuthn';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+
+// Default meal configurations
+const defaultMealConfigs: Record<number, { name: string; time: string; emoji: string }[]> = {
+  3: [
+    { name: 'Śniadanie', time: '08:00', emoji: '🌅' },
+    { name: 'Obiad', time: '13:00', emoji: '🍽️' },
+    { name: 'Kolacja', time: '19:00', emoji: '🌙' },
+  ],
+  4: [
+    { name: 'Śniadanie', time: '08:00', emoji: '🌅' },
+    { name: 'Obiad', time: '13:00', emoji: '🍽️' },
+    { name: 'Przekąska', time: '16:00', emoji: '🍪' },
+    { name: 'Kolacja', time: '19:00', emoji: '🌙' },
+  ],
+  5: [
+    { name: 'Śniadanie', time: '07:30', emoji: '🌅' },
+    { name: 'Drugie śniadanie', time: '10:30', emoji: '🥐' },
+    { name: 'Obiad', time: '13:00', emoji: '🍽️' },
+    { name: 'Podwieczorek', time: '16:00', emoji: '☕' },
+    { name: 'Kolacja', time: '19:00', emoji: '🌙' },
+  ],
+  6: [
+    { name: 'Śniadanie', time: '07:00', emoji: '🌅' },
+    { name: 'Drugie śniadanie', time: '10:00', emoji: '🥐' },
+    { name: 'Obiad', time: '13:00', emoji: '🍽️' },
+    { name: 'Podwieczorek', time: '16:00', emoji: '☕' },
+    { name: 'Kolacja', time: '19:00', emoji: '🌙' },
+    { name: 'Deser', time: '21:00', emoji: '🍰' },
+  ],
+};
+
+const extraMealNames = [
+  { name: 'Podwieczorek', emoji: '☕' },
+  { name: 'Drugie śniadanie', emoji: '🥐' },
+  { name: 'Deser', emoji: '🍰' },
+  { name: 'Przekąska wieczorna', emoji: '🌜' },
+  { name: 'Smoothie', emoji: '🥤' },
+  { name: 'Lekka przekąska', emoji: '🥗' },
+];
 
 export default function Settings() {
   const { user, signOut } = useAuth();
@@ -39,6 +79,90 @@ export default function Settings() {
     darkMode: false,
     biometricLogin: false,
   });
+
+  // Meal personalization state
+  const [mealsCount, setMealsCount] = useState(4);
+  const [mealSchedule, setMealSchedule] = useState(defaultMealConfigs[4]);
+
+  // Load meal settings from localStorage
+  useEffect(() => {
+    try {
+      const savedMealsCount = localStorage.getItem('fitfly_meals_count');
+      const savedMealSchedule = localStorage.getItem('fitfly_meal_schedule');
+      
+      if (savedMealsCount) {
+        const count = parseInt(savedMealsCount, 10);
+        setMealsCount(count);
+      }
+      if (savedMealSchedule) {
+        setMealSchedule(JSON.parse(savedMealSchedule));
+      }
+    } catch (e) {
+      console.error('Error loading meal settings:', e);
+    }
+  }, []);
+
+  // Save meal settings
+  const saveMealSettings = (count: number, schedule: typeof mealSchedule) => {
+    try {
+      localStorage.setItem('fitfly_meals_count', count.toString());
+      localStorage.setItem('fitfly_meal_schedule', JSON.stringify(schedule));
+      toast.success('Ustawienia posiłków zapisane! 🍽️');
+    } catch (e) {
+      console.error('Error saving meal settings:', e);
+    }
+  };
+
+  const handleMealsCountChange = (newCount: number) => {
+    if (newCount < 2 || newCount > 8) return;
+    
+    setMealsCount(newCount);
+    
+    // Use default config if available, otherwise generate custom
+    if (defaultMealConfigs[newCount]) {
+      setMealSchedule(defaultMealConfigs[newCount]);
+      saveMealSettings(newCount, defaultMealConfigs[newCount]);
+    } else {
+      // Generate custom meal schedule
+      const baseMeals = defaultMealConfigs[4];
+      const newSchedule = [...baseMeals];
+      
+      // Add or remove meals as needed
+      while (newSchedule.length < newCount) {
+        const extraIndex = (newSchedule.length - 4) % extraMealNames.length;
+        const extraMeal = extraMealNames[extraIndex];
+        const lastMealTime = newSchedule[newSchedule.length - 1]?.time || '19:00';
+        const [hours] = lastMealTime.split(':').map(Number);
+        const newHours = Math.min(hours + 2, 22);
+        newSchedule.push({
+          name: extraMeal.name,
+          time: `${newHours.toString().padStart(2, '0')}:00`,
+          emoji: extraMeal.emoji,
+        });
+      }
+      
+      while (newSchedule.length > newCount) {
+        newSchedule.pop();
+      }
+      
+      setMealSchedule(newSchedule);
+      saveMealSettings(newCount, newSchedule);
+    }
+  };
+
+  const handleMealTimeChange = (index: number, newTime: string) => {
+    const updated = [...mealSchedule];
+    updated[index] = { ...updated[index], time: newTime };
+    setMealSchedule(updated);
+    saveMealSettings(mealsCount, updated);
+  };
+
+  const handleMealNameChange = (index: number, newName: string) => {
+    const updated = [...mealSchedule];
+    updated[index] = { ...updated[index], name: newName };
+    setMealSchedule(updated);
+    saveMealSettings(mealsCount, updated);
+  };
 
   // Check if biometric is already registered
   useEffect(() => {
@@ -167,7 +291,86 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Theme Section */}
+      {/* Meal Personalization Section */}
+      <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful relative z-10 animate-float">
+        <h2 className="font-bold font-display text-foreground mb-4 flex items-center gap-2 text-lg">
+          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Utensils className="w-5 h-5 text-primary" />
+          </div>
+          Personalizacja posiłków 🍽️
+        </h2>
+        
+        {/* Meals count selector */}
+        <div className="bg-muted/50 rounded-2xl p-4 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-sm text-foreground font-medium">
+              Liczba posiłków dziennie
+            </Label>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleMealsCountChange(mealsCount - 1)}
+                disabled={mealsCount <= 2}
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                  mealsCount <= 2 
+                    ? "bg-muted text-muted-foreground cursor-not-allowed" 
+                    : "bg-primary/10 text-primary hover:bg-primary/20"
+                )}
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="text-lg font-bold text-foreground w-8 text-center">{mealsCount}</span>
+              <button
+                onClick={() => handleMealsCountChange(mealsCount + 1)}
+                disabled={mealsCount >= 8}
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                  mealsCount >= 8 
+                    ? "bg-muted text-muted-foreground cursor-not-allowed" 
+                    : "bg-primary/10 text-primary hover:bg-primary/20"
+                )}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Dostosuj ilość posiłków do swojego planu żywieniowego
+          </p>
+        </div>
+
+        {/* Meal schedule */}
+        <div className="space-y-2">
+          <Label className="text-sm text-foreground font-medium flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Harmonogram posiłków
+          </Label>
+          <div className="space-y-2">
+            {mealSchedule.map((meal, index) => (
+              <div 
+                key={index}
+                className="flex items-center gap-2 bg-muted/30 rounded-xl p-3"
+              >
+                <span className="text-lg">{meal.emoji}</span>
+                <Input
+                  value={meal.name}
+                  onChange={(e) => handleMealNameChange(index, e.target.value)}
+                  className="flex-1 h-9 rounded-xl border-border/50 bg-background text-sm font-medium"
+                  placeholder="Nazwa posiłku"
+                  maxLength={30}
+                />
+                <Input
+                  type="time"
+                  value={meal.time}
+                  onChange={(e) => handleMealTimeChange(index, e.target.value)}
+                  className="w-24 h-9 rounded-xl border-border/50 bg-background text-sm"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful relative z-10 animate-float">
         <h2 className="font-bold font-display text-foreground mb-4 flex items-center gap-2 text-lg">
           <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
