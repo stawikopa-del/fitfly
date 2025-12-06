@@ -111,7 +111,7 @@ export default function Challenges() {
           {/* Atomic Habits Tip */}
           {habits.length === 0 && (
             <div className="bg-primary/10 rounded-3xl p-5 border-2 border-primary/30 flex items-start gap-4">
-              <div className="w-16 h-16 rounded-full bg-muted/80 shadow-sm border border-border/30 flex items-center justify-center shrink-0">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/30 to-fitfly-blue-light/30 shadow-sm flex items-center justify-center shrink-0">
                 <img 
                   src={fitekPalec} 
                   alt="FITEK wskazuje" 

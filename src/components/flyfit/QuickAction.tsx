@@ -38,8 +38,6 @@ const colorClasses = {
 };
 
 export function QuickAction({ icon, title, description, color, onClick }: QuickActionProps) {
-  // Check if icon is an img element (FITEK image)
-  const isFitekImage = typeof icon === 'object' && icon !== null && 'type' in (icon as any) && (icon as any).type === 'img';
   
   return (
     <button
@@ -55,9 +53,7 @@ export function QuickAction({ icon, title, description, color, onClick }: QuickA
     >
       <div className={cn(
         'w-14 h-14 rounded-2xl flex items-center justify-center shrink-0',
-        isFitekImage 
-          ? 'bg-muted/80 shadow-sm border border-border/30' 
-          : colorClasses[color].icon
+        colorClasses[color].icon
       )}>
         {icon}
       </div>
