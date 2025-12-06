@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Check, Share2, Calendar, ChevronLeft, ChevronRight, ChevronDown, Trash2, Copy, Users, Plus, X, Gift, User, Heart } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Check, Send, Calendar, ChevronLeft, ChevronRight, ChevronDown, Trash2, Copy, Users, Plus, X, Gift, User, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -1733,7 +1733,7 @@ export default function ShoppingList() {
           
           
           <Button variant="ghost" size="icon" onClick={() => setShowShareDialog(true)} disabled={ingredients.length === 0}>
-            <Share2 className="w-5 h-5" />
+            <Send className="w-5 h-5" />
           </Button>
         </div>
       </header>
@@ -1997,7 +1997,7 @@ listę zakupów 📝
         {/* Lists I sent to others */}
         {sentLists.length > 0 && <div className="bg-card rounded-2xl border-2 border-primary/30 p-4 shadow-card-playful">
             <h2 className="font-bold font-display text-foreground mb-3 flex items-center gap-2">
-              <Share2 className="w-5 h-5 text-primary" />
+              <Send className="w-5 h-5 text-primary" />
               Wysłane listy zakupów
             </h2>
             <div className="space-y-3">
@@ -2267,7 +2267,7 @@ lub dodaj własne produkty</p>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Share2 className="w-5 h-5" />
+              <Send className="w-5 h-5" />
               Udostępnij listę
             </DialogTitle>
             <DialogDescription>
@@ -2286,7 +2286,7 @@ lub dodaj własne produkty</p>
                     <p className="font-medium text-foreground">{friend.displayName || 'Użytkownik'}</p>
                     {friend.username && <p className="text-xs text-muted-foreground">@{friend.username}</p>}
                   </div>
-                  <Share2 className="w-4 h-4 text-muted-foreground" />
+                  <Send className="w-4 h-4 text-muted-foreground" />
                 </button>)}
           </div>
 
@@ -2413,7 +2413,7 @@ lub dodaj własne produkty</p>
                 size="icon" 
                 onClick={() => setShowShareDialog(true)}
               >
-                <Share2 className="w-5 h-5" />
+                <Send className="w-5 h-5" />
               </Button>
             </div>
           </header>

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Camera, Sparkles, Plus, X, Loader2, ChefHat, PlayCircle, Clock, Utensils, Heart, Share2, Cookie, Salad, Flame, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Camera, Sparkles, Plus, X, Loader2, ChefHat, PlayCircle, Clock, Utensils, Heart, Send, Cookie, Salad, Flame, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -688,7 +688,7 @@ export default function QuickMealMethod() {
                       }}
                       className="rounded-xl text-muted-foreground"
                     >
-                      <Share2 className="w-4 h-4 mr-2" />
+                      <Send className="w-4 h-4 mr-2" />
                       Udostępnij znajomemu
                     </Button>
                   )}

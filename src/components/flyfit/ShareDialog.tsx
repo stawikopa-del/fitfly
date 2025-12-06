@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  Share2, 
+  Send, 
   Link2, 
   Users, 
   Check,
@@ -72,7 +72,7 @@ export function ShareDialog({ open, onOpenChange, type, itemId, itemName }: Shar
       <DialogContent className="max-w-md bg-card">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Share2 className="h-5 w-5 text-primary" />
+            <Send className="h-5 w-5 text-primary" />
             Udostępnij {type === 'recipe' ? 'przepis' : 'wyzwanie'}
           </DialogTitle>
         </DialogHeader>
