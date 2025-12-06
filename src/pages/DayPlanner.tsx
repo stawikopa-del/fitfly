@@ -122,6 +122,13 @@ export default function DayPlanner() {
     setPlanCoords(coords);
     setPlanLocation(address);
     setShowMapPicker(false);
+    
+    // Close the sheet briefly then reopen it
+    setIsAddingPlan(false);
+    setTimeout(() => {
+      setIsAddingPlan(true);
+    }, 100);
+    
     toast.success('Lokalizacja zapisana!');
   };
 
