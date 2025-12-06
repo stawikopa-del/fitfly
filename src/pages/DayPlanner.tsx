@@ -72,6 +72,7 @@ export default function DayPlanner() {
   // Form state
   const [planName, setPlanName] = useState('');
   const [planTime, setPlanTime] = useState('');
+  const [planDate, setPlanDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [planLocation, setPlanLocation] = useState('');
   const [planCoords, setPlanCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
@@ -116,6 +117,7 @@ export default function DayPlanner() {
   const resetForm = () => {
     setPlanName('');
     setPlanTime('');
+    setPlanDate(format(selectedDate, 'yyyy-MM-dd'));
     setPlanLocation('');
     setPlanCoords(null);
     setShowMapPicker(false);
@@ -166,6 +168,7 @@ export default function DayPlanner() {
     setEditingPlan(plan);
     setPlanName(plan.name);
     setPlanTime(plan.time || '');
+    setPlanDate(plan.plan_date);
     setPlanLocation(plan.location || '');
     setPlanCoords(plan.latitude && plan.longitude ? { lat: plan.latitude, lng: plan.longitude } : null);
     setPlanCategory(plan.category);
@@ -208,7 +211,7 @@ export default function DayPlanner() {
         // Insert new plan
         const { error } = await supabase.from('day_plans').insert({
           user_id: user.id,
-          plan_date: selectedDateStr,
+          plan_date: planDate,
           name: planName.trim(),
           time: planTime || null,
           location: planLocation || null,
@@ -479,16 +482,36 @@ export default function DayPlanner() {
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-muted-foreground" />
-            Miejsce
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            Data
+            {(() => {
+              const today = format(new Date(), 'yyyy-MM-dd');
+              const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+              if (planDate === today) return <span className="text-xs text-secondary font-normal ml-1">(Dzisiaj)</span>;
+              if (planDate === tomorrow) return <span className="text-xs text-secondary font-normal ml-1">(Jutro)</span>;
+              return null;
+            })()}
           </label>
           <Input
-            value={planLocation}
-            onChange={(e) => setPlanLocation(e.target.value)}
-            placeholder="np. Dom, Biuro"
+            type="date"
+            value={planDate}
+            onChange={(e) => setPlanDate(e.target.value)}
             className="bg-background"
           />
         </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+          <MapPin className="w-4 h-4 text-muted-foreground" />
+          Miejsce
+        </label>
+        <Input
+          value={planLocation}
+          onChange={(e) => setPlanLocation(e.target.value)}
+          placeholder="np. Dom, Biuro"
+          className="bg-background"
+        />
       </div>
 
       {/* Map location buttons */}
