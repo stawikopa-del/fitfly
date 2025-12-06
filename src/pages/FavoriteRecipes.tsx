@@ -219,15 +219,17 @@ export default function FavoriteRecipes() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center gap-3 p-4">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               soundFeedback.buttonClick();
-              navigate(-1);
+              navigate('/dieta');
             }}
-            className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
+            className="rounded-full -ml-2"
           >
             <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
+          </Button>
           <div className="flex items-center gap-2">
             <Heart className="w-5 h-5 text-red-500 fill-red-500" />
             <h1 className="text-xl font-bold font-display text-foreground">Ulubione przepisy</h1>
