@@ -82,7 +82,7 @@ export default function ProfileSetup() {
         .from('profiles')
         .select('gender, age, height, weight, goal')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       const isComplete = profile && 
         profile.gender && 

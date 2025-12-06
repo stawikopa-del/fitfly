@@ -41,9 +41,13 @@ export default function Invite() {
           .from('profiles')
           .select('user_id, display_name, username, avatar_url')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();
 
-        if (error) throw error;
+        if (error || !data) {
+          console.error('Inviter not found');
+          setLoading(false);
+          return;
+        }
         setInviter(data);
       } catch (error) {
         console.error('Error fetching inviter:', error);

@@ -210,9 +210,9 @@ export default function SharedShoppingList() {
           .from('shared_shopping_lists')
           .select('*')
           .eq('id', listId)
-          .single();
+          .maybeSingle();
 
-        if (error) {
+        if (error || !data) {
           console.error('Error fetching shared list:', error);
           toast.error('Nie udało się załadować listy');
           navigate('/lista-zakupow');

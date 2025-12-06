@@ -312,9 +312,9 @@ export function useDirectMessages(friendId?: string) {
         .from('direct_messages')
         .select('reactions')
         .eq('id', messageId)
-        .single();
+        .maybeSingle();
 
-      if (fetchError) {
+      if (fetchError || !msgData) {
         console.error('Error fetching message:', fetchError);
         return false;
       }
