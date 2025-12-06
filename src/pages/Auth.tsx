@@ -797,7 +797,7 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
       <div className="w-64 h-64 mb-4 animate-float-slow">
-        <img src={fitekDetective} alt="FITEK Detektyw" className="w-full h-full object-contain drop-shadow-2xl" />
+        <img src={fitekDetective} alt="FITEK Detektyw" className="w-full h-full object-contain" />
       </div>
 
       <div className="text-center mb-8">
