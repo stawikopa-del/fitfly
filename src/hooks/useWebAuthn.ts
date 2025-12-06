@@ -1,20 +1,27 @@
-import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useCallback, useEffect } from 'react';
 
 // Helper to convert ArrayBuffer to Base64
 function bufferToBase64(buffer: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  try {
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  } catch {
+    return '';
+  }
 }
 
 // Helper to convert Base64 to ArrayBuffer
 function base64ToBuffer(base64: string): ArrayBuffer {
-  const binary = atob(base64);
-  const buffer = new ArrayBuffer(binary.length);
-  const view = new Uint8Array(buffer);
-  for (let i = 0; i < binary.length; i++) {
-    view[i] = binary.charCodeAt(i);
+  try {
+    const binary = atob(base64);
+    const buffer = new ArrayBuffer(binary.length);
+    const view = new Uint8Array(buffer);
+    for (let i = 0; i < binary.length; i++) {
+      view[i] = binary.charCodeAt(i);
+    }
+    return buffer;
+  } catch {
+    return new ArrayBuffer(0);
   }
-  return buffer;
 }
 
 interface StoredCredential {
@@ -25,28 +32,41 @@ interface StoredCredential {
 }
 
 export function useWebAuthn() {
-  const [isSupported] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      return !!window.PublicKeyCredential && typeof window.PublicKeyCredential === 'function';
-    } catch {
-      return false;
-    }
-  });
+  const [isSupported, setIsSupported] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
+  // Check support in useEffect to avoid SSR issues
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const supported = !!window.PublicKeyCredential && typeof window.PublicKeyCredential === 'function';
+      setIsSupported(supported);
+    } catch {
+      setIsSupported(false);
+    }
+  }, []);
+
   // Check if user has registered biometric
   const hasRegisteredBiometric = useCallback((): boolean => {
-    const stored = localStorage.getItem('webauthn_credential');
-    return !!stored;
+    if (typeof window === 'undefined') return false;
+    
+    try {
+      const stored = localStorage.getItem('webauthn_credential');
+      return !!stored;
+    } catch {
+      return false;
+    }
   }, []);
 
   // Get stored credential
   const getStoredCredential = useCallback((): StoredCredential | null => {
-    const stored = localStorage.getItem('webauthn_credential');
-    if (!stored) return null;
+    if (typeof window === 'undefined') return null;
+    
     try {
+      const stored = localStorage.getItem('webauthn_credential');
+      if (!stored) return null;
       return JSON.parse(stored);
     } catch {
       return null;
@@ -55,6 +75,10 @@ export function useWebAuthn() {
 
   // Register biometric for current user
   const registerBiometric = useCallback(async (userId: string, email: string): Promise<{ success: boolean; error?: string }> => {
+    if (typeof window === 'undefined') {
+      return { success: false, error: 'Nie dostępne w tym środowisku' };
+    }
+    
     if (!isSupported) {
       return { success: false, error: 'WebAuthn nie jest wspierane na tym urządzeniu' };
     }
@@ -75,7 +99,7 @@ export function useWebAuthn() {
         user: {
           id: new TextEncoder().encode(userId),
           name: email,
-          displayName: email.split('@')[0],
+          displayName: email.split('@')[0] || 'User',
         },
         pubKeyCredParams: [
           { alg: -7, type: 'public-key' }, // ES256
@@ -106,16 +130,20 @@ export function useWebAuthn() {
         email,
       };
 
-      localStorage.setItem('webauthn_credential', JSON.stringify(storedCredential));
+      try {
+        localStorage.setItem('webauthn_credential', JSON.stringify(storedCredential));
+      } catch {
+        return { success: false, error: 'Nie udało się zapisać poświadczenia' };
+      }
 
       return { success: true };
     } catch (error: any) {
       console.error('WebAuthn registration error:', error);
       
-      if (error.name === 'NotAllowedError') {
+      if (error?.name === 'NotAllowedError') {
         return { success: false, error: 'Dostęp do biometrii został odrzucony' };
       }
-      if (error.name === 'NotSupportedError') {
+      if (error?.name === 'NotSupportedError') {
         return { success: false, error: 'Biometria nie jest wspierana na tym urządzeniu' };
       }
       
@@ -127,6 +155,10 @@ export function useWebAuthn() {
 
   // Authenticate with biometric
   const authenticateWithBiometric = useCallback(async (): Promise<{ success: boolean; email?: string; error?: string }> => {
+    if (typeof window === 'undefined') {
+      return { success: false, error: 'Nie dostępne w tym środowisku' };
+    }
+    
     if (!isSupported) {
       return { success: false, error: 'WebAuthn nie jest wspierane na tym urządzeniu' };
     }
@@ -143,11 +175,16 @@ export function useWebAuthn() {
       const challenge = new Uint8Array(32);
       crypto.getRandomValues(challenge);
 
+      const rawIdBuffer = base64ToBuffer(storedCredential.rawId);
+      if (rawIdBuffer.byteLength === 0) {
+        return { success: false, error: 'Nieprawidłowe dane poświadczenia' };
+      }
+
       const publicKeyCredentialRequestOptions: PublicKeyCredentialRequestOptions = {
         challenge,
         allowCredentials: [
           {
-            id: base64ToBuffer(storedCredential.rawId),
+            id: rawIdBuffer,
             type: 'public-key',
             transports: ['internal'],
           },
@@ -173,7 +210,7 @@ export function useWebAuthn() {
     } catch (error: any) {
       console.error('WebAuthn authentication error:', error);
       
-      if (error.name === 'NotAllowedError') {
+      if (error?.name === 'NotAllowedError') {
         return { success: false, error: 'Dostęp do biometrii został odrzucony' };
       }
       
@@ -185,7 +222,13 @@ export function useWebAuthn() {
 
   // Remove stored biometric
   const removeBiometric = useCallback(() => {
-    localStorage.removeItem('webauthn_credential');
+    if (typeof window === 'undefined') return;
+    
+    try {
+      localStorage.removeItem('webauthn_credential');
+    } catch {
+      // Ignore storage errors
+    }
   }, []);
 
   return {
