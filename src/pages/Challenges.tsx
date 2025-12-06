@@ -111,11 +111,13 @@ export default function Challenges() {
           {/* Atomic Habits Tip */}
           {habits.length === 0 && (
             <div className="bg-primary/10 rounded-3xl p-5 border-2 border-primary/30 flex items-start gap-4">
-              <img 
-                src={fitekPalec} 
-                alt="FITEK wskazuje" 
-                className="w-14 h-14 object-contain shrink-0"
-              />
+              <div className="w-16 h-16 rounded-full bg-white/90 dark:bg-card shadow-sm border border-border/30 flex items-center justify-center shrink-0">
+                <img 
+                  src={fitekPalec} 
+                  alt="FITEK wskazuje" 
+                  className="w-12 h-12 object-contain"
+                />
+              </div>
               <div>
                 <h3 className="font-bold text-primary mb-1">Tip z "Atomowych Nawyków"</h3>
                 <p className="text-sm text-muted-foreground">
