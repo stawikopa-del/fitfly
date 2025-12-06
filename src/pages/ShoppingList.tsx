@@ -1777,45 +1777,58 @@ export default function ShoppingList() {
           
           {/* Twoja dieta button - only show if user has a diet plan */}
           {dietPlan && (
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-3 h-auto py-3"
+            <button
               onClick={() => {
                 try { soundFeedback.buttonClick(); } catch {}
-                // Scroll to calendar section or highlight it
+                // Scroll to calendar section
+                const calendarSection = document.getElementById('calendar-section');
+                if (calendarSection) {
+                  calendarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
                 setSelectingStart(true);
                 setStartDate(null);
                 setEndDate(null);
               }}
+              className="w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 border-secondary/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
             >
-              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-fitfly-green-dark flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                  <Calendar className="w-7 h-7 text-white" />
+                </div>
+                <div className="text-left flex-1">
+                  <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+                    Twoja dieta
+                    <span>🥗</span>
+                  </h3>
+                  <p className="text-sm text-muted-foreground">Generuj listę zakupów z planu diety</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
-              <div className="flex-1 text-left">
-                <p className="font-medium text-foreground">Twoja dieta</p>
-                <p className="text-xs text-muted-foreground">Generuj listę z planu diety</p>
-              </div>
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            </Button>
+            </button>
           )}
           
           {/* Create custom list button */}
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-3 h-auto py-3 border-dashed"
+          <button
             onClick={() => {
               try { soundFeedback.buttonClick(); } catch {}
               setShowCreateListDialog(true);
             }}
+            className="w-full bg-gradient-to-r from-primary/20 via-fitfly-blue/20 to-fitfly-blue-light/20 rounded-3xl p-5 border-2 border-primary/30 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
           >
-            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-              <Plus className="w-5 h-5 text-muted-foreground" />
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-dark flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                <Plus className="w-7 h-7 text-white" />
+              </div>
+              <div className="text-left flex-1">
+                <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+                  Utwórz swoją listę
+                  <span>✨</span>
+                </h3>
+                <p className="text-sm text-muted-foreground">Dodaj produkty, notatki i udostępnij</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
             </div>
-            <div className="flex-1 text-left">
-              <p className="font-medium text-foreground">Utwórz swoją listę</p>
-              <p className="text-xs text-muted-foreground">Dodaj produkty, notatki i udostępnij</p>
-            </div>
-          </Button>
+          </button>
         </div>
 
         {/* Custom Items Notice */}
@@ -1827,7 +1840,7 @@ export default function ShoppingList() {
 
 
         {/* Calendar Date Range Selector */}
-        <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-card-playful py-[8px]">
+        <div id="calendar-section" className="bg-card rounded-2xl border border-border/50 p-4 shadow-card-playful py-[8px]">
           <div className="flex items-center justify-between mb-4">
             <button onClick={() => {
             try {
