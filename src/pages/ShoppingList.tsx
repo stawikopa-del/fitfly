@@ -1769,75 +1769,14 @@ export default function ShoppingList() {
       </header>
 
       <div className="px-4 space-y-6 py-4">
-        {/* Twoja dieta button - only show if user has a diet plan */}
-        {dietPlan && (
-          <button
-            onClick={() => {
-              try { soundFeedback.buttonClick(); } catch {}
-              // Scroll to calendar section
-              const calendarSection = document.getElementById('calendar-section');
-              if (calendarSection) {
-                calendarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
-              setSelectingStart(true);
-              setStartDate(null);
-              setEndDate(null);
-            }}
-            className="w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 border-secondary/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-fitfly-green-dark flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <Calendar className="w-7 h-7 text-white" />
-              </div>
-              <div className="text-left flex-1">
-                <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
-                  Twoja dieta
-                  <span>🥗</span>
-                </h3>
-                <p className="text-sm text-muted-foreground">Generuj listę zakupów z planu diety</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
-        )}
-
-        {/* Moje listy Section Header */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-extrabold font-display text-foreground">
-            Moje listy
-          </h2>
-          
-          {/* Create custom list button */}
-          <button
-            onClick={() => {
-              try { soundFeedback.buttonClick(); } catch {}
-              setShowCreateListDialog(true);
-            }}
-            className="w-full bg-gradient-to-r from-primary/20 via-fitfly-blue/20 to-fitfly-blue-light/20 rounded-3xl p-5 border-2 border-primary/30 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-dark flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <Plus className="w-7 h-7 text-white" />
-              </div>
-              <div className="text-left flex-1">
-                <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
-                  Utwórz swoją listę
-                  <span>✨</span>
-                </h3>
-                <p className="text-sm text-muted-foreground">Dodaj produkty, notatki i udostępnij</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
-        </div>
-
-        {/* Custom Items Notice */}
-        {customItems.length > 0 && (!startDate || !endDate) && <div className="bg-primary/10 rounded-2xl p-4 text-center">
-            <p className="text-sm text-foreground">
-              Masz {customItems.length} własnych produktów na liście
+        {/* Info banner - show when no dates selected */}
+        {(!startDate || !endDate) && (
+          <div className="bg-muted rounded-2xl p-4 text-center">
+            <p className="text-sm text-muted-foreground font-medium">
+              Najpierw wybierz okres w kalendarzu 🗓️
             </p>
-          </div>}
-
+          </div>
+        )}
 
         {/* Calendar Date Range Selector */}
         <div id="calendar-section" className="bg-card rounded-2xl border border-border/50 p-4 shadow-card-playful py-[8px]">
@@ -1899,6 +1838,75 @@ export default function ShoppingList() {
               </p>
             </div>}
         </div>
+
+        {/* Moje listy Section Header */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-extrabold font-display text-foreground">
+            Moje listy
+          </h2>
+          
+          {/* Twoja dieta button - only show if user has a diet plan */}
+          {dietPlan && (
+            <button
+              onClick={() => {
+                try { soundFeedback.buttonClick(); } catch {}
+                // Scroll to calendar section
+                const calendarSection = document.getElementById('calendar-section');
+                if (calendarSection) {
+                  calendarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                setSelectingStart(true);
+                setStartDate(null);
+                setEndDate(null);
+              }}
+              className="w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 border-secondary/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-fitfly-green-dark flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                  <Calendar className="w-7 h-7 text-white" />
+                </div>
+                <div className="text-left flex-1">
+                  <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+                    Twoja dieta
+                    <span>🥗</span>
+                  </h3>
+                  <p className="text-sm text-muted-foreground">Generuj listę zakupów z planu diety</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+          )}
+          
+          {/* Create custom list button */}
+          <button
+            onClick={() => {
+              try { soundFeedback.buttonClick(); } catch {}
+              setShowCreateListDialog(true);
+            }}
+            className="w-full bg-gradient-to-r from-primary/20 via-fitfly-blue/20 to-fitfly-blue-light/20 rounded-3xl p-5 border-2 border-primary/30 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-dark flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                <Plus className="w-7 h-7 text-white" />
+              </div>
+              <div className="text-left flex-1">
+                <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+                  Utwórz swoją listę
+                  <span>✨</span>
+                </h3>
+                <p className="text-sm text-muted-foreground">Dodaj produkty, notatki i udostępnij</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+            </div>
+          </button>
+        </div>
+
+        {/* Custom Items Notice */}
+        {customItems.length > 0 && (!startDate || !endDate) && <div className="bg-primary/10 rounded-2xl p-4 text-center">
+            <p className="text-sm text-foreground">
+              Masz {customItems.length} własnych produktów na liście
+            </p>
+          </div>}
 
         {/* Favorite Lists Section */}
         {(loadingFavorites || favoriteLists.length > 0) && (
