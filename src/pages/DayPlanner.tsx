@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map, Search, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import fitekCel from '@/assets/fitek/fitek-cel.png';
+
+// Lazy load the map component
+const LocationPickerMap = lazy(() => import('@/components/flyfit/LocationPickerMap'));
 
 interface DayPlan {
   id: string;
@@ -65,13 +68,7 @@ export default function DayPlanner() {
   const [planTime, setPlanTime] = useState('');
   const [planLocation, setPlanLocation] = useState('');
   const [planCoords, setPlanCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [showAddressSearch, setShowAddressSearch] = useState(false);
-  const [addressQuery, setAddressQuery] = useState('');
-  const [addressResults, setAddressResults] = useState<Array<{ display_name: string; lat: string; lon: string }>>([]);
-  const [isSearchingAddress, setIsSearchingAddress] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationPermissionAsked, setLocationPermissionAsked] = useState(false);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [planCategory, setPlanCategory] = useState('inne');
   const [customCategory, setCustomCategory] = useState('');
   const [planPriority, setPlanPriority] = useState('normal');
@@ -111,9 +108,7 @@ export default function DayPlanner() {
     setPlanTime('');
     setPlanLocation('');
     setPlanCoords(null);
-    setShowAddressSearch(false);
-    setAddressQuery('');
-    setAddressResults([]);
+    setShowMapPicker(false);
     setPlanCategory('inne');
     setCustomCategory('');
     setPlanPriority('normal');
@@ -122,116 +117,12 @@ export default function DayPlanner() {
     setEditingPlan(null);
   };
 
-  // Request user location for better search results
-  const requestUserLocation = () => {
-    if (locationPermissionAsked || !navigator.geolocation) return;
-    
-    setLocationPermissionAsked(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-        toast.success('Lokalizacja pobrana - wyniki będą sortowane od najbliższych!');
-      },
-      () => {
-        // User denied or error - just continue without location
-      },
-      { enableHighAccuracy: false, timeout: 5000 }
-    );
-  };
-
-  // Open address search with location permission request
-  const openAddressSearch = () => {
-    setShowAddressSearch(true);
-    requestUserLocation();
-  };
-
-  // Search for addresses using Nominatim API
-  const searchAddress = async (query: string) => {
-    if (query.length < 3) {
-      setAddressResults([]);
-      return;
-    }
-
-    setIsSearchingAddress(true);
-    try {
-      // Build URL with optional location bias
-      let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10&accept-language=pl&countrycodes=pl`;
-      
-      // If we have user location, add viewbox for location bias (50km radius)
-      if (userLocation) {
-        const delta = 0.5; // ~50km
-        url += `&viewbox=${userLocation.lng - delta},${userLocation.lat + delta},${userLocation.lng + delta},${userLocation.lat - delta}`;
-        url += `&bounded=0`; // Don't strictly bound, just prefer
-      }
-      
-      const response = await fetch(url);
-      let data = await response.json();
-      
-      // If we have user location, sort results by distance
-      if (userLocation && data.length > 0) {
-        data = data.map((result: any) => ({
-          ...result,
-          distance: Math.sqrt(
-            Math.pow(parseFloat(result.lat) - userLocation.lat, 2) +
-            Math.pow(parseFloat(result.lon) - userLocation.lng, 2)
-          )
-        })).sort((a: any, b: any) => a.distance - b.distance).slice(0, 5);
-      } else {
-        data = data.slice(0, 5);
-      }
-      
-      setAddressResults(data || []);
-    } catch (err) {
-      console.error('Address search error:', err);
-      setAddressResults([]);
-    } finally {
-      setIsSearchingAddress(false);
-    }
-  };
-
-  // Debounced address search
-  const handleAddressQueryChange = (value: string) => {
-    setAddressQuery(value);
-    
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    searchTimeoutRef.current = setTimeout(() => {
-      searchAddress(value);
-    }, 300);
-  };
-
-  // Open in maps app
-  const openInMaps = (lat: number, lng: number, address: string) => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const encodedAddress = encodeURIComponent(address);
-    
-    if (isIOS) {
-      window.open(`maps://maps.apple.com/?q=${encodedAddress}&ll=${lat},${lng}`, '_blank');
-    } else {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
-    }
-  };
-
-  // Select address from search results
-  const selectAddress = (result: { display_name: string; lat: string; lon: string }) => {
-    const shortAddress = result.display_name.split(',').slice(0, 3).join(',').trim();
-    const lat = parseFloat(result.lat);
-    const lng = parseFloat(result.lon);
-    
-    setPlanLocation(shortAddress);
-    setPlanCoords({ lat, lng });
-    setShowAddressSearch(false);
-    setAddressQuery('');
-    setAddressResults([]);
+  // Handle location selection from map picker
+  const handleLocationSelect = (coords: { lat: number; lng: number }, address: string) => {
+    setPlanCoords(coords);
+    setPlanLocation(address);
+    setShowMapPicker(false);
     toast.success('Lokalizacja zapisana!');
-    
-    // Open in maps app
-    openInMaps(lat, lng, shortAddress);
   };
 
   const openNavigationToLocation = () => {
@@ -566,80 +457,15 @@ export default function DayPlanner() {
 
       {/* Map location buttons */}
       <div className="space-y-2">
-        {!showAddressSearch ? (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={openAddressSearch}
-            className="w-full justify-start gap-2 h-11"
-          >
-            <Map className="w-4 h-4 text-primary" />
-            Wyszukaj adres na mapie
-          </Button>
-        ) : (
-          <div className="space-y-2 p-3 bg-muted/30 rounded-xl border border-border">
-            <div className="flex items-center gap-2">
-              <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-              <Input
-                value={addressQuery}
-                onChange={(e) => handleAddressQueryChange(e.target.value)}
-                placeholder="Wpisz adres, np. ul. Marszałkowska 10, Warszawa"
-                className="bg-background flex-1"
-                autoFocus
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setShowAddressSearch(false);
-                  setAddressQuery('');
-                  setAddressResults([]);
-                }}
-                className="shrink-0"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {isSearchingAddress && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground p-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Szukam...
-              </div>
-            )}
-            
-            {addressResults.length > 0 && (
-              <div className="space-y-1 max-h-48 overflow-y-auto">
-                {addressResults.map((result, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => selectAddress(result)}
-                    className="w-full text-left p-2 rounded-lg hover:bg-primary/10 text-sm transition-colors"
-                  >
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      <span className="line-clamp-2">{result.display_name}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-            
-            {addressQuery.length >= 3 && !isSearchingAddress && addressResults.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center p-2">
-                Brak wyników dla "{addressQuery}"
-              </p>
-            )}
-            
-            {addressQuery.length < 3 && addressQuery.length > 0 && (
-              <p className="text-xs text-muted-foreground text-center">
-                Wpisz min. 3 znaki...
-              </p>
-            )}
-          </div>
-        )}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setShowMapPicker(true)}
+          className="w-full justify-start gap-2 h-11"
+        >
+          <Map className="w-4 h-4 text-primary" />
+          Wybierz lokalizację na mapie
+        </Button>
         
         {planCoords && (
           <>
@@ -918,6 +744,20 @@ export default function DayPlanner() {
             {formContent}
           </SheetContent>
         </Sheet>
+      )}
+
+      {/* Map Picker Modal */}
+      {showMapPicker && (
+        <Suspense fallback={
+          <div className="fixed inset-0 z-50 bg-background flex items-center justify-center">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+          </div>
+        }>
+          <LocationPickerMap
+            onSelectLocation={handleLocationSelect}
+            onClose={() => setShowMapPicker(false)}
+          />
+        </Suspense>
       )}
     </div>
   );
