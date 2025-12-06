@@ -21,6 +21,13 @@ interface MealItem {
   calories: number;
   description: string;
   type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  ingredients?: string[];
+  preparationTime?: number;
+  macros?: {
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
 }
 
 interface SavedDietPlan {
@@ -40,6 +47,17 @@ interface SavedDietPlan {
       meals: string[];
     }[];
   };
+  preferences?: {
+    dietType?: string;
+    goal?: 'lose' | 'maintain' | 'gain';
+    gender?: 'male' | 'female';
+    dailyCalories?: number;
+    mealsPerDay?: number;
+  };
+}
+
+interface SwappedMeals {
+  [key: string]: MealItem; // key format: "date-mealType" e.g. "2024-01-15-breakfast"
 }
 
 interface MealCalendarProps {
@@ -61,7 +79,14 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0);
   const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
+  const [swappedMeals, setSwappedMeals] = useState<SwappedMeals>({});
   const scrollRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   // Fetch the most recent saved diet plan
   useEffect(() => {
@@ -77,6 +102,8 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
           .limit(1)
           .single();
         
+        if (!mountedRef.current) return;
+        
         if (!error && data) {
           setSavedPlan({
             id: data.id,
@@ -84,12 +111,15 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
             diet_type: data.diet_type,
             daily_calories: data.daily_calories,
             plan_data: data.plan_data as unknown as SavedDietPlan['plan_data'],
+            preferences: data.preferences as unknown as SavedDietPlan['preferences'],
           });
         }
       } catch (error) {
         console.error('Error fetching diet plan:', error);
       } finally {
-        setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+        }
       }
     };
     
@@ -141,6 +171,11 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
     setSelectedDate(day.date);
   };
 
+  // Get date key for swapped meals
+  const getDateMealKey = (date: Date, mealType: string) => {
+    return `${date.toISOString().split('T')[0]}-${mealType}`;
+  };
+
   // Get meals for selected day based on day of week from weekly schedule
   const getMealsForDay = (): MealItem[] => {
     if (!savedPlan?.plan_data?.dailyMeals) return [];
@@ -151,45 +186,97 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
     const { dailyMeals } = savedPlan.plan_data;
     const meals: MealItem[] = [];
     
-    // Rotate meals based on day index for variety
-    const breakfastIdx = dayIndex % (dailyMeals.breakfast?.length || 1);
-    const lunchIdx = dayIndex % (dailyMeals.lunch?.length || 1);
-    const dinnerIdx = dayIndex % (dailyMeals.dinner?.length || 1);
-    const snackIdx = dayIndex % (dailyMeals.snacks?.length || 1);
-    
-    if (dailyMeals.breakfast?.[breakfastIdx]) {
-      meals.push({ ...dailyMeals.breakfast[breakfastIdx], type: 'breakfast' });
-    }
-    if (dailyMeals.lunch?.[lunchIdx]) {
-      meals.push({ ...dailyMeals.lunch[lunchIdx], type: 'lunch' });
-    }
-    if (dailyMeals.dinner?.[dinnerIdx]) {
-      meals.push({ ...dailyMeals.dinner[dinnerIdx], type: 'dinner' });
-    }
-    if (dailyMeals.snacks?.[snackIdx]) {
-      meals.push({ ...dailyMeals.snacks[snackIdx], type: 'snack' });
+    // Check for swapped meals first, then use default from plan
+    const mealTypes: Array<{ key: keyof typeof dailyMeals; type: MealItem['type'] }> = [
+      { key: 'breakfast', type: 'breakfast' },
+      { key: 'lunch', type: 'lunch' },
+      { key: 'dinner', type: 'dinner' },
+      { key: 'snacks', type: 'snack' },
+    ];
+
+    for (const { key, type } of mealTypes) {
+      const swapKey = getDateMealKey(selectedDate, type);
+      
+      // Check if there's a swapped meal for this date and type
+      if (swappedMeals[swapKey]) {
+        meals.push(swappedMeals[swapKey]);
+      } else {
+        // Use meal from plan based on day index
+        const mealArray = dailyMeals[key];
+        const idx = dayIndex % (mealArray?.length || 1);
+        if (mealArray?.[idx]) {
+          meals.push({ ...mealArray[idx], type });
+        }
+      }
     }
     
     return meals;
   };
 
-  // Handle swap meal with another option
+  // Handle swap meal with AI-generated alternative
   const handleSwapMeal = async (meal: MealItem, mealIndex: number) => {
-    if (!savedPlan?.plan_data?.dailyMeals) return;
+    if (!savedPlan) return;
     
     soundFeedback.buttonClick();
     setSwappingMeal(`${meal.type}-${mealIndex}`);
     
-    // Simulate finding alternative meal (in real app, could call AI)
-    setTimeout(() => {
-      const mealTypeArray = savedPlan.plan_data.dailyMeals[meal.type === 'snack' ? 'snacks' : meal.type];
-      if (mealTypeArray && mealTypeArray.length > 1) {
-        toast.success('Zamieniono przepis na alternatywę! 🔄');
-      } else {
-        toast.info('Brak alternatywnych przepisów. Wygeneruj nową dietę!');
+    try {
+      // Collect all current meals to exclude from generation
+      const excludeMeals = getMealsForDay().map(m => m.name);
+      
+      // Call the AI to generate a new meal
+      const { data, error } = await supabase.functions.invoke('swap-meal', {
+        body: {
+          currentMeal: {
+            name: meal.name,
+            calories: meal.calories,
+            description: meal.description,
+            type: meal.type,
+          },
+          userPreferences: {
+            dietType: savedPlan.diet_type || savedPlan.preferences?.dietType,
+            dailyCalories: savedPlan.daily_calories || savedPlan.preferences?.dailyCalories,
+            goal: savedPlan.preferences?.goal,
+            gender: savedPlan.preferences?.gender,
+            mealsPerDay: savedPlan.preferences?.mealsPerDay,
+          },
+          excludeMeals,
+        },
+      });
+      
+      if (!mountedRef.current) return;
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Save the swapped meal for this date
+        const swapKey = getDateMealKey(selectedDate, meal.type);
+        const newMeal: MealItem = {
+          name: data.name,
+          calories: data.calories,
+          description: data.description,
+          type: meal.type,
+          ingredients: data.ingredients,
+          preparationTime: data.preparationTime,
+          macros: data.macros,
+        };
+        
+        setSwappedMeals(prev => ({
+          ...prev,
+          [swapKey]: newMeal,
+        }));
+        
+        soundFeedback.success();
+        toast.success(`Zamieniono na: ${data.name} 🔄`);
       }
-      setSwappingMeal(null);
-    }, 500);
+    } catch (error) {
+      console.error('Error swapping meal:', error);
+      toast.error('Nie udało się zamienić przepisu. Spróbuj ponownie.');
+    } finally {
+      if (mountedRef.current) {
+        setSwappingMeal(null);
+      }
+    }
   };
 
   // Start cooking mode for a meal
@@ -200,15 +287,15 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
     const recipe: DetailedRecipe = {
       name: meal.name,
       description: meal.description,
-      ingredients: ['Składniki zgodne z przepisem'],
+      ingredients: meal.ingredients || ['Składniki zgodne z przepisem'],
       servings: 1,
-      total_time_minutes: 30,
+      total_time_minutes: meal.preparationTime || 30,
       tools_needed: ['Garnek', 'Patelnia'],
       macros: {
         calories: meal.calories,
-        protein: Math.round(meal.calories * 0.25 / 4),
-        carbs: Math.round(meal.calories * 0.5 / 4),
-        fat: Math.round(meal.calories * 0.25 / 9),
+        protein: meal.macros?.protein || Math.round(meal.calories * 0.25 / 4),
+        carbs: meal.macros?.carbs || Math.round(meal.calories * 0.5 / 4),
+        fat: meal.macros?.fat || Math.round(meal.calories * 0.25 / 9),
       },
       steps: [
         {
@@ -219,7 +306,7 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
         {
           step_number: 2,
           instruction: meal.description || 'Przygotuj posiłek zgodnie z przepisem',
-          duration_minutes: 15,
+          duration_minutes: Math.max(10, (meal.preparationTime || 30) - 10),
         },
         {
           step_number: 3,
@@ -359,12 +446,14 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
           mealsForDay.map((meal, index) => {
             const mealConfig = mealTypeLabels[meal.type];
             const isSwapping = swappingMeal === `${meal.type}-${index}`;
+            const isSwapped = !!swappedMeals[getDateMealKey(selectedDate, meal.type)];
             
             return (
               <div 
                 key={`${meal.type}-${index}`}
                 className={cn(
-                  "rounded-2xl p-4 border-2 border-border/30 transition-all duration-200 hover:-translate-y-0.5",
+                  "rounded-2xl p-4 border-2 transition-all duration-200 hover:-translate-y-0.5",
+                  isSwapped ? "border-secondary/50" : "border-border/30",
                   mealConfig.bgClass
                 )}
               >
@@ -374,6 +463,11 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
                     <span className={cn("text-xs font-bold uppercase", mealConfig.textClass)}>
                       {mealConfig.label}
                     </span>
+                    {isSwapped && (
+                      <span className="text-[10px] bg-secondary/20 text-secondary px-1.5 py-0.5 rounded-full">
+                        zamienione
+                      </span>
+                    )}
                   </div>
                   <span className="text-xs font-bold text-foreground bg-card px-2 py-1 rounded-full shadow-sm">
                     {meal.calories} kcal
@@ -398,6 +492,7 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
                     onClick={() => handleSwapMeal(meal, index)}
                     disabled={isSwapping}
                     className="rounded-xl text-xs"
+                    title="Zamień na inny przepis"
                   >
                     {isSwapping ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
