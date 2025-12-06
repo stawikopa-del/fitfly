@@ -116,7 +116,7 @@ export default function Home() {
               icon={<img src={fitekReceWGore} alt="FITEK" className="w-8 h-8 object-contain" />}
               title="Szybki trening"
               description="10 minut ćwiczeń na start dnia"
-              color="blue"
+              color="green"
               onClick={() => navigate('/treningi')}
             />
           </div>
@@ -126,7 +126,7 @@ export default function Home() {
               icon={<img src={fitekPiatka} alt="FITEK" className="w-8 h-8 object-contain" />}
               title="Wyzwanie dnia"
               description="10 000 kroków - 3/7 dni ukończone"
-              color="purple"
+              color="orange"
               onClick={() => navigate('/wyzwania')}
             />
           </div>
