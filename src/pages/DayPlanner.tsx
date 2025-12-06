@@ -69,6 +69,8 @@ export default function DayPlanner() {
   const [addressQuery, setAddressQuery] = useState('');
   const [addressResults, setAddressResults] = useState<Array<{ display_name: string; lat: string; lon: string }>>([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationPermissionAsked, setLocationPermissionAsked] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [planCategory, setPlanCategory] = useState('inne');
   const [customCategory, setCustomCategory] = useState('');
@@ -120,6 +122,32 @@ export default function DayPlanner() {
     setEditingPlan(null);
   };
 
+  // Request user location for better search results
+  const requestUserLocation = () => {
+    if (locationPermissionAsked || !navigator.geolocation) return;
+    
+    setLocationPermissionAsked(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        toast.success('Lokalizacja pobrana - wyniki będą sortowane od najbliższych!');
+      },
+      () => {
+        // User denied or error - just continue without location
+      },
+      { enableHighAccuracy: false, timeout: 5000 }
+    );
+  };
+
+  // Open address search with location permission request
+  const openAddressSearch = () => {
+    setShowAddressSearch(true);
+    requestUserLocation();
+  };
+
   // Search for addresses using Nominatim API
   const searchAddress = async (query: string) => {
     if (query.length < 3) {
@@ -129,10 +157,32 @@ export default function DayPlanner() {
 
     setIsSearchingAddress(true);
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=pl&countrycodes=pl`
-      );
-      const data = await response.json();
+      // Build URL with optional location bias
+      let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10&accept-language=pl&countrycodes=pl`;
+      
+      // If we have user location, add viewbox for location bias (50km radius)
+      if (userLocation) {
+        const delta = 0.5; // ~50km
+        url += `&viewbox=${userLocation.lng - delta},${userLocation.lat + delta},${userLocation.lng + delta},${userLocation.lat - delta}`;
+        url += `&bounded=0`; // Don't strictly bound, just prefer
+      }
+      
+      const response = await fetch(url);
+      let data = await response.json();
+      
+      // If we have user location, sort results by distance
+      if (userLocation && data.length > 0) {
+        data = data.map((result: any) => ({
+          ...result,
+          distance: Math.sqrt(
+            Math.pow(parseFloat(result.lat) - userLocation.lat, 2) +
+            Math.pow(parseFloat(result.lon) - userLocation.lng, 2)
+          )
+        })).sort((a: any, b: any) => a.distance - b.distance).slice(0, 5);
+      } else {
+        data = data.slice(0, 5);
+      }
+      
       setAddressResults(data || []);
     } catch (err) {
       console.error('Address search error:', err);
@@ -155,15 +205,33 @@ export default function DayPlanner() {
     }, 300);
   };
 
+  // Open in maps app
+  const openInMaps = (lat: number, lng: number, address: string) => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const encodedAddress = encodeURIComponent(address);
+    
+    if (isIOS) {
+      window.open(`maps://maps.apple.com/?q=${encodedAddress}&ll=${lat},${lng}`, '_blank');
+    } else {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
+    }
+  };
+
   // Select address from search results
   const selectAddress = (result: { display_name: string; lat: string; lon: string }) => {
     const shortAddress = result.display_name.split(',').slice(0, 3).join(',').trim();
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    
     setPlanLocation(shortAddress);
-    setPlanCoords({ lat: parseFloat(result.lat), lng: parseFloat(result.lon) });
+    setPlanCoords({ lat, lng });
     setShowAddressSearch(false);
     setAddressQuery('');
     setAddressResults([]);
     toast.success('Lokalizacja zapisana!');
+    
+    // Open in maps app
+    openInMaps(lat, lng, shortAddress);
   };
 
   const openNavigationToLocation = () => {
@@ -502,7 +570,7 @@ export default function DayPlanner() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => setShowAddressSearch(true)}
+            onClick={openAddressSearch}
             className="w-full justify-start gap-2 h-11"
           >
             <Map className="w-4 h-4 text-primary" />
