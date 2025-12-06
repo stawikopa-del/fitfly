@@ -14,6 +14,14 @@ import fitekObiad from '@/assets/fitek/fitek-obiad.png';
 import fitekPalec from '@/assets/fitek/fitek-palec.png';
 import fitekPiatka from '@/assets/fitek/fitek-piatka.png';
 
+// Import zdjęć - Paczka 3
+import fitekPuchar from '@/assets/fitek/fitek-puchar.png';
+import fitekReceWGore from '@/assets/fitek/fitek-rece-w-gore.png';
+import fitekSamolot from '@/assets/fitek/fitek-samolot.png';
+import fitekSen from '@/assets/fitek/fitek-sen.png';
+import fitekWoda from '@/assets/fitek/fitek-woda.png';
+import fitekWykresy from '@/assets/fitek/fitek-wykresy.png';
+
 export interface FitekImage {
   id: string;
   src: string;
@@ -95,6 +103,49 @@ export const fitekImages: FitekImage[] = [
     name: 'Fitek daje piątkę',
     description: 'Fitek biegnie i daje piątkę (high five) - radosny, gratuluje sukcesu',
     suggestedUsage: ['gratulacje', 'sukces', 'high-five', 'ukończenie', 'brawo'],
+  },
+  // Paczka 3
+  {
+    id: 'puchar',
+    src: fitekPuchar,
+    name: 'Fitek z pucharem',
+    description: 'Fitek trzyma złoty puchar, napina mięśnie - dumny zwycięzca, triumf',
+    suggestedUsage: ['zwycięstwo', 'nagrody', 'osiągnięcia', 'wyzwania ukończone', 'trofea'],
+  },
+  {
+    id: 'rece-w-gore',
+    src: fitekReceWGore,
+    name: 'Fitek z rękami w górze',
+    description: 'Fitek radośnie podnosi ręce do góry, zamknięte oczy z uśmiechem - celebracja, euforia',
+    suggestedUsage: ['celebracja', 'radość', 'sukces', 'ukończenie treningu', 'hurra'],
+  },
+  {
+    id: 'samolot',
+    src: fitekSamolot,
+    name: 'Fitek z samolotem',
+    description: 'Fitek puszcza papierowy samolot - wysyłanie, udostępnianie, wiadomość',
+    suggestedUsage: ['wysyłanie', 'udostępnianie', 'share', 'wiadomości', 'zaproszenia'],
+  },
+  {
+    id: 'sen',
+    src: fitekSen,
+    name: 'Fitek śpi',
+    description: 'Fitek śpi na poduszce, symbole ZzZ - głęboki sen, odpoczynek, regeneracja',
+    suggestedUsage: ['sen', 'odpoczynek', 'regeneracja', 'noc', 'dobranoc'],
+  },
+  {
+    id: 'woda',
+    src: fitekWoda,
+    name: 'Fitek pije wodę',
+    description: 'Fitek pije wodę ze szklanki - nawodnienie, zdrowie, orzeźwienie',
+    suggestedUsage: ['woda', 'nawodnienie', 'hydratacja', 'water tracker', 'picie'],
+  },
+  {
+    id: 'wykresy',
+    src: fitekWykresy,
+    name: 'Fitek z wykresami',
+    description: 'Fitek pokazuje tablicę z kolorowymi wykresami słupkowymi - analiza, postępy, statystyki',
+    suggestedUsage: ['postępy', 'statystyki', 'wykresy', 'analiza', 'progress'],
   },
 ];
 
