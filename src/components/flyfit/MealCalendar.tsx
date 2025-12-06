@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, PlayCircle, RefreshCw, Loader2, UtensilsCrossed } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlayCircle, RefreshCw, Loader2, UtensilsCrossed, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,6 +80,8 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
   const [swappedMeals, setSwappedMeals] = useState<SwappedMeals>({});
+  const [favoriteNames, setFavoriteNames] = useState<Set<string>>(new Set());
+  const [savingFavorite, setSavingFavorite] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(true);
 
@@ -124,6 +126,30 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
     };
     
     fetchPlan();
+  }, [user]);
+
+  // Fetch favorite recipe names
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      if (!user) return;
+      
+      try {
+        const { data } = await supabase
+          .from('favorite_recipes')
+          .select('recipe_name')
+          .eq('user_id', user.id);
+        
+        if (!mountedRef.current) return;
+        
+        if (data) {
+          setFavoriteNames(new Set(data.map(f => f.recipe_name)));
+        }
+      } catch (error) {
+        console.error('Error fetching favorites:', error);
+      }
+    };
+    
+    fetchFavorites();
   }, [user]);
 
   // Generate days for the calendar (current week + offset)
@@ -319,6 +345,70 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
     onStartCooking(recipe);
   };
 
+  // Add meal to favorites
+  const handleAddToFavorites = async (meal: MealItem) => {
+    if (!user) return;
+    
+    soundFeedback.buttonClick();
+    setSavingFavorite(meal.name);
+    
+    try {
+      // Check if already in favorites
+      if (favoriteNames.has(meal.name)) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorite_recipes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('recipe_name', meal.name);
+        
+        if (error) throw error;
+        
+        setFavoriteNames(prev => {
+          const next = new Set(prev);
+          next.delete(meal.name);
+          return next;
+        });
+        toast.success('Usunięto z ulubionych 💔');
+      } else {
+        // Add to favorites
+        const recipeData = {
+          name: meal.name,
+          description: meal.description,
+          calories: meal.calories,
+          ingredients: meal.ingredients || [],
+          preparationTime: meal.preparationTime || 30,
+          macros: meal.macros || {
+            protein: Math.round(meal.calories * 0.25 / 4),
+            carbs: Math.round(meal.calories * 0.5 / 4),
+            fat: Math.round(meal.calories * 0.25 / 9),
+          },
+        };
+        
+        const { error } = await supabase
+          .from('favorite_recipes')
+          .insert([{
+            user_id: user.id,
+            recipe_name: meal.name,
+            recipe_data: recipeData,
+          }]);
+        
+        if (error) throw error;
+        
+        setFavoriteNames(prev => new Set([...prev, meal.name]));
+        soundFeedback.success();
+        toast.success('Dodano do ulubionych! ❤️');
+      }
+    } catch (error) {
+      console.error('Error updating favorites:', error);
+      toast.error('Nie udało się zaktualizować ulubionych');
+    } finally {
+      if (mountedRef.current) {
+        setSavingFavorite(null);
+      }
+    }
+  };
+
   const mealsForDay = getMealsForDay();
 
   if (loading) {
@@ -447,6 +537,7 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
             const mealConfig = mealTypeLabels[meal.type];
             const isSwapping = swappingMeal === `${meal.type}-${index}`;
             const isSwapped = !!swappedMeals[getDateMealKey(selectedDate, meal.type)];
+            const isFavorite = favoriteNames.has(meal.name);
             
             return (
               <div 
@@ -469,9 +560,28 @@ export function MealCalendar({ onStartCooking }: MealCalendarProps) {
                       </span>
                     )}
                   </div>
-                  <span className="text-xs font-bold text-foreground bg-card px-2 py-1 rounded-full shadow-sm">
-                    {meal.calories} kcal
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleAddToFavorites(meal)}
+                      disabled={savingFavorite === meal.name}
+                      className={cn(
+                        "p-1.5 rounded-full transition-all duration-200",
+                        isFavorite 
+                          ? "text-red-500 hover:text-red-600" 
+                          : "text-muted-foreground hover:text-red-400"
+                      )}
+                      title={isFavorite ? "Usuń z ulubionych" : "Dodaj do ulubionych"}
+                    >
+                      {savingFavorite === meal.name ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Heart className={cn("w-4 h-4", isFavorite && "fill-current")} />
+                      )}
+                    </button>
+                    <span className="text-xs font-bold text-foreground bg-card px-2 py-1 rounded-full shadow-sm">
+                      {meal.calories} kcal
+                    </span>
+                  </div>
                 </div>
                 
                 <h4 className="font-bold text-foreground mb-1">{meal.name}</h4>
