@@ -13,7 +13,6 @@ import { pl } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useFriends } from '@/hooks/useFriends';
 import { CreateCustomListDialog } from '@/components/flyfit/CreateCustomListDialog';
-
 interface Ingredient {
   name: string;
   amount: number;
@@ -26,7 +25,6 @@ interface Ingredient {
   displayAmount: string;
   isCustom?: boolean;
 }
-
 interface CustomItem {
   id: string;
   name: string;
@@ -34,7 +32,6 @@ interface CustomItem {
   amount: number;
   unit: string;
 }
-
 interface SharedList {
   id: string;
   owner_id: string;
@@ -55,11 +52,10 @@ interface SharedList {
 // Polish name declension helper (genitive case - "od kogo?")
 const declinePolishName = (name: string): string => {
   if (!name) return '';
-  
   const trimmed = name.trim();
   const lastChar = trimmed.slice(-1).toLowerCase();
   const lastTwoChars = trimmed.slice(-2).toLowerCase();
-  
+
   // Names ending in -a (feminine and some masculine)
   if (lastChar === 'a') {
     // Exception for -ia endings (Maria -> Marii)
@@ -78,7 +74,7 @@ const declinePolishName = (name: string): string => {
     }
     return trimmed.slice(0, -1) + 'y';
   }
-  
+
   // Masculine names ending in consonants
   // Common patterns:
   // -ek -> -ka (Marek -> Marka, Jacek -> Jacka)
@@ -157,11 +153,10 @@ const declinePolishName = (name: string): string => {
   if (lastChar === 'g') {
     return trimmed + 'a';
   }
-  
+
   // Default: just add 'a'
   return trimmed + 'a';
 };
-
 const AVAILABLE_UNITS = ['g', 'ml', 'kg', 'l', 'szt', 'opak'];
 const CATEGORY_OPTIONS = [{
   key: 'pieczywo',
@@ -1244,7 +1239,7 @@ export default function ShoppingList() {
   const [sharedLists, setSharedLists] = useState<SharedList[]>([]);
   const [sentLists, setSentLists] = useState<SharedList[]>([]); // Lists I sent to others
   const [loadingSharedLists, setLoadingSharedLists] = useState(false);
-  
+
   // Favorite shopping lists
   const [favoriteLists, setFavoriteLists] = useState<Array<{
     id: string;
@@ -1257,21 +1252,20 @@ export default function ShoppingList() {
   // Load favorite shopping lists
   const fetchFavorites = useCallback(async () => {
     if (!user) return;
-    
     setLoadingFavorites(true);
     try {
-      const { data, error } = await supabase
-        .from('favorite_shopping_lists')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
+      const {
+        data,
+        error
+      } = await supabase.from('favorite_shopping_lists').select('*').eq('user_id', user.id).order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
       setFavoriteLists((data || []).map(d => ({
         id: d.id,
         name: d.name,
         items: d.items as any[],
-        created_at: d.created_at,
+        created_at: d.created_at
       })));
     } catch (err) {
       console.error('Error fetching favorite lists:', err);
@@ -1279,7 +1273,6 @@ export default function ShoppingList() {
       setLoadingFavorites(false);
     }
   }, [user]);
-
   useEffect(() => {
     if (!isInitialized || !user) return;
     fetchFavorites();
@@ -1288,34 +1281,33 @@ export default function ShoppingList() {
   // Load shared lists from friends
   useEffect(() => {
     if (!isInitialized || !user) return;
-
     const fetchSharedLists = async () => {
       setLoadingSharedLists(true);
       try {
-        const { data: shared, error } = await supabase
-          .from('shared_shopping_lists')
-          .select('*')
-          .eq('shared_with_id', user.id)
-          .order('created_at', { ascending: false });
-
+        const {
+          data: shared,
+          error
+        } = await supabase.from('shared_shopping_lists').select('*').eq('shared_with_id', user.id).order('created_at', {
+          ascending: false
+        });
         if (error) {
           console.error('Error fetching shared_shopping_lists:', error);
           setSharedLists([]);
           return;
         }
-
-        
-
         if (shared && shared.length > 0) {
           // Get owner profiles - use RPC function to bypass RLS
           const ownerIds = [...new Set(shared.map(s => s.owner_id))];
-          
+
           // Fetch profiles for each owner using the get_friend_profile RPC
           const profilesMap: Record<string, string> = {};
           for (const ownerId of ownerIds) {
             try {
-              const { data: profileData } = await supabase
-                .rpc('get_friend_profile', { friend_user_id: ownerId });
+              const {
+                data: profileData
+              } = await supabase.rpc('get_friend_profile', {
+                friend_user_id: ownerId
+              });
               if (profileData && profileData.length > 0) {
                 profilesMap[ownerId] = profileData[0].display_name || 'Znajomy';
               }
@@ -1323,13 +1315,12 @@ export default function ShoppingList() {
               console.error('Error fetching owner profile:', e);
             }
           }
-
           const listsWithNames: SharedList[] = shared.map(s => {
             return {
               id: s.id,
               owner_id: s.owner_id,
               owner_name: profilesMap[s.owner_id] || 'Znajomy',
-              items: (s.items as SharedList['items']) || [],
+              items: s.items as SharedList['items'] || [],
               date_range_start: s.date_range_start,
               date_range_end: s.date_range_end,
               created_at: s.created_at
@@ -1341,20 +1332,22 @@ export default function ShoppingList() {
         }
 
         // Also fetch lists I sent to others
-        const { data: mySentLists, error: sentError } = await supabase
-          .from('shared_shopping_lists')
-          .select('*')
-          .eq('owner_id', user.id)
-          .order('created_at', { ascending: false });
-
+        const {
+          data: mySentLists,
+          error: sentError
+        } = await supabase.from('shared_shopping_lists').select('*').eq('owner_id', user.id).order('created_at', {
+          ascending: false
+        });
         if (!sentError && mySentLists && mySentLists.length > 0) {
           const recipientIds = [...new Set(mySentLists.map(s => s.shared_with_id))];
           const recipientsMap: Record<string, string> = {};
-          
           for (const recipientId of recipientIds) {
             try {
-              const { data: profileData } = await supabase
-                .rpc('get_friend_profile', { friend_user_id: recipientId });
+              const {
+                data: profileData
+              } = await supabase.rpc('get_friend_profile', {
+                friend_user_id: recipientId
+              });
               if (profileData && profileData.length > 0) {
                 recipientsMap[recipientId] = profileData[0].display_name || 'Znajomy';
               }
@@ -1362,12 +1355,11 @@ export default function ShoppingList() {
               console.error('Error fetching recipient profile:', e);
             }
           }
-
           const sentListsWithNames: SharedList[] = mySentLists.map(s => ({
             id: s.id,
             owner_id: s.owner_id,
             owner_name: recipientsMap[s.shared_with_id] || 'Znajomy',
-            items: (s.items as SharedList['items']) || [],
+            items: s.items as SharedList['items'] || [],
             date_range_start: s.date_range_start,
             date_range_end: s.date_range_end,
             created_at: s.created_at
@@ -1382,7 +1374,6 @@ export default function ShoppingList() {
         setLoadingSharedLists(false);
       }
     };
-
     fetchSharedLists();
   }, [user, isInitialized]);
 
@@ -1391,15 +1382,11 @@ export default function ShoppingList() {
     try {
       soundFeedback.buttonClick();
     } catch {}
-
     try {
-      const { error } = await supabase
-        .from('shared_shopping_lists')
-        .delete()
-        .eq('id', listId);
-
+      const {
+        error
+      } = await supabase.from('shared_shopping_lists').delete().eq('id', listId);
       if (error) throw error;
-
       setSharedLists(prev => prev.filter(l => l.id !== listId));
       toast.success('Usunięto listę');
     } catch (err) {
@@ -1407,7 +1394,6 @@ export default function ShoppingList() {
       toast.error('Nie udało się usunąć listy');
     }
   }, []);
-
   const handleDateClick = useCallback((date: Date) => {
     try {
       soundFeedback.buttonClick();
@@ -1476,12 +1462,11 @@ export default function ShoppingList() {
       const parsedIngredients = parseIngredientsFromMeals(allMeals, daysDiff);
 
       // Convert to final format
-      parsedIngredients.forEach((ing) => {
+      parsedIngredients.forEach(ing => {
         // Skip if already added as custom item
         if (customItems.some(ci => ci.name.toLowerCase() === ing.name.toLowerCase())) {
           return;
         }
-        
         result.push({
           name: ing.name,
           amount: ing.totalAmount,
@@ -1515,45 +1500,42 @@ export default function ShoppingList() {
     });
     return sortedGroups;
   }, [ingredients]);
-  
+
   // Save current list to favorites
   const saveToFavorites = useCallback(async () => {
     if (!user || ingredients.length === 0) return;
-
     try {
       soundFeedback.buttonClick();
     } catch {}
-
-    const listName = startDate && endDate 
-      ? `Lista ${format(startDate, 'd.MM', { locale: pl })} - ${format(endDate, 'd.MM', { locale: pl })}`
-      : `Lista ${format(new Date(), 'd.MM.yyyy', { locale: pl })}`;
-
+    const listName = startDate && endDate ? `Lista ${format(startDate, 'd.MM', {
+      locale: pl
+    })} - ${format(endDate, 'd.MM', {
+      locale: pl
+    })}` : `Lista ${format(new Date(), 'd.MM.yyyy', {
+      locale: pl
+    })}`;
     const itemsToSave = ingredients.map(ing => ({
       name: ing.name,
       amount: ing.amount,
       unit: ing.unit,
       category: ing.category,
-      displayAmount: ing.displayAmount,
+      displayAmount: ing.displayAmount
     }));
-
     try {
-      const { data, error } = await supabase
-        .from('favorite_shopping_lists')
-        .insert({
-          user_id: user.id,
-          name: listName,
-          items: itemsToSave,
-        })
-        .select()
-        .single();
-
+      const {
+        data,
+        error
+      } = await supabase.from('favorite_shopping_lists').insert({
+        user_id: user.id,
+        name: listName,
+        items: itemsToSave
+      }).select().single();
       if (error) throw error;
-
       setFavoriteLists(prev => [{
         id: data.id,
         name: data.name,
         items: data.items as any[],
-        created_at: data.created_at,
+        created_at: data.created_at
       }, ...prev]);
       toast.success('Zapisano do ulubionych! ❤️');
     } catch (err) {
@@ -1567,13 +1549,10 @@ export default function ShoppingList() {
     try {
       soundFeedback.buttonClick();
     } catch {}
-
     try {
-      const { error } = await supabase
-        .from('favorite_shopping_lists')
-        .delete()
-        .eq('id', id);
-
+      const {
+        error
+      } = await supabase.from('favorite_shopping_lists').delete().eq('id', id);
       if (error) throw error;
       setFavoriteLists(prev => prev.filter(l => l.id !== id));
       toast.success('Usunięto z ulubionych');
@@ -1582,7 +1561,6 @@ export default function ShoppingList() {
       toast.error('Nie udało się usunąć');
     }
   }, []);
-
   const toggleItem = useCallback((name: string) => {
     try {
       soundFeedback.buttonClick();
@@ -1689,34 +1667,30 @@ export default function ShoppingList() {
       category: item.category,
       displayAmount: item.displayAmount
     }));
-
     try {
       // Insert into shared_shopping_lists table
-      const { data: sharedList, error } = await supabase
-        .from('shared_shopping_lists')
-        .insert({
-          owner_id: user.id,
-          shared_with_id: friendId,
-          items: itemsToShare,
-          date_range_start: startDate ? format(startDate, 'yyyy-MM-dd') : null,
-          date_range_end: endDate ? format(endDate, 'yyyy-MM-dd') : null
-        })
-        .select('id')
-        .single();
-
+      const {
+        data: sharedList,
+        error
+      } = await supabase.from('shared_shopping_lists').insert({
+        owner_id: user.id,
+        shared_with_id: friendId,
+        items: itemsToShare,
+        date_range_start: startDate ? format(startDate, 'yyyy-MM-dd') : null,
+        date_range_end: endDate ? format(endDate, 'yyyy-MM-dd') : null
+      }).select('id').single();
       if (error) throw error;
 
       // Send a message in chat with shopping list notification
-      await supabase
-        .from('direct_messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: friendId,
-          content: '🛒 Udostępniono Ci listę zakupów!',
-          message_type: 'shopping_list',
-          recipe_data: { shoppingListId: sharedList.id }
-        });
-
+      await supabase.from('direct_messages').insert({
+        sender_id: user.id,
+        receiver_id: friendId,
+        content: '🛒 Udostępniono Ci listę zakupów!',
+        message_type: 'shopping_list',
+        recipe_data: {
+          shoppingListId: sharedList.id
+        }
+      });
       toast.success('Lista zakupów została udostępniona! 🛒');
       setShowShareDialog(false);
     } catch (error) {
@@ -1753,13 +1727,7 @@ export default function ShoppingList() {
           <Button variant="ghost" size="icon" onClick={() => setShowAddDialog(true)}>
             <Plus className="w-5 h-5" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={saveToFavorites} 
-            disabled={ingredients.length === 0}
-            title="Dodaj do ulubionych"
-          >
+          <Button variant="ghost" size="icon" onClick={saveToFavorites} disabled={ingredients.length === 0} title="Dodaj do ulubionych">
             <Heart className="w-5 h-5" />
           </Button>
           <Button variant="ghost" size="icon" onClick={() => setShowShareDialog(true)} disabled={ingredients.length === 0}>
@@ -1770,13 +1738,11 @@ export default function ShoppingList() {
 
       <div className="px-4 space-y-6 py-4">
         {/* Info banner - show when no dates selected */}
-        {(!startDate || !endDate) && (
-          <div className="bg-muted rounded-2xl p-4 text-center">
+        {(!startDate || !endDate) && <div className="bg-muted rounded-2xl p-4 text-center">
             <p className="text-sm text-muted-foreground font-medium">
               Najpierw wybierz okres w kalendarzu 🗓️
             </p>
-          </div>
-        )}
+          </div>}
 
         {/* Calendar Date Range Selector */}
         <div id="calendar-section" className="bg-card rounded-2xl border border-border/50 p-4 shadow-card-playful py-[8px]">
@@ -1846,14 +1812,12 @@ export default function ShoppingList() {
           </h2>
           
           {/* Twoja dieta button - only show if user has a diet plan */}
-          {dietPlan && (
-            <button
-              onClick={() => {
-                try { soundFeedback.buttonClick(); } catch {}
-                navigate('/lista-zakupow/dieta');
-              }}
-              className="w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 border-secondary/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
-            >
+          {dietPlan && <button onClick={() => {
+          try {
+            soundFeedback.buttonClick();
+          } catch {}
+          navigate('/lista-zakupow/dieta');
+        }} className="w-full bg-gradient-to-r from-secondary/20 via-fitfly-green/20 to-fitfly-green-light/20 rounded-3xl p-5 border-2 border-secondary/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-fitfly-green-dark flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
                   <Calendar className="w-7 h-7 text-white" />
@@ -1867,25 +1831,24 @@ export default function ShoppingList() {
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
-            </button>
-          )}
+            </button>}
           
           {/* Create custom list button */}
-          <button
-            onClick={() => {
-              try { soundFeedback.buttonClick(); } catch {}
-              setShowCreateListDialog(true);
-            }}
-            className="w-full bg-gradient-to-r from-primary/20 via-fitfly-blue/20 to-fitfly-blue-light/20 rounded-3xl p-5 border-2 border-primary/30 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
-          >
+          <button onClick={() => {
+          try {
+            soundFeedback.buttonClick();
+          } catch {}
+          setShowCreateListDialog(true);
+        }} className="w-full bg-gradient-to-r from-primary/20 via-fitfly-blue/20 to-fitfly-blue-light/20 rounded-3xl p-5 border-2 border-primary/30 border-dashed shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-dark flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
                 <Plus className="w-7 h-7 text-white" />
               </div>
               <div className="text-left flex-1">
-                <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
-                  Utwórz swoją listę
-                  <span>✨</span>
+                <h3 className="font-extrabold font-display text-foreground flex items-center gap-2 text-left">
+                  Utwórz swoją 
+listę zakupów 📝  
+                  
                 </h3>
                 <p className="text-sm text-muted-foreground">Dodaj produkty, notatki i udostępnij</p>
               </div>
@@ -1902,25 +1865,18 @@ export default function ShoppingList() {
           </div>}
 
         {/* Favorite Lists Section */}
-        {(loadingFavorites || favoriteLists.length > 0) && (
-          <div className="bg-card rounded-2xl border-2 border-destructive/30 p-4 shadow-card-playful">
+        {(loadingFavorites || favoriteLists.length > 0) && <div className="bg-card rounded-2xl border-2 border-destructive/30 p-4 shadow-card-playful">
             <h2 className="font-bold font-display text-foreground mb-3 flex items-center gap-2">
               <Heart className="w-5 h-5 text-destructive fill-destructive" />
               Ulubione listy zakupów
             </h2>
             
-            {loadingFavorites ? (
-              <div className="flex items-center justify-center py-6">
+            {loadingFavorites ? <div className="flex items-center justify-center py-6">
                 <div className="animate-spin w-6 h-6 border-3 border-primary border-t-transparent rounded-full" />
-              </div>
-            ) : favoriteLists.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
+              </div> : favoriteLists.length === 0 ? <p className="text-sm text-muted-foreground text-center py-4">
                 Brak ulubionych list
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {favoriteLists.map(list => (
-                  <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
+              </p> : <div className="space-y-3">
+                {favoriteLists.map(list => <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
                     <div className="p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex-1 min-w-0">
@@ -1928,62 +1884,47 @@ export default function ShoppingList() {
                             {list.name}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {list.items?.length || 0} produktów • {format(new Date(list.created_at), 'd MMM yyyy', { locale: pl })}
+                            {list.items?.length || 0} produktów • {format(new Date(list.created_at), 'd MMM yyyy', {
+                      locale: pl
+                    })}
                           </p>
                         </div>
-                        <button 
-                          onClick={() => deleteFavorite(list.id)}
-                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0"
-                        >
+                        <button onClick={() => deleteFavorite(list.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          try { soundFeedback.buttonClick(); } catch {}
-                          navigate(`/lista-zakupow/fav/${list.id}`);
-                        }}
-                      >
+                      <Button variant="outline" size="sm" className="w-full" onClick={() => {
+                try {
+                  soundFeedback.buttonClick();
+                } catch {}
+                navigate(`/lista-zakupow/fav/${list.id}`);
+              }}>
                         <ShoppingCart className="w-4 h-4 mr-2" />
                         Otwórz listę
                       </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                  </div>)}
+              </div>}
+          </div>}
 
         {/* Shared Lists from Friends */}
-        {(loadingSharedLists || sharedLists.length > 0) && (
-          <div className="bg-card rounded-2xl border-2 border-secondary/30 p-4 shadow-card-playful">
+        {(loadingSharedLists || sharedLists.length > 0) && <div className="bg-card rounded-2xl border-2 border-secondary/30 p-4 shadow-card-playful">
             <h2 className="font-bold font-display text-foreground mb-3 flex items-center gap-2">
               <Gift className="w-5 h-5 text-secondary" />
               Udostępnione listy zakupów
             </h2>
             
-            {loadingSharedLists ? (
-              <div className="flex items-center justify-center py-6">
+            {loadingSharedLists ? <div className="flex items-center justify-center py-6">
                 <div className="animate-spin w-6 h-6 border-3 border-primary border-t-transparent rounded-full" />
-              </div>
-            ) : sharedLists.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
+              </div> : sharedLists.length === 0 ? <p className="text-sm text-muted-foreground text-center py-4">
                 Brak udostępnionych list
-              </p>
-            ) : (
-              <div className="space-y-3">
+              </p> : <div className="space-y-3">
                 {sharedLists.map(list => {
-                  const totalCount = list.items.length;
-                  // Count checked items from database (items with checked: true)
-                  const checkedCount = list.items.filter(item => item.checked).length;
-                  const progressPercent = totalCount > 0 ? (checkedCount / totalCount) * 100 : 0;
-
-                  return (
-                    <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
+            const totalCount = list.items.length;
+            // Count checked items from database (items with checked: true)
+            const checkedCount = list.items.filter(item => item.checked).length;
+            const progressPercent = totalCount > 0 ? checkedCount / totalCount * 100 : 0;
+            return <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
                       <div className="p-3">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1992,19 +1933,18 @@ export default function ShoppingList() {
                               Udostępnione przez {declinePolishName(list.owner_name)}
                             </span>
                           </div>
-                          <button 
-                            onClick={() => deleteSharedList(list.id)}
-                            className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0"
-                          >
+                          <button onClick={() => deleteSharedList(list.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        {list.date_range_start && list.date_range_end && (
-                          <p className="text-xs text-muted-foreground mb-2">
+                        {list.date_range_start && list.date_range_end && <p className="text-xs text-muted-foreground mb-2">
                             <Calendar className="w-3 h-3 inline mr-1" />
-                            {format(new Date(list.date_range_start), 'd MMM', { locale: pl })} — {format(new Date(list.date_range_end), 'd MMM', { locale: pl })}
-                          </p>
-                        )}
+                            {format(new Date(list.date_range_start), 'd MMM', {
+                    locale: pl
+                  })} — {format(new Date(list.date_range_end), 'd MMM', {
+                    locale: pl
+                  })}
+                          </p>}
                         
                         {/* Progress bar */}
                         <div className="mb-3">
@@ -2013,76 +1953,67 @@ export default function ShoppingList() {
                             <span className="text-xs font-medium text-primary">{checkedCount}/{totalCount}</span>
                           </div>
                           <div className="h-2 bg-background rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" 
-                              style={{ width: `${progressPercent}%` }} 
-                            />
+                            <div className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" style={{
+                      width: `${progressPercent}%`
+                    }} />
                           </div>
                         </div>
 
                         {/* Open list button - navigates to dedicated page */}
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            try { soundFeedback.buttonClick(); } catch {}
-                            navigate(`/lista-zakupow/${list.id}`);
-                          }}
-                        >
+                        <Button variant="default" size="sm" className="w-full" onClick={() => {
+                  try {
+                    soundFeedback.buttonClick();
+                  } catch {}
+                  navigate(`/lista-zakupow/${list.id}`);
+                }}>
                           <ShoppingCart className="w-4 h-4 mr-2" />
                           Otwórz listę ({totalCount} produktów)
                         </Button>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+                    </div>;
+          })}
+              </div>}
+          </div>}
 
         {/* Lists I sent to others */}
-        {sentLists.length > 0 && (
-          <div className="bg-card rounded-2xl border-2 border-primary/30 p-4 shadow-card-playful">
+        {sentLists.length > 0 && <div className="bg-card rounded-2xl border-2 border-primary/30 p-4 shadow-card-playful">
             <h2 className="font-bold font-display text-foreground mb-3 flex items-center gap-2">
               <Share2 className="w-5 h-5 text-primary" />
               Wysłane listy zakupów
             </h2>
             <div className="space-y-3">
               {sentLists.map(list => {
-                const totalCount = list.items.length;
-                const checkedCount = list.items.filter(item => item.checked).length;
-                const progressPercent = totalCount > 0 ? (checkedCount / totalCount) * 100 : 0;
-                
-                return (
-                  <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
+            const totalCount = list.items.length;
+            const checkedCount = list.items.filter(item => item.checked).length;
+            const progressPercent = totalCount > 0 ? checkedCount / totalCount * 100 : 0;
+            return <div key={list.id} className="bg-muted/50 rounded-xl overflow-hidden">
                     <div className="p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">
                             Wysłano do: {list.owner_name}
                           </p>
-                          {list.date_range_start && list.date_range_end && (
-                            <p className="text-xs text-muted-foreground">
+                          {list.date_range_start && list.date_range_end && <p className="text-xs text-muted-foreground">
                               <Calendar className="w-3 h-3 inline mr-1" />
-                              {format(new Date(list.date_range_start), 'd MMM', { locale: pl })} — {format(new Date(list.date_range_end), 'd MMM', { locale: pl })}
-                            </p>
-                          )}
+                              {format(new Date(list.date_range_start), 'd MMM', {
+                        locale: pl
+                      })} — {format(new Date(list.date_range_end), 'd MMM', {
+                        locale: pl
+                      })}
+                            </p>}
                         </div>
-                        <button 
-                          onClick={async () => {
-                            try { soundFeedback.buttonClick(); } catch {}
-                            try {
-                              await supabase.from('shared_shopping_lists').delete().eq('id', list.id);
-                              setSentLists(prev => prev.filter(l => l.id !== list.id));
-                              toast.success('Usunięto udostępnioną listę');
-                            } catch (err) {
-                              toast.error('Nie udało się usunąć');
-                            }
-                          }}
-                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0"
-                        >
+                        <button onClick={async () => {
+                    try {
+                      soundFeedback.buttonClick();
+                    } catch {}
+                    try {
+                      await supabase.from('shared_shopping_lists').delete().eq('id', list.id);
+                      setSentLists(prev => prev.filter(l => l.id !== list.id));
+                      toast.success('Usunięto udostępnioną listę');
+                    } catch (err) {
+                      toast.error('Nie udało się usunąć');
+                    }
+                  }} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 flex-shrink-0">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -2094,33 +2025,27 @@ export default function ShoppingList() {
                           <span className="text-xs font-medium text-primary">{checkedCount}/{totalCount}</span>
                         </div>
                         <div className="h-2 bg-background rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" 
-                            style={{ width: `${progressPercent}%` }} 
-                          />
+                          <div className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300" style={{
+                      width: `${progressPercent}%`
+                    }} />
                         </div>
                       </div>
 
                       {/* Open list button */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          try { soundFeedback.buttonClick(); } catch {}
-                          navigate(`/lista-zakupow/${list.id}`);
-                        }}
-                      >
+                      <Button variant="outline" size="sm" className="w-full" onClick={() => {
+                  try {
+                    soundFeedback.buttonClick();
+                  } catch {}
+                  navigate(`/lista-zakupow/${list.id}`);
+                }}>
                         <ShoppingCart className="w-4 h-4 mr-2" />
                         Otwórz listę ({totalCount} produktów)
                       </Button>
                     </div>
-                  </div>
-                );
-              })}
+                  </div>;
+          })}
             </div>
-          </div>
-        )}
+          </div>}
         <Button variant="outline" className="w-full" onClick={() => setShowAddDialog(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Dodaj własny produkt
@@ -2357,46 +2282,42 @@ lub dodaj własne produkty</p>
       </Dialog>
 
       {/* Create Custom List Dialog */}
-      <CreateCustomListDialog
-        open={showCreateListDialog}
-        onOpenChange={setShowCreateListDialog}
-        onListCreated={() => {
-          fetchFavorites();
-          // Also refresh shared lists
-          if (user) {
-            supabase
-              .from('shared_shopping_lists')
-              .select('*')
-              .eq('owner_id', user.id)
-              .order('created_at', { ascending: false })
-              .then(async ({ data: mySentLists }) => {
-                if (mySentLists && mySentLists.length > 0) {
-                  const recipientIds = [...new Set(mySentLists.map(s => s.shared_with_id))];
-                  const recipientsMap: Record<string, string> = {};
-                  
-                  for (const recipientId of recipientIds) {
-                    try {
-                      const { data: profileData } = await supabase
-                        .rpc('get_friend_profile', { friend_user_id: recipientId });
-                      if (profileData && profileData.length > 0) {
-                        recipientsMap[recipientId] = profileData[0].display_name || 'Znajomy';
-                      }
-                    } catch (e) {}
-                  }
-
-                  setSentLists(mySentLists.map(s => ({
-                    id: s.id,
-                    owner_id: s.owner_id,
-                    owner_name: recipientsMap[s.shared_with_id] || 'Znajomy',
-                    items: (s.items as any) || [],
-                    date_range_start: s.date_range_start,
-                    date_range_end: s.date_range_end,
-                    created_at: s.created_at
-                  })));
+      <CreateCustomListDialog open={showCreateListDialog} onOpenChange={setShowCreateListDialog} onListCreated={() => {
+      fetchFavorites();
+      // Also refresh shared lists
+      if (user) {
+        supabase.from('shared_shopping_lists').select('*').eq('owner_id', user.id).order('created_at', {
+          ascending: false
+        }).then(async ({
+          data: mySentLists
+        }) => {
+          if (mySentLists && mySentLists.length > 0) {
+            const recipientIds = [...new Set(mySentLists.map(s => s.shared_with_id))];
+            const recipientsMap: Record<string, string> = {};
+            for (const recipientId of recipientIds) {
+              try {
+                const {
+                  data: profileData
+                } = await supabase.rpc('get_friend_profile', {
+                  friend_user_id: recipientId
+                });
+                if (profileData && profileData.length > 0) {
+                  recipientsMap[recipientId] = profileData[0].display_name || 'Znajomy';
                 }
-              });
+              } catch (e) {}
+            }
+            setSentLists(mySentLists.map(s => ({
+              id: s.id,
+              owner_id: s.owner_id,
+              owner_name: recipientsMap[s.shared_with_id] || 'Znajomy',
+              items: s.items as any || [],
+              date_range_start: s.date_range_start,
+              date_range_end: s.date_range_end,
+              created_at: s.created_at
+            })));
           }
-        }}
-      />
+        });
+      }
+    }} />
     </div>;
 }
