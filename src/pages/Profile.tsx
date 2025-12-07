@@ -444,7 +444,7 @@ export default function Profile() {
           {[
             { id: 'water', label: 'Przypomnienia o piciu wody', checked: notifications.water, emoji: '💧' },
             { id: 'workout', label: 'Przypomnienia o treningu', checked: notifications.workout, emoji: '🏃' },
-            { id: 'challenges', label: 'Nowe wyzwania', checked: notifications.challenges, emoji: '🏆' },
+            { id: 'challenges', label: 'Nowe cele', checked: notifications.challenges, emoji: '🎯' },
           ].map(({ id, label, checked, emoji }) => (
             <div key={id} className="flex items-center justify-between bg-muted/50 rounded-2xl p-4">
               <Label htmlFor={id} className="text-sm text-foreground font-medium flex items-center gap-2">

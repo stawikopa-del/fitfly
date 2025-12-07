@@ -266,7 +266,7 @@ export default function Settings() {
         { key: 'notifications', label: 'Włącz powiadomienia', emoji: '📲', disabled: true, note: '(wkrótce)' },
         { key: 'waterReminders', label: 'Przypomnienia o piciu wody', emoji: '💧', disabled: true, note: '(wkrótce)' },
         { key: 'workoutReminders', label: 'Przypomnienia o treningu', emoji: '🏃', disabled: true, note: '(wkrótce)' },
-        { key: 'challengeReminders', label: 'Nowe wyzwania', emoji: '🏆', disabled: true, note: '(wkrótce)' },
+        { key: 'challengeReminders', label: 'Nowe cele', emoji: '🎯', disabled: true, note: '(wkrótce)' },
       ],
     },
     {

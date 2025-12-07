@@ -51,7 +51,7 @@ export const TIER_FEATURES: Record<SubscriptionTier, {
       'Wszystko z pakietu FIT',
       'Indywidualny plan treningowy',
       'Konsultacje z trenerem',
-      'Ekskluzywne wyzwania',
+      'Ekskluzywne cele',
       'Brak reklam',
     ],
   },
