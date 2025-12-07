@@ -73,13 +73,13 @@ export function AddChallengeDialog({ onAdd }: AddChallengeDialogProps) {
       <DialogTrigger asChild>
         <Button variant="accent" className="rounded-2xl gap-2">
           <Plus className="w-5 h-5" />
-          Dodaj cel
+          Dodaj wyzwanie
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md bg-card border-2 border-border/50 rounded-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold font-display text-center">
-            Nowy cel 🎯
+            Nowe wyzwanie 🏆
           </DialogTitle>
         </DialogHeader>
         
@@ -91,7 +91,7 @@ export function AddChallengeDialog({ onAdd }: AddChallengeDialogProps) {
           
           <TabsContent value="suggested" className="space-y-3">
             <p className="text-sm text-muted-foreground text-center mb-4">
-              Wybierz cel i zdobądź punkty! 🎯
+              Wybierz wyzwanie i zdobądź punkty! 🎯
             </p>
             {suggestedChallenges.map((challenge, index) => (
               <button
@@ -122,7 +122,7 @@ export function AddChallengeDialog({ onAdd }: AddChallengeDialogProps) {
           
           <TabsContent value="custom" className="space-y-4">
             <div className="space-y-2">
-              <Label className="font-bold">Nazwa celu *</Label>
+              <Label className="font-bold">Nazwa wyzwania *</Label>
               <Input
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -136,7 +136,7 @@ export function AddChallengeDialog({ onAdd }: AddChallengeDialogProps) {
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Opisz szczegóły celu..."
+                placeholder="Opisz szczegóły wyzwania..."
                 className="rounded-2xl border-2 resize-none"
                 rows={2}
               />
@@ -213,7 +213,7 @@ export function AddChallengeDialog({ onAdd }: AddChallengeDialogProps) {
           disabled={!formData.title.trim() || isLoading}
           className="w-full rounded-2xl mt-4"
         >
-          {isLoading ? 'Dodawanie...' : 'Dodaj cel 🎯'}
+          {isLoading ? 'Dodawanie...' : 'Dodaj wyzwanie 🏆'}
         </Button>
       </DialogContent>
     </Dialog>

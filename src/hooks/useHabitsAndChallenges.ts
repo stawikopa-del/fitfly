@@ -431,7 +431,7 @@ export function useHabitsAndChallenges() {
     
     if (error) {
       console.error('Error adding challenge:', error);
-      toast.error('Nie udało się dodać celu');
+      toast.error('Nie udało się dodać wyzwania');
       return null;
     }
     
@@ -460,7 +460,7 @@ export function useHabitsAndChallenges() {
     
     if (error) {
       console.error('Error starting challenge:', error);
-      toast.error('Nie udało się rozpocząć celu');
+      toast.error('Nie udało się rozpocząć wyzwania');
       return;
     }
     
@@ -509,7 +509,7 @@ export function useHabitsAndChallenges() {
       
       if (deleteError) {
         console.error('Error deleting challenge:', deleteError);
-        toast.error('Nie udało się usunąć celu');
+        toast.error('Nie udało się usunąć wyzwania');
         return;
       }
       
@@ -517,7 +517,7 @@ export function useHabitsAndChallenges() {
       setChallenges(prev => prev.filter(c => c.id !== challengeId));
     } catch (err) {
       console.error('Error deleting challenge:', err);
-      toast.error('Nie udało się usunąć celu');
+      toast.error('Nie udało się usunąć wyzwania');
     }
   };
 

@@ -63,7 +63,7 @@ export default function Challenges() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PageHeader title="Nawyki i Cele" emoji="🎯" icon={<Target className="w-5 h-5 text-primary" />} />
+      <PageHeader title="Nawyki i Wyzwania" emoji="🏆" icon={<Trophy className="w-5 h-5 text-primary" />} />
       <div className="px-4 py-4 space-y-6 pb-24">
 
       {/* Stats Cards */}
@@ -93,8 +93,8 @@ export default function Challenges() {
             Nawyki
           </TabsTrigger>
           <TabsTrigger value="challenges" className="flex-1 rounded-xl font-bold">
-            <Target className="w-4 h-4 mr-2" />
-            Cele
+            <Trophy className="w-4 h-4 mr-2" />
+            Wyzwania
           </TabsTrigger>
         </TabsList>
 
@@ -252,7 +252,7 @@ export default function Challenges() {
           {/* Add Challenge Button */}
           <div className="flex items-center justify-between">
             <h2 className="font-bold font-display text-foreground text-lg">
-              Twoje cele 🎯
+              Twoje wyzwania 🏆
             </h2>
             <AddChallengeDialog onAdd={addChallenge} />
           </div>
@@ -283,7 +283,7 @@ export default function Challenges() {
           {activeChallenges.length > 0 && challengeFilter !== 'completed' && (
             <div className="bg-primary/10 rounded-2xl p-4 border border-primary/30">
               <p className="text-sm font-medium text-primary">
-                💪 Masz {activeChallenges.length} aktywn{activeChallenges.length === 1 ? 'y cel' : 'e cele'}! Nie poddawaj się!
+                💪 Masz {activeChallenges.length} aktywne wyzwani{activeChallenges.length === 1 ? 'e' : 'a'}! Nie poddawaj się!
               </p>
             </div>
           )}
@@ -340,12 +340,12 @@ export default function Challenges() {
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent className="rounded-3xl">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Usunąć cel?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Utracisz cały postęp dla tego celu.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Usunąć wyzwanie?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Utracisz cały postęp dla tego wyzwania.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel className="rounded-2xl">Anuluj</AlertDialogCancel>
                             <AlertDialogAction 

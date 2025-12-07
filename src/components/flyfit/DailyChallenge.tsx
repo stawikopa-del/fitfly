@@ -21,7 +21,7 @@ export function DailyChallenge({ title, description, progress, target }: DailyCh
             <Target className="w-5 h-5 text-purple-500" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Cel dnia</h3>
+            <h3 className="font-semibold text-foreground">Wyzwanie dnia</h3>
             <p className="text-xs text-muted-foreground">{title}</p>
           </div>
         </div>

@@ -17,7 +17,7 @@ import fitekKasa from '@/assets/fitek/fitek-kasa.png';
 const menuItems = [
   { to: '/postepy', icon: TrendingUp, label: 'Postępy', emoji: '📊', description: 'Sprawdź swoje statystyki' },
   { to: '/cele', icon: Target, label: 'Cele', emoji: '🎯', description: 'Ustal i śledź swoje cele' },
-  { to: '/wyzwania', icon: Target, label: 'Cele', emoji: '🎯', description: 'Ustal i śledź swoje cele' },
+  { to: '/wyzwania', icon: Trophy, label: 'Wyzwania', emoji: '🏆', description: 'Podejmij nowe wyzwania' },
   { to: '/znajomi', icon: Users, label: 'Znajomi', emoji: '👥', description: 'Dodaj znajomych i rywalizuj' },
   { to: '/osiagniecia', icon: Award, label: 'Osiągnięcia', emoji: '🎖️', description: 'Poziomy, odznaki i XP' },
   { to: '/lista-zakupow', icon: ShoppingCart, label: 'Lista zakupów', emoji: '🛒', description: 'Zaplanuj zakupy na okres diety' },
@@ -67,7 +67,7 @@ const TIER_COMPARISON = [
   { feature: 'Spersonalizowane plany', start: false, fit: true, premium: true },
   { feature: 'Brak reklam', start: false, fit: true, premium: true },
   { feature: 'Trener AI 1-na-1', start: false, fit: false, premium: true },
-  { feature: 'Ekskluzywne cele', start: false, fit: false, premium: true },
+  { feature: 'Ekskluzywne wyzwania', start: false, fit: false, premium: true },
   { feature: 'Priorytetowe wsparcie', start: false, fit: false, premium: true },
 ];
 
@@ -390,8 +390,8 @@ export default function More() {
             <p className="text-xs text-muted-foreground mt-1">Dostosowane do Twoich celów i możliwości</p>
           </div>
           <div className="animate-float bg-card rounded-2xl p-4 border border-border/50 shadow-card-playful" style={{ animationDelay: '0.3s' }}>
-            <div className="text-2xl mb-2">🎯</div>
-            <h4 className="font-bold text-foreground text-sm">Ekskluzywne cele</h4>
+            <div className="text-2xl mb-2">🏆</div>
+            <h4 className="font-bold text-foreground text-sm">Ekskluzywne wyzwania</h4>
             <p className="text-xs text-muted-foreground mt-1">Dodatkowe nagrody i motywacja</p>
           </div>
           <div className="animate-float bg-card rounded-2xl p-4 border border-border/50 shadow-card-playful" style={{ animationDelay: '0.4s' }}>

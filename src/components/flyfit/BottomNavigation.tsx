@@ -17,8 +17,8 @@ const homeSubRoutes = [
 ];
 
 const inneSubRoutes = [
-  '/inne', '/profil', '/postepy', '/wyzwania', '/cele', '/ustawienia', '/o-nas', '/pomoc', 
-  '/informacje', '/prywatnosc', '/osiagniecia', '/znajomi', '/lista-zakupow',
+  '/inne', '/profil', '/postepy', '/wyzwania', '/ustawienia', '/o-nas', '/pomoc', 
+  '/informacje', '/prywatnosc', '/osiagniecia', '/cele', '/znajomi', '/lista-zakupow',
   '/zaproszenie'
 ];
 

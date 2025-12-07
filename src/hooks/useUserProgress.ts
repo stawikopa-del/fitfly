@@ -21,7 +21,7 @@ const motivationalMessages: Record<MascotEmotion, string[]> = {
   proud: ['Jestem z Ciebie dumny/a!', 'Osiągasz swoje cele!', 'Brawo! Robisz postępy!'],
   motivated: ['Dasz radę! Wierzę w Ciebie!', 'Jeden krok naraz!', 'Dziś jest Twój dzień!'],
   tired: ['Pamiętaj o odpoczynku!', 'Regeneracja też jest ważna!', 'Nie zapominaj o sobie!'],
-  neutral: ['Cześć! Co dziś robimy?', 'Gotowy/a na nowe cele?', 'Zacznijmy razem!'],
+  neutral: ['Cześć! Co dziś robimy?', 'Gotowy/a na wyzwania?', 'Zacznijmy razem!'],
   celebrating: ['🎉 Cel osiągnięty!', 'Niesamowite! Udało się!', 'Jesteś mistrzem/mistrzynią!'],
   cheering: ['Dajesz! Jeszcze trochę! 💪', 'Nie poddawaj się!', 'Jesteś na dobrej drodze!'],
   sleeping: ['Zzz... dobranoc!', 'Czas na odpoczynek...', 'Sen to też trening!'],
