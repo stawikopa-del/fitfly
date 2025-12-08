@@ -1,4 +1,4 @@
-import { Footprints, Flame, Target, Dumbbell, Calendar, Utensils, CheckCircle, TrendingUp, Sparkles, ClipboardList } from 'lucide-react';
+import { Footprints, Flame, Calendar, Utensils, CheckCircle, Clock, MapPin, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
 import { ChatHeroBubble } from '@/components/flyfit/ChatHeroBubble';
@@ -73,6 +73,7 @@ export default function Home() {
   const [displayName, setDisplayName] = useState<string>('');
   const [todayCalories, setTodayCalories] = useState<number>(0);
   const [caloriesGoal, setCaloriesGoal] = useState<number>(2000);
+  const [todayPlans, setTodayPlans] = useState<Array<{id: string; name: string; time: string | null; location: string | null; category: string; is_completed: boolean}>>([]);
 
   // Fetch user profile for personalized greeting and calories
   useEffect(() => {
@@ -108,8 +109,28 @@ export default function Home() {
         console.error('Error fetching meals:', err);
       }
     };
+    // Fetch today's plans
+    const fetchTodayPlans = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const { data, error } = await supabase
+          .from('day_plans')
+          .select('id, name, time, location, category, is_completed')
+          .eq('user_id', user.id)
+          .eq('plan_date', today)
+          .order('time', { ascending: true, nullsFirst: false })
+          .limit(4);
+        if (!error && data) {
+          setTodayPlans(data);
+        }
+      } catch (err) {
+        console.error('Error fetching plans:', err);
+      }
+    };
+
     fetchProfile();
     fetchTodayMeals();
+    fetchTodayPlans();
   }, [user]);
 
   // Get greeting info
@@ -175,27 +196,52 @@ export default function Home() {
         </button>
       </header>
 
-      {/* Streak i motywacja */}
-      {!gamificationLoading && gamification && <section className="relative z-10">
-          <div className="bg-gradient-to-r from-accent/20 via-primary/10 to-secondary/20 rounded-2xl p-4 border border-accent/30 cursor-pointer hover:shadow-md transition-all" onClick={() => navigate('/osiagniecia')}>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-accent/30 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-accent" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-extrabold font-display text-foreground">
-                    {loginStreak} 🔥
-                  </span>
-                  <span className="text-sm text-muted-foreground font-medium">
-                    {loginStreak === 1 ? 'dzień' : loginStreak >= 2 && loginStreak <= 4 ? 'dni' : 'dni'} z rzędu
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{streakMessage}</p>
-              </div>
-            </div>
+      {/* Dzisiejsze plany */}
+      <section className="relative z-10">
+        <div 
+          className="bg-card rounded-2xl p-4 border border-border/50 shadow-sm cursor-pointer hover:shadow-md hover:border-primary/30 transition-all" 
+          onClick={() => navigate('/planowanie')}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold font-display text-foreground flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              Plany na dziś
+            </h3>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </div>
-        </section>}
+          
+          {todayPlans.length > 0 ? (
+            <div className="space-y-2">
+              {todayPlans.map((plan) => (
+                <div 
+                  key={plan.id} 
+                  className={`flex items-center gap-3 p-2 rounded-xl ${plan.is_completed ? 'bg-muted/50 opacity-60' : 'bg-muted/30'}`}
+                >
+                  <div className={`w-2 h-2 rounded-full ${plan.is_completed ? 'bg-primary' : 'bg-accent'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium truncate ${plan.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                      {plan.name}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {plan.time && <span>{plan.time}</span>}
+                      {plan.location && (
+                        <span className="flex items-center gap-0.5 truncate">
+                          <MapPin className="w-3 h-3" />
+                          {plan.location.split(',')[0]}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-2">
+              Brak planów na dziś — dotknij, aby dodać ✨
+            </p>
+          )}
+        </div>
+      </section>
 
       {/* Level Progress - compact */}
       {!gamificationLoading && gamification && <section className="relative z-10 cursor-pointer" onClick={() => navigate('/osiagniecia')}>
