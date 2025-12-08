@@ -46,7 +46,7 @@ export default function Workouts() {
   // Show morning workout module (rendered outside AppLayout to hide nav)
   if (showMorningWorkout) {
     return (
-      <div className="fixed inset-0 z-50 bg-background">
+      <div className="fixed inset-0 z-[100] bg-background overflow-hidden">
         <MorningWorkoutModule
           onClose={() => {
             setShowMorningWorkout(false);
