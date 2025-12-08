@@ -1,19 +1,22 @@
 import { useState } from 'react';
-import { Search, Clock, Flame, ChevronRight, Play, Trophy } from 'lucide-react';
+import { Search, Clock, Flame, ChevronRight, Play, Trophy, Sunrise } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { WorkoutSession } from '@/components/flyfit/WorkoutSession';
+import { MorningWorkoutModule } from '@/components/flyfit/MorningWorkout';
 import { workouts, categories, difficultyConfig, WorkoutData } from '@/data/workouts';
 import { useToast } from '@/hooks/use-toast';
 import { useGamification } from '@/hooks/useGamification';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import fitekPoranek from '@/assets/fitek/fitek-poranek.png';
+import fitekPajacyki from '@/assets/fitek-pajacyki.png';
 
 export default function Workouts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Wszystkie');
   const [activeWorkout, setActiveWorkout] = useState<WorkoutData | null>(null);
+  const [showMorningWorkout, setShowMorningWorkout] = useState(false);
   const { toast } = useToast();
   const { onWorkoutCompleted } = useGamification();
   const { addActiveMinutes } = useUserProgress();
@@ -47,6 +50,21 @@ export default function Workouts() {
       description: "Ukończyłeś trening! FITEK jest z ciebie dumny!",
     });
   };
+
+  // Show morning workout module
+  if (showMorningWorkout) {
+    return (
+      <MorningWorkoutModule
+        onClose={() => {
+          setShowMorningWorkout(false);
+          toast({
+            title: "Brawo! 🎉",
+            description: "Ukończyłeś poranny trening! FITEK jest z ciebie dumny!",
+          });
+        }}
+      />
+    );
+  }
 
   // Show workout session if active
   if (activeWorkout) {
@@ -107,6 +125,54 @@ export default function Workouts() {
           </Button>
         ))}
       </div>
+
+      {/* Poranny trening - featured */}
+      <section className="relative z-10">
+        <button
+          onClick={() => setShowMorningWorkout(true)}
+          className="w-full bg-gradient-to-br from-primary/20 via-fitfly-blue-light/20 to-secondary/20 rounded-3xl p-5 border-2 border-primary/30 shadow-playful
+                     hover:-translate-y-1 hover:shadow-playful-hover transition-all duration-300 
+                     text-left flex items-center gap-4 active:scale-[0.98]"
+        >
+          {/* Mascot */}
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-light flex items-center justify-center shrink-0 shadow-playful overflow-hidden">
+            <img 
+              src={fitekPajacyki} 
+              alt="FITEK poranny" 
+              className="w-16 h-16 object-contain"
+            />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Sunrise className="w-4 h-4 text-primary" />
+              <span className="text-xs font-bold text-primary uppercase tracking-wide">Polecane</span>
+            </div>
+            <h3 className="font-bold font-display text-foreground text-lg">Poranny trening 10 minut</h3>
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                <Clock className="w-3.5 h-3.5" />
+                10 min
+              </span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                <Flame className="w-3.5 h-3.5" />
+                45–70 kcal
+              </span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                <Trophy className="w-3.5 h-3.5" />
+                11 ćwiczeń
+              </span>
+            </div>
+            <span className="text-xs px-3 py-1 rounded-full font-bold inline-block mt-2 bg-secondary text-secondary-foreground">
+              Łatwy
+            </span>
+          </div>
+          
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-playful-sm">
+            <Play className="w-6 h-6 text-primary-foreground" />
+          </div>
+        </button>
+      </section>
 
       {/* Lista treningów */}
       <section className="space-y-4 relative z-10">
