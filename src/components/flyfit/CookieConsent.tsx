@@ -43,7 +43,7 @@ export function CookieConsent() {
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-card/95 backdrop-blur-lg rounded-2xl p-4 border border-border/50 shadow-lg max-w-md mx-auto">
+      <div className="bg-card/70 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-xl max-w-md mx-auto">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
             <Cookie className="w-5 h-5 text-amber-500" />
