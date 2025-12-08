@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { TrendingUp, Trophy, User, Settings, HelpCircle, Info, Heart, Download, Check, Share, Award, Crown, Zap, Star, Loader2, CheckCircle2, RefreshCw, ArrowRight, Sparkles, Scale, Target, Users, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
-import { pageVariants, cardVariants, listItemVariants, springBouncy } from '@/lib/animations';
 import { TestimonialsCarousel } from '@/components/flyfit/TestimonialsCarousel';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -277,62 +275,48 @@ export default function More() {
   });
 
   return (
-    <motion.div 
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      className="px-5 py-8 space-y-8"
-    >
+    <div className="px-5 py-8 space-y-8">
       {/* Header */}
-      <motion.header variants={cardVariants} className="text-center">
+      <header className="text-center">
         <h1 className="text-3xl font-extrabold font-display text-foreground">
           Więcej opcji ✨
         </h1>
         <p className="text-muted-foreground font-medium mt-2">
           Odkryj wszystkie funkcje FITFLY
         </p>
-      </motion.header>
+      </header>
 
       {/* Główne opcje */}
-      <motion.div variants={cardVariants} className="space-y-4">
+      <div className="space-y-4">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide px-1">
           Menu główne
         </h2>
         <div className="grid gap-4">
-          {menuItems.map(({ to, icon: Icon, label, emoji, description }, index) => (
-            <motion.div
+          {menuItems.map(({ to, icon: Icon, label, emoji, description }) => (
+            <NavLink
               key={to}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ ...springBouncy, delay: index * 0.05 }}
+              to={to}
+              onClick={() => soundFeedback.navTap()}
+              className={({ isActive }) => cn(
+                'flex items-center gap-4 p-5 rounded-2xl transition-all duration-300',
+                'bg-card border-2 border-border/50 shadow-card-playful',
+                'hover:-translate-y-0.5 hover:shadow-card-playful-hover',
+                isActive && 'border-primary/50 bg-primary/5'
+              )}
             >
-              <NavLink
-                to={to}
-                onClick={() => soundFeedback.navTap()}
-                className={({ isActive }) => cn(
-                  'flex items-center gap-4 p-5 rounded-2xl transition-all duration-300',
-                  'bg-card border-2 border-border/50 shadow-card-playful',
-                  'hover:-translate-y-0.5 hover:shadow-card-playful-hover',
-                  isActive && 'border-primary/50 bg-primary/5'
-                )}
-              >
-                <motion.div 
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shadow-playful"
-                >
-                  <Icon className="w-7 h-7 text-primary" />
-                </motion.div>
-                <div className="flex-1">
-                  <p className="font-bold text-foreground text-lg flex items-center gap-2">
-                    {label} <span>{emoji}</span>
-                  </p>
-                  <p className="text-sm text-muted-foreground">{description}</p>
-                </div>
-              </NavLink>
-            </motion.div>
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shadow-playful">
+                <Icon className="w-7 h-7 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-foreground text-lg flex items-center gap-2">
+                  {label} <span>{emoji}</span>
+                </p>
+                <p className="text-sm text-muted-foreground">{description}</p>
+              </div>
+            </NavLink>
           ))}
         </div>
-      </motion.div>
+      </div>
 
       {/* Pakiety Premium */}
       <div className="space-y-5">
@@ -606,6 +590,6 @@ export default function More() {
           </div>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   );
 }

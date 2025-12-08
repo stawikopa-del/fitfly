@@ -1,7 +1,6 @@
 import { Footprints, Flame, Calendar, Utensils, CheckCircle, Clock, MapPin, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { ChatHeroBubble } from '@/components/flyfit/ChatHeroBubble';
 import { StatCard } from '@/components/flyfit/StatCard';
 import { WaterTracker } from '@/components/flyfit/WaterTracker';
@@ -13,7 +12,6 @@ import { useHabitsAndChallenges } from '@/hooks/useHabitsAndChallenges';
 import { useAuth } from '@/hooks/useAuth';
 import { LevelProgress } from '@/components/flyfit/LevelProgress';
 import { supabase } from '@/integrations/supabase/client';
-import { pageVariants, cardVariants, staggerContainer, springBouncy, listItemVariants } from '@/lib/animations';
 import fitflyLogoFull from '@/assets/fitfly-logo-full.png';
 import fitekReceWGore from '@/assets/fitek/fitek-rece-w-gore.png';
 import fitekPiatka from '@/assets/fitek/fitek-piatka.png';
@@ -153,19 +151,12 @@ export default function Home() {
   // No loading spinner - show content immediately
   const loginStreak = gamification?.daily_login_streak || 0;
   const streakMessage = getStreakMessage(loginStreak);
-  return (
-    <motion.div 
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      className="px-4 py-6 space-y-6"
-    >
+  return <div className="px-4 py-6 space-y-6">
+      {/* Brand Banner */}
+      
 
       {/* Header z personalizowanym powitaniem */}
-      <motion.header 
-        variants={cardVariants}
-        className="flex items-center justify-between relative z-10"
-      >
+      <header className="flex items-center justify-between relative z-10">
         <div>
           <h1 className="text-2xl font-extrabold font-display text-foreground tracking-tight">
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -176,12 +167,7 @@ export default function Home() {
           <p className="text-xs text-muted-foreground font-medium mt-0.5">Jak się dziś czujesz?</p>
         </div>
         
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/kalendarz')} 
-          className="relative text-center bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group"
-        >
+        <button onClick={() => navigate('/kalendarz')} className="relative text-center bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group">
           <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
             <Calendar className="w-3 h-3" />
             Kalendarz
@@ -202,14 +188,12 @@ export default function Home() {
             year: 'numeric'
           }).replace(/\//g, '.')}
           </p>
-        </motion.button>
-      </motion.header>
+        </button>
+      </header>
 
       {/* Dzisiejsze plany */}
-      <motion.section variants={cardVariants} className="relative z-10">
-        <motion.div 
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+      <section className="relative z-10">
+        <div 
           className="bg-card rounded-2xl p-4 border border-border/50 shadow-sm cursor-pointer hover:shadow-md hover:border-primary/30 transition-all" 
           onClick={() => navigate('/planowanie')}
         >
@@ -251,8 +235,8 @@ export default function Home() {
               Brak planów na dziś — dotknij, aby dodać ✨
             </p>
           )}
-        </motion.div>
-      </motion.section>
+        </div>
+      </section>
 
       {/* Level Progress - compact */}
       {!gamificationLoading && gamification && <section className="relative z-10 cursor-pointer" onClick={() => navigate('/osiagniecia')}>
@@ -329,6 +313,5 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </motion.div>
-  );
+    </div>;
 }

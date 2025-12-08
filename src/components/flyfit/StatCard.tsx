@@ -1,7 +1,5 @@
 import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { springBouncy } from '@/lib/animations';
 
 interface StatCardProps {
   icon: ReactNode;
@@ -37,35 +35,27 @@ const colorClasses = {
 
 export function StatCard({ icon, label, value, subValue, color, onClick }: StatCardProps) {
   return (
-    <motion.button
+    <button
       onClick={onClick}
       disabled={!onClick}
-      whileHover={{ scale: 1.03, y: -4 }}
-      whileTap={{ scale: 0.97 }}
-      transition={springBouncy}
       className={cn(
         'bg-card rounded-3xl p-5 border-2 text-left w-full',
-        'shadow-card-playful transition-shadow duration-300',
-        'hover:shadow-card-playful-hover',
+        'shadow-card-playful transition-all duration-300',
+        'hover:-translate-y-1 hover:shadow-card-playful-hover active:translate-y-0 active:scale-95',
         colorClasses[color].border
       )}
     >
-      <motion.div 
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ ...springBouncy, delay: 0.1 }}
-        className={cn(
-          'w-12 h-12 rounded-2xl flex items-center justify-center mb-4',
-          colorClasses[color].icon
-        )}
-      >
+      <div className={cn(
+        'w-12 h-12 rounded-2xl flex items-center justify-center mb-4',
+        colorClasses[color].icon
+      )}>
         {icon}
-      </motion.div>
+      </div>
       <p className="text-3xl font-extrabold font-display text-foreground">{value}</p>
       <p className="text-sm text-muted-foreground font-semibold mt-1">{label}</p>
       {subValue && (
         <p className="text-xs text-muted-foreground/70 mt-0.5 font-medium">{subValue}</p>
       )}
-    </motion.button>
+    </button>
   );
 }
