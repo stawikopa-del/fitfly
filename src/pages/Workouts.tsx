@@ -43,18 +43,20 @@ export default function Workouts() {
     });
   };
 
-  // Show morning workout module
+  // Show morning workout module (rendered outside AppLayout to hide nav)
   if (showMorningWorkout) {
     return (
-      <MorningWorkoutModule
-        onClose={() => {
-          setShowMorningWorkout(false);
-          toast({
-            title: "Brawo! 🎉",
-            description: "Ukończyłeś poranny trening! FITEK jest z ciebie dumny!",
-          });
-        }}
-      />
+      <div className="fixed inset-0 z-50 bg-background">
+        <MorningWorkoutModule
+          onClose={() => {
+            setShowMorningWorkout(false);
+            toast({
+              title: "Brawo! 🎉",
+              description: "Ukończyłeś poranny trening! FITEK jest z ciebie dumny!",
+            });
+          }}
+        />
+      </div>
     );
   }
 
