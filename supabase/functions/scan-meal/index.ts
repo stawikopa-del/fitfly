@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const inputSchema = z.object({
-  imageBase64: z.string().min(100).max(10000000), // Base64 image data
+  imageBase64: z.string().min(100).max(10000000),
 });
 
 serve(async (req) => {
@@ -38,35 +38,121 @@ serve(async (req) => {
     // Remove data URL prefix if present
     const base64Data = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
 
-    const systemPrompt = `Jesteś ekspertem od żywienia i rozpoznawania posiłków ze zdjęć. Twoim zadaniem jest BARDZO DOKŁADNE oszacowanie wartości odżywczych.
+    const systemPrompt = `Jesteś EKSPERTEM DIETETYKIEM z zaawansowaną wiedzą o wizualnej analizie żywności.
+Twoja specjalizacja: PRECYZYJNE rozpoznawanie posiłków ze zdjęć i szacowanie ich wartości odżywczych.
 
-ZASADY SZACOWANIA:
-1. Dokładnie analizuj wielkość porcji - porównuj z talerzem/miską
-2. Identyfikuj WSZYSTKIE składniki widoczne na zdjęciu
-3. Szacuj wagę każdego składnika osobno
-4. Sumuj kalorie i makroskładniki
-5. Uwzględniaj sposób przygotowania (smażone = więcej tłuszczu)
+## METODOLOGIA ANALIZY WIZUALNEJ (Chain of Thought)
 
-PRZYKŁADOWE REFERENCJE:
-- Średni talerz = 25cm średnicy
-- Porcja ryżu (ugotowanego) = 150-200g = 180-240 kcal
-- Porcja makaronu = 200g = 260-300 kcal  
-- Pierś kurczaka = 150g = 165 kcal, 31g białka
-- Jajko sadzone = 90 kcal, 6g białka, 7g tłuszczu
-- Łyżka oliwy = 120 kcal, 14g tłuszczu
-- Porcja sałatki = 50g = 10-15 kcal
+### KROK 1: IDENTYFIKACJA KONTEKSTU
+1. Określ typ naczynia (talerz płaski/głęboki, miska, pojemnik)
+2. Oszacuj średnicę naczynia:
+   - Standardowy talerz obiadowy: 24-27cm
+   - Talerz deserowy: 19-21cm
+   - Miska: 14-18cm średnicy
+   - Pojemnik lunch-box: zwykle 500-800ml
+3. Zwróć uwagę na perspektywę zdjęcia
 
-ODPOWIEDZ TYLKO W FORMACIE JSON:
+### KROK 2: DEKOMPOZYCJA WIZUALNA
+Dla KAŻDEGO widocznego elementu:
+1. Zidentyfikuj produkt (bądź konkretny: "pierś kurczaka grillowana" nie "kurczak")
+2. Oszacuj jego wymiary na talerzu (% powierzchni)
+3. Oszacuj grubość/wysokość warstwy
+4. Oblicz przybliżoną wagę
+
+REFERENCJE WIZUALNE:
+- Pierś kurczaka grillowana (wielkość dłoni): 120-150g
+- Porcja ryżu (wielkość pięści): 150-180g
+- Porcja sałaty (duża garść): 30-50g
+- Plasterek chleba: 30-40g
+- Jajko sadzone: 55-65g
+- Łyżka sosu: 25-35g
+- Warzywa na talerzu (1/4 talerza): 80-120g
+
+### KROK 3: ANALIZA METODY PRZYRZĄDZENIA
+Szukaj wskazówek wizualnych:
+- Błyszcząca powierzchnia = tłuszcz/sos
+- Brązowe przypieczenie = smażenie/grillowanie
+- Jednolita matowa = gotowanie
+- Panierka widoczna = smażone na głębokim tłuszczu
+- Widoczny sos/zalewę = dolicz kalorie
+
+### KROK 4: BAZA KALORYCZNA (kcal/100g PRODUKTU GOTOWEGO!)
+
+MIĘSA I BIAŁKA:
+- Pierś kurczaka grillowana: 165 kcal, 31g B, 0g W, 3.6g T
+- Pierś kurczaka panierowana: 250 kcal, 22g B, 12g W, 13g T
+- Kotlet schabowy panierowany: 280 kcal, 20g B, 10g W, 18g T
+- Kotlet mielony: 220 kcal, 18g B, 5g W, 14g T
+- Kiełbasa: 300 kcal, 12g B, 2g W, 27g T
+- Łosoś pieczony: 208 kcal, 25g B, 0g W, 12g T
+- Dorsz pieczony: 105 kcal, 23g B, 0g W, 1g T
+- Jajko sadzone: 196 kcal, 14g B, 1g W, 15g T
+- Jajecznica (z masłem): 180 kcal, 12g B, 1g W, 14g T
+
+WĘGLOWODANY:
+- Ryż biały gotowany: 130 kcal, 2.7g B, 28g W, 0.3g T
+- Makaron gotowany: 131 kcal, 5g B, 25g W, 1.1g T
+- Ziemniaki gotowane: 87 kcal, 2g B, 20g W, 0.1g T
+- Ziemniaki puree (z masłem): 113 kcal, 2g B, 16g W, 5g T
+- Frytki: 312 kcal, 3.4g B, 41g W, 15g T
+- Kasza gryczana: 92 kcal, 3g B, 20g W, 0.6g T
+- Chleb: 265 kcal, 9g B, 49g W, 3g T
+- Bułka: 280 kcal, 9g B, 53g W, 3g T
+
+WARZYWA I SAŁATKI:
+- Sałata zielona: 15 kcal, 1g B, 2g W, 0.2g T
+- Pomidor: 18 kcal, 0.9g B, 3.9g W, 0.2g T
+- Ogórek: 15 kcal, 0.7g B, 3.6g W, 0.1g T
+- Surówka z kapusty: 30 kcal, 1g B, 6g W, 0.3g T
+- Surówka z marchewki: 45 kcal, 0.8g B, 10g W, 0.2g T
+- Brokuły gotowane: 35 kcal, 2.8g B, 7g W, 0.4g T
+- Buraki: 43 kcal, 1.6g B, 10g W, 0.2g T
+
+SOSY I DODATKI:
+- Sos pomidorowy: 40 kcal, 1g B, 8g W, 0.5g T
+- Sos śmietanowy: 150 kcal, 2g B, 5g W, 14g T
+- Sos pieczeniowy: 50 kcal, 1g B, 5g W, 3g T
+- Ketchup (łyżka): 20 kcal
+- Majonez (łyżka): 100 kcal
+- Oliwa (łyżka): 120 kcal
+
+ZUPY:
+- Rosół: 30 kcal/100ml
+- Pomidorowa: 45 kcal/100ml
+- Żurek: 55 kcal/100ml
+- Pieczarkowa kremowa: 80 kcal/100ml
+
+POPULARNE DANIA POLSKIE (typowa porcja):
+- Schabowy z ziemniakami i surówką: 650-850 kcal
+- Pierogi ruskie (10 szt): 400-500 kcal
+- Pierogi z mięsem (10 szt): 500-600 kcal
+- Bigos (porcja 300g): 350-450 kcal
+- Gołąbki (2 szt): 400-500 kcal
+- Kopytka z sosem (porcja): 450-550 kcal
+- Naleśniki z serem (2 szt): 400-500 kcal
+- Placki ziemniaczane (3 szt): 350-450 kcal
+
+### KROK 5: WALIDACJA KOŃCOWA
+Sprawdź czy suma makroskładników = kalorie:
+Kalorie ≈ (Białko × 4) + (Węglowodany × 4) + (Tłuszcz × 9)
+Dopuszczalna rozbieżność: ±10%
+
+## FORMAT ODPOWIEDZI (TYLKO JSON!)
 {
-  "name": "krótka nazwa posiłku po polsku (max 35 znaków)",
-  "calories": liczba_kalorii (zaokrąglona do 5),
-  "protein": gramy_białka,
-  "carbs": gramy_węglowodanów,
-  "fat": gramy_tłuszczu,
+  "name": "zwięzła nazwa posiłku po polsku (max 35 znaków)",
+  "calories": liczba_całkowita_zaokrąglona_do_5,
+  "protein": gramy_białka_zaokrąglone,
+  "carbs": gramy_węglowodanów_zaokrąglone,
+  "fat": gramy_tłuszczu_zaokrąglone,
   "confidence": "low" | "medium" | "high",
-  "ingredients": ["składnik1", "składnik2"],
-  "portion_estimate": "opis wielkości porcji"
-}`;
+  "ingredients": ["składnik1 (szacowana waga)", "składnik2 (szacowana waga)"],
+  "portion_estimate": "szczegółowy opis porcji i metody przygotowania"
+}
+
+CONFIDENCE:
+- "high" = wyraźne, dobrze widoczne składniki, standardowa porcja
+- "medium" = częściowo widoczne, typowe danie
+- "low" = niewyraźne zdjęcie, nakładające się składniki`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -75,7 +161,7 @@ ODPOWIEDZ TYLKO W FORMACIE JSON:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: systemPrompt },
           { 
@@ -89,7 +175,15 @@ ODPOWIEDZ TYLKO W FORMACIE JSON:
               },
               {
                 type: "text",
-                text: "Przeanalizuj to zdjęcie posiłku i oszacuj wartości odżywcze. Bądź dokładny!"
+                text: `Przeanalizuj to zdjęcie posiłku KROK PO KROKU:
+
+1. KONTEKST: Jaki typ naczynia? Jaka jest jego przybliżona wielkość?
+2. SKŁADNIKI: Co dokładnie widzisz? Oszacuj wagę każdego elementu.
+3. PRZYGOTOWANIE: Jak to zostało przygotowane (smażone, gotowane, pieczone)?
+4. OBLICZENIA: Policz kalorie i makro dla każdego składnika.
+5. SUMA: Zsumuj wszystko i zwaliduj wynik.
+
+Odpowiedz TYLKO JSON-em bez żadnego dodatkowego tekstu.`
               }
             ]
           },
@@ -148,6 +242,15 @@ ODPOWIEDZ TYLKO W FORMACIE JSON:
     });
     
     const validatedMeal = mealSchema.parse(mealData);
+
+    // Validate macro consistency
+    const calculatedCalories = (validatedMeal.protein * 4) + (validatedMeal.carbs * 4) + (validatedMeal.fat * 9);
+    const difference = Math.abs(calculatedCalories - validatedMeal.calories);
+    const percentDiff = (difference / validatedMeal.calories) * 100;
+    
+    if (percentDiff > 15) {
+      console.warn(`Macro/calorie mismatch: calculated ${calculatedCalories}, reported ${validatedMeal.calories} (${percentDiff.toFixed(1)}% diff)`);
+    }
 
     return new Response(JSON.stringify(validatedMeal), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
