@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages, ReplyData } from '@/hooks/useDirectMessages';
 import { ChatAttachmentMenu, PendingAttachmentPreview, type PendingAttachment } from '@/components/flyfit/ChatAttachmentMenu';
+import { ChatMessagesSkeleton } from '@/components/flyfit/ChatSkeleton';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { toast } from 'sonner';
 import { format, differenceInMinutes } from 'date-fns';
@@ -714,7 +715,9 @@ export default function DirectChat() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {allMessages.length === 0 && (
+        {isLoading ? (
+          <ChatMessagesSkeleton />
+        ) : allMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
             <button onClick={goToProfile}>
               <Avatar className="h-20 w-20 border-4 border-border mb-4 hover:opacity-80 transition-opacity">
@@ -731,9 +734,9 @@ export default function DirectChat() {
               Napisz pierwszą wiadomość! 👋
             </p>
           </div>
-        )}
+        ) : null}
 
-        {allMessages.map((message) => {
+        {!isLoading && allMessages.map((message) => {
           const isOwn = message.senderId === user?.id;
           const isOptimistic = (message as any).isOptimistic;
           const isSwiping = swipingMessageId === message.id;

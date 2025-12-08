@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, Sparkles, ChevronRight, Search, UserPlus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import fitekAvatar from '@/assets/fitek-avatar.png';
 import { useDirectMessages, ChatPreview } from '@/hooks/useDirectMessages';
 import { useFriends } from '@/hooks/useFriends';
+import { ChatListSkeleton } from '@/components/flyfit/ChatSkeleton';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -176,7 +177,14 @@ export default function ChatList() {
       </div>
 
       {/* Active Conversations */}
-      {filteredPreviews.length > 0 && (
+      {isLoading ? (
+        <div className="mb-6">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Rozmowy
+          </p>
+          <ChatListSkeleton />
+        </div>
+      ) : filteredPreviews.length > 0 ? (
         <div className="mb-6">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             Rozmowy
@@ -187,7 +195,7 @@ export default function ChatList() {
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Friends to message */}
       {filteredFriends.length > 0 && (
