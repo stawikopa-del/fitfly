@@ -98,14 +98,11 @@ export default function Workouts() {
         >
           {/* Mascot - much bigger */}
           <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/30 blur-[60px] rounded-full scale-125" />
-              <img 
-                src={fitekPajacyki} 
-                alt="FITEK poranny" 
-                className="w-64 h-64 object-contain relative z-10 animate-float"
-              />
-            </div>
+            <img 
+              src={fitekPajacyki} 
+              alt="FITEK poranny" 
+              className="w-64 h-64 object-contain animate-float"
+            />
           </div>
           
           {/* Content */}
