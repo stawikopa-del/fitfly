@@ -53,13 +53,7 @@ export default function Challenges() {
 
   const activeChallenges = challenges.filter(c => c.is_active && !c.is_completed);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  // No loading spinner - content shows immediately
 
   return (
     <div className="min-h-screen bg-background">

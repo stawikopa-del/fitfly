@@ -148,12 +148,7 @@ export default function Home() {
   }, [habits, todayLogs]);
   const totalActiveHabits = habits.length;
 
-  // Loading state
-  if (progressLoading) {
-    return <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>;
-  }
+  // No loading spinner - show content immediately
   const loginStreak = gamification?.daily_login_streak || 0;
   const streakMessage = getStreakMessage(loginStreak);
   return <div className="px-4 py-6 space-y-6">

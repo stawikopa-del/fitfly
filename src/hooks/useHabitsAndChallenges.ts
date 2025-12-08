@@ -183,7 +183,7 @@ export function useHabitsAndChallenges() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [todayLogs, setTodayLogs] = useState<HabitLog[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // No initial loading delay
   const [error, setError] = useState<string | null>(null);
   
   // Prevent concurrent operations

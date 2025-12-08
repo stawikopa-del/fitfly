@@ -35,7 +35,7 @@ export function useUserProgress() {
     emotion: 'neutral',
     message: 'Cześć! Gotowy/a na świetny dzień?',
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // No initial loading delay
   const [error, setError] = useState<string | null>(null);
   
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);

@@ -27,7 +27,7 @@ export default function Progress() {
   const { user } = useAuth();
   const { measurements, getWeightHistory, getAverages, loading: measurementsLoading } = useMeasurements();
   const [weeklyData, setWeeklyData] = useState<DailyData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<'water' | 'steps' | 'activeMinutes'>('water');
 
   useEffect(() => {
@@ -132,13 +132,7 @@ export default function Progress() {
   const currentMetric = metricConfig[selectedMetric];
   const CurrentIcon = currentMetric.icon;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  // No loading spinner - content shows immediately
 
   return (
     <div className="min-h-screen bg-background">

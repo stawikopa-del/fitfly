@@ -53,7 +53,7 @@ const defaultMealSchedule: MealScheduleItem[] = [
 export default function Nutrition() {
   const navigate = useNavigate();
   const [meals, setMeals] = useState<Meal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   
   const [dialogOpen, setDialogOpen] = useState(false);

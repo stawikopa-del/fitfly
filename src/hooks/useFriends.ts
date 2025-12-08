@@ -31,7 +31,7 @@ export function useFriends() {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
   const [sentRequests, setSentRequests] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // No initial loading delay
   const operationInProgress = useRef(false);
   const mountedRef = useRef(true);
 

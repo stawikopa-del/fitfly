@@ -47,7 +47,7 @@ export function useDirectMessages(friendId?: string) {
   const { user, isInitialized } = useAuth();
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [chatPreviews, setChatPreviews] = useState<ChatPreview[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // No initial loading delay
   const [isSending, setIsSending] = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const mountedRef = useRef(true);

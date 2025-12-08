@@ -280,11 +280,7 @@ export default function Friends() {
           </TabsList>
 
           <TabsContent value="friends" className="mt-4 space-y-3">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : friends.length === 0 ? (
+            {friends.length === 0 ? (
               <Card className="bg-card/50 border-dashed">
                 <CardContent className="py-12 text-center">
                   <UserX className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
