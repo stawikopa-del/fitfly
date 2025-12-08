@@ -9,77 +9,61 @@ import { useGamification } from '@/hooks/useGamification';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import fitekPoranek from '@/assets/fitek/fitek-poranek.png';
 import fitekPajacyki from '@/assets/fitek-pajacyki.png';
-
 export default function Workouts() {
   const [activeWorkout, setActiveWorkout] = useState<WorkoutData | null>(null);
   const [showMorningWorkout, setShowMorningWorkout] = useState(false);
-  const { toast } = useToast();
-  const { onWorkoutCompleted } = useGamification();
-  const { addActiveMinutes } = useUserProgress();
-
+  const {
+    toast
+  } = useToast();
+  const {
+    onWorkoutCompleted
+  } = useGamification();
+  const {
+    addActiveMinutes
+  } = useUserProgress();
   const filteredWorkouts = workouts;
-
   const handleStartWorkout = (workout: WorkoutData) => {
     setActiveWorkout(workout);
   };
-
   const handleCloseWorkout = () => {
     setActiveWorkout(null);
   };
-
   const handleCompleteWorkout = () => {
     if (activeWorkout) {
       // Add active minutes based on workout duration
       addActiveMinutes(activeWorkout.duration);
-      
+
       // Award XP for completing workout
       onWorkoutCompleted();
     }
-    
     setActiveWorkout(null);
     toast({
       title: "Brawo! 🎉",
-      description: "Ukończyłeś trening! FITEK jest z ciebie dumny!",
+      description: "Ukończyłeś trening! FITEK jest z ciebie dumny!"
     });
   };
 
   // Show morning workout module (rendered outside AppLayout to hide nav)
   if (showMorningWorkout) {
-    return (
-      <div className="fixed inset-0 z-[100] bg-background overflow-hidden">
-        <MorningWorkoutModule
-          onClose={() => {
-            setShowMorningWorkout(false);
-            toast({
-              title: "Brawo! 🎉",
-              description: "Ukończyłeś poranny trening! FITEK jest z ciebie dumny!",
-            });
-          }}
-        />
-      </div>
-    );
+    return <div className="fixed inset-0 z-[100] bg-background overflow-hidden">
+        <MorningWorkoutModule onClose={() => {
+        setShowMorningWorkout(false);
+        toast({
+          title: "Brawo! 🎉",
+          description: "Ukończyłeś poranny trening! FITEK jest z ciebie dumny!"
+        });
+      }} />
+      </div>;
   }
 
   // Show workout session if active
   if (activeWorkout) {
-    return (
-      <WorkoutSession
-        workout={activeWorkout}
-        onClose={handleCloseWorkout}
-        onComplete={handleCompleteWorkout}
-      />
-    );
+    return <WorkoutSession workout={activeWorkout} onClose={handleCloseWorkout} onComplete={handleCompleteWorkout} />;
   }
-
-  return (
-    <div className="px-4 py-6 space-y-6">
+  return <div className="px-4 py-6 space-y-6">
       {/* Header z FITEK */}
       <header className="relative z-10 flex items-center gap-4">
-        <img 
-          src={fitekPoranek} 
-          alt="FITEK poranny" 
-          className="w-14 h-14 object-contain animate-float"
-        />
+        
         <div>
           <h1 className="text-2xl font-extrabold font-display bg-gradient-to-r from-primary to-fitfly-blue-light bg-clip-text text-transparent">
             Treningi
@@ -90,19 +74,12 @@ export default function Workouts() {
 
       {/* Poranny trening - featured */}
       <section className="relative z-10">
-        <button
-          onClick={() => setShowMorningWorkout(true)}
-          className="w-full bg-gradient-to-br from-primary/10 via-fitfly-blue-light/10 to-secondary/10 rounded-3xl p-6 border-2 border-primary/30 shadow-playful
+        <button onClick={() => setShowMorningWorkout(true)} className="w-full bg-gradient-to-br from-primary/10 via-fitfly-blue-light/10 to-secondary/10 rounded-3xl p-6 border-2 border-primary/30 shadow-playful
                      hover:-translate-y-1 hover:shadow-playful-hover transition-all duration-300 
-                     text-left active:scale-[0.98]"
-        >
+                     text-left active:scale-[0.98]">
           {/* Mascot - much bigger */}
           <div className="flex justify-center mb-6">
-            <img 
-              src={fitekPajacyki} 
-              alt="FITEK poranny" 
-              className="w-64 h-64 object-contain animate-float"
-            />
+            <img src={fitekPajacyki} alt="FITEK poranny" className="w-64 h-64 object-contain animate-float" />
           </div>
           
           {/* Content */}
@@ -143,14 +120,9 @@ export default function Workouts() {
 
       {/* Lista treningów */}
       <section className="space-y-4 relative z-10">
-        {filteredWorkouts.map((workout) => (
-          <button
-            key={workout.id}
-            onClick={() => handleStartWorkout(workout)}
-            className="w-full bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful 
+        {filteredWorkouts.map(workout => <button key={workout.id} onClick={() => handleStartWorkout(workout)} className="w-full bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful 
                        hover:-translate-y-1 hover:shadow-card-playful-hover transition-all duration-300 
-                       text-left flex items-center gap-4 active:scale-[0.98]"
-          >
+                       text-left flex items-center gap-4 active:scale-[0.98]">
             {/* Ikona/Placeholder */}
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-fitfly-blue-light flex items-center justify-center shrink-0 shadow-playful-sm">
               <Play className="w-8 h-8 text-primary-foreground" />
@@ -173,10 +145,7 @@ export default function Workouts() {
                   {workout.exercises.length} ćwiczeń
                 </span>
               </div>
-              <span className={cn(
-                'text-xs px-3 py-1 rounded-full font-bold inline-block mt-2',
-                difficultyConfig[workout.difficulty].color
-              )}>
+              <span className={cn('text-xs px-3 py-1 rounded-full font-bold inline-block mt-2', difficultyConfig[workout.difficulty].color)}>
                 {difficultyConfig[workout.difficulty].label}
               </span>
             </div>
@@ -184,16 +153,12 @@ export default function Workouts() {
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <ChevronRight className="w-5 h-5 text-primary" />
             </div>
-          </button>
-        ))}
+          </button>)}
         
-        {filteredWorkouts.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground bg-card rounded-3xl border-2 border-border/50">
+        {filteredWorkouts.length === 0 && <div className="text-center py-12 text-muted-foreground bg-card rounded-3xl border-2 border-border/50">
             <p className="text-lg font-display font-bold">Nie znaleziono treningów 😅</p>
             <p className="text-sm">Spróbuj innej kategorii</p>
-          </div>
-        )}
+          </div>}
       </section>
-    </div>
-  );
+    </div>;
 }
