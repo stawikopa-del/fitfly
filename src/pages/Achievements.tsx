@@ -12,22 +12,7 @@ import fitekPuchar from '@/assets/fitek/fitek-puchar.png';
 export default function Achievements() {
   const { gamification, badges, loading } = useGamification();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <PageHeader title="Osiągnięcia" emoji="🏆" icon={<Trophy className="w-5 h-5 text-primary" />} />
-        <div className="p-4 space-y-4">
-          <Skeleton className="h-32 w-full rounded-2xl" />
-          <Skeleton className="h-12 w-full rounded-xl" />
-          <div className="grid grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-24 rounded-2xl" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // No loading skeleton - content shows immediately
 
   const earnedBadges = badges.map(b => b.badge_type);
   const earnedCount = earnedBadges.length;

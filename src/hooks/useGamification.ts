@@ -16,7 +16,7 @@ export function useGamification() {
   const { user, isInitialized } = useAuth();
   const [gamification, setGamification] = useState<UserGamification | null>(null);
   const [badges, setBadges] = useState<UserBadge[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // No initial loading delay
   
   const operationInProgressRef = useRef(false);
   const pendingXPRef = useRef<Array<{ amount: number; source: string; description?: string }>>([]);

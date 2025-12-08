@@ -25,7 +25,6 @@ export default function FitekChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
@@ -35,10 +34,7 @@ export default function FitekChat() {
 
   // Pobierz historię czatu przy starcie
   useEffect(() => {
-    if (!user) {
-      setIsLoadingHistory(false);
-      return;
-    }
+    if (!user) return;
     
     let mounted = true;
     
@@ -63,8 +59,6 @@ export default function FitekChat() {
         }
       } catch (err) {
         console.error('Error fetching chat history:', err);
-      } finally {
-        if (mounted) setIsLoadingHistory(false);
       }
     };
     

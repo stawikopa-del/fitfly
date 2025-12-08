@@ -65,7 +65,7 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [dayPlans, setDayPlans] = useState<DayPlan[]>([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // No initial loading delay
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
