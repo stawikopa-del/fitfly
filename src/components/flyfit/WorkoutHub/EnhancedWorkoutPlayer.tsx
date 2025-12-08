@@ -399,36 +399,30 @@ export function EnhancedWorkoutPlayer({ workout, userEnergy, onComplete, onBack 
 
         {/* Control Buttons */}
         <div className="flex items-center justify-center gap-4">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={skipToNext}
-            className="w-14 h-14 rounded-full bg-muted flex items-center justify-center"
+          <button
+            onClick={onBack}
+            className="w-14 h-14 rounded-full bg-muted flex items-center justify-center transition-all duration-300 active:scale-95"
           >
-            <SkipForward className="w-6 h-6" />
-          </motion.button>
+            <ArrowLeft className="w-6 h-6" />
+          </button>
           
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={togglePlayPause}
-            className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-lg"
+            className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-lg transition-all duration-300 active:scale-95"
           >
             {isRunning ? (
               <Pause className="w-8 h-8 text-primary-foreground" />
             ) : (
               <Play className="w-8 h-8 text-primary-foreground ml-1" />
             )}
-          </motion.button>
+          </button>
           
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => {}}
-            className="w-14 h-14 rounded-full bg-muted flex items-center justify-center opacity-0 pointer-events-none"
+          <button
+            onClick={skipToNext}
+            className="w-14 h-14 rounded-full bg-muted flex items-center justify-center transition-all duration-300 active:scale-95"
           >
-            <ChevronRight className="w-6 h-6" />
-          </motion.button>
+            <SkipForward className="w-6 h-6" />
+          </button>
         </div>
       </div>
     </motion.div>
