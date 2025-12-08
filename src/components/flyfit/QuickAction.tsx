@@ -1,6 +1,8 @@
 import { ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { springBouncy } from '@/lib/animations';
 
 interface QuickActionProps {
   icon: ReactNode;
@@ -44,32 +46,42 @@ const colorClasses = {
 };
 
 export function QuickAction({ icon, title, description, color, onClick }: QuickActionProps) {
-  
   return (
-    <button
+    <motion.button
       onClick={onClick}
+      whileHover={{ scale: 1.02, x: 4 }}
+      whileTap={{ scale: 0.98 }}
+      transition={springBouncy}
       className={cn(
         'w-full flex items-center gap-4 p-4 rounded-3xl border-2',
-        'transition-all duration-300',
-        'hover:-translate-y-1 hover:shadow-card-playful active:translate-y-0 active:scale-[0.98]',
+        'transition-shadow duration-300',
+        'hover:shadow-card-playful',
         colorClasses[color].bg,
         colorClasses[color].border,
         colorClasses[color].hover
       )}
     >
-      <div className={cn(
-        'w-14 h-14 rounded-2xl flex items-center justify-center shrink-0',
-        colorClasses[color].icon
-      )}>
+      <motion.div 
+        initial={{ scale: 0, rotate: -45 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ ...springBouncy, delay: 0.1 }}
+        className={cn(
+          'w-14 h-14 rounded-2xl flex items-center justify-center shrink-0',
+          colorClasses[color].icon
+        )}
+      >
         {icon}
-      </div>
+      </motion.div>
       <div className="flex-1 text-left">
         <h4 className="font-bold font-display text-foreground text-lg">{title}</h4>
         <p className="text-sm text-muted-foreground font-medium">{description}</p>
       </div>
-      <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center shadow-sm border border-border/30">
+      <motion.div 
+        whileHover={{ x: 4 }}
+        className="w-10 h-10 rounded-xl bg-card flex items-center justify-center shadow-sm border border-border/30"
+      >
         <ChevronRight className="w-5 h-5 text-muted-foreground" />
-      </div>
-    </button>
+      </motion.div>
+    </motion.button>
   );
 }
