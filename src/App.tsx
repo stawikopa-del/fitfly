@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/flyfit/SplashScreen";
 import { useTheme } from "@/hooks/useTheme";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { WorkoutProvider } from "@/contexts/WorkoutContext";
 
 // Lazy load pages for better performance
 const Home = lazy(() => import("./pages/Home"));
@@ -490,8 +491,10 @@ const App = () => {
           {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
           <BrowserRouter>
             <AuthProvider>
-              <AppRoutes />
-              <CookieConsent />
+              <WorkoutProvider>
+                <AppRoutes />
+                <CookieConsent />
+              </WorkoutProvider>
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>
