@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Clock, Flame, ChevronRight, Play, Trophy, Sunrise } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { WorkoutSession } from '@/components/flyfit/WorkoutSession';
 import { MorningWorkoutModule } from '@/components/flyfit/MorningWorkout';
-import { workouts, categories, difficultyConfig, WorkoutData } from '@/data/workouts';
+import { workouts, difficultyConfig, WorkoutData } from '@/data/workouts';
 import { useToast } from '@/hooks/use-toast';
 import { useGamification } from '@/hooks/useGamification';
 import { useUserProgress } from '@/hooks/useUserProgress';
@@ -12,19 +11,13 @@ import fitekPoranek from '@/assets/fitek/fitek-poranek.png';
 import fitekPajacyki from '@/assets/fitek-pajacyki.png';
 
 export default function Workouts() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Wszystkie');
   const [activeWorkout, setActiveWorkout] = useState<WorkoutData | null>(null);
   const [showMorningWorkout, setShowMorningWorkout] = useState(false);
   const { toast } = useToast();
   const { onWorkoutCompleted } = useGamification();
   const { addActiveMinutes } = useUserProgress();
 
-  const filteredWorkouts = workouts.filter(workout => {
-    const matchesSearch = workout.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'Wszystkie' || workout.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredWorkouts = workouts;
 
   const handleStartWorkout = (workout: WorkoutData) => {
     setActiveWorkout(workout);
@@ -105,13 +98,13 @@ export default function Workouts() {
                      text-left active:scale-[0.98]"
         >
           {/* Mascot - much bigger */}
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-6">
             <div className="relative">
-              <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-110" />
+              <div className="absolute inset-0 bg-primary/30 blur-[60px] rounded-full scale-125" />
               <img 
                 src={fitekPajacyki} 
                 alt="FITEK poranny" 
-                className="w-40 h-40 object-contain relative z-10 animate-float"
+                className="w-64 h-64 object-contain relative z-10 animate-float"
               />
             </div>
           </div>
