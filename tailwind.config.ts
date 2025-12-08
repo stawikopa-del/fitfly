@@ -167,7 +167,7 @@ export default {
         "bounce-soft": "bounce-soft 2s ease-in-out infinite",
         "wiggle": "wiggle 0.5s ease-in-out",
         "float": "float 3s ease-in-out infinite",
-        "float-slow": "float-slow 5s ease-in-out infinite",
+        "float-slow": "float-slow 3s ease-in-out infinite",
         "pushup": "pushup 2s ease-in-out infinite",
         "float-gentle": "float-gentle 6s ease-in-out infinite",
         "pulse-ring": "pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
