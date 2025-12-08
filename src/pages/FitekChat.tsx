@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Trash2, ArrowLeft } from 'lucide-react';
+import { Send, Sparkles, Trash2, ArrowLeft, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { FitekChatSkeleton } from '@/components/flyfit/ChatSkeleton';
+import { useProactiveMessages } from '@/hooks/useProactiveMessages';
 
 interface Message {
   id?: string;
@@ -29,6 +30,7 @@ export default function FitekChat() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const { proactiveMessage, dismissMessage, declinedName } = useProactiveMessages();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -274,9 +276,38 @@ export default function FitekChat() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 relative z-10">
+        {/* Proactive message bubble */}
+        {proactiveMessage && messages.length === 0 && (
+          <div className="mb-4 animate-slide-up-fade">
+            <div className="flex gap-3">
+              <div className="w-10 h-10 rounded-full bg-white border-2 border-primary/20 shadow-playful-sm shrink-0 overflow-hidden animate-bounce-soft">
+                <img src={fitekAvatar} alt="FITEK" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-primary/30 rounded-3xl rounded-bl-lg px-4 py-3 shadow-card-playful relative">
+                <button 
+                  onClick={dismissMessage}
+                  className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <p className="text-sm font-medium text-foreground pr-6">{proactiveMessage.content}</p>
+                <button
+                  onClick={() => {
+                    setInput('Cześć FITEK!');
+                    dismissMessage();
+                  }}
+                  className="mt-2 text-xs text-primary font-semibold hover:underline"
+                >
+                  Odpowiedz →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isLoadingHistory ? (
           <FitekChatSkeleton />
-        ) : messages.length === 0 ? (
+        ) : messages.length === 0 && !proactiveMessage ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
             <div className="w-40 h-40 mb-4 rounded-3xl overflow-hidden shadow-card-playful">
               <video 
@@ -289,13 +320,13 @@ export default function FitekChat() {
               />
             </div>
             <h2 className="text-xl font-bold font-display text-foreground mb-2">
-              Cześć! Jestem FITEK! 👋
+              {declinedName ? `Cześć ${declinedName}! 👋` : 'Cześć! Jestem FITEK! 👋'}
             </h2>
             <p className="text-muted-foreground text-sm max-w-[250px]">
               Twój przyjaciel fitness! Porozmawiaj ze mną o ćwiczeniach, jedzeniu, lub po prostu pogadajmy! 💪
             </p>
             <div className="flex flex-wrap gap-2 mt-4 justify-center">
-              {['Jak zacząć ćwiczyć?', 'Co jeść na śniadanie?', 'Zmotywuj mnie!'].map((suggestion) => (
+              {['Jak mija mi dzień?', 'Co jeść na śniadanie?', 'Zmotywuj mnie!'].map((suggestion) => (
                 <button
                   key={suggestion}
                   onClick={() => {
