@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { soundFeedback } from '@/utils/soundFeedback';
+import { FitekChatSkeleton } from '@/components/flyfit/ChatSkeleton';
 
 interface Message {
   id?: string;
@@ -25,6 +26,7 @@ export default function FitekChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
@@ -34,7 +36,10 @@ export default function FitekChat() {
 
   // Pobierz historię czatu przy starcie
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setIsLoadingHistory(false);
+      return;
+    }
     
     let mounted = true;
     
@@ -59,6 +64,10 @@ export default function FitekChat() {
         }
       } catch (err) {
         console.error('Error fetching chat history:', err);
+      } finally {
+        if (mounted) {
+          setIsLoadingHistory(false);
+        }
       }
     };
     
@@ -265,7 +274,9 @@ export default function FitekChat() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 relative z-10">
-        {messages.length === 0 && (
+        {isLoadingHistory ? (
+          <FitekChatSkeleton />
+        ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
             <div className="w-40 h-40 mb-4 rounded-3xl overflow-hidden shadow-card-playful">
               <video 
@@ -297,7 +308,7 @@ export default function FitekChat() {
               ))}
             </div>
           </div>
-        )}
+        ) : null}
 
         {messages.map((message, index) => (
           <div
