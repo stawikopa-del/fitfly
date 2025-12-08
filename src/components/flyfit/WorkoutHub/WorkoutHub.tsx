@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WorkoutProgramCard } from './WorkoutProgramCard';
 import { PreWorkoutCheck } from './PreWorkoutCheck';
@@ -7,6 +7,7 @@ import { WorkoutSummary } from './WorkoutSummary';
 import { WorkoutProgram, workoutPrograms, categoryNames, WorkoutCategory } from '@/data/workoutPrograms';
 import { useGamification } from '@/hooks/useGamification';
 import { useUserProgress } from '@/hooks/useUserProgress';
+import { useWorkout } from '@/contexts/WorkoutContext';
 import { Flame, Clock, Zap, Trophy, TrendingUp, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +29,17 @@ export function WorkoutHub() {
   
   const { onWorkoutCompleted, addXP } = useGamification();
   const { addActiveMinutes } = useUserProgress();
+  const { setWorkoutActive } = useWorkout();
+
+  // Update workout active state based on current screen
+  useEffect(() => {
+    const isActive = currentScreen !== 'browse';
+    setWorkoutActive(isActive);
+    
+    return () => {
+      setWorkoutActive(false);
+    };
+  }, [currentScreen, setWorkoutActive]);
 
   const handleSelectWorkout = (workout: WorkoutProgram) => {
     setSelectedWorkout(workout);
