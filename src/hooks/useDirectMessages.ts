@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -43,185 +44,216 @@ export interface ChatPreview {
   isOnline?: boolean;
 }
 
+// Fetch chat previews
+async function fetchChatPreviewsData(userId: string): Promise<ChatPreview[]> {
+  const { data: messagesData, error } = await supabase
+    .from('direct_messages')
+    .select('*')
+    .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching messages:', error);
+    return [];
+  }
+
+  const conversationsMap = new Map<string, {
+    messages: any[];
+    partnerId: string;
+  }>();
+
+  (messagesData || []).forEach(msg => {
+    if (!msg) return;
+    const partnerId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id;
+    
+    if (!conversationsMap.has(partnerId)) {
+      conversationsMap.set(partnerId, { messages: [], partnerId });
+    }
+    conversationsMap.get(partnerId)!.messages.push(msg);
+  });
+
+  const partnerIds = Array.from(conversationsMap.keys());
+  
+  if (partnerIds.length === 0) {
+    return [];
+  }
+
+  // Use RPC function for secure profile access
+  const profilesPromises = partnerIds.map(id => 
+    supabase.rpc('get_friend_profile', { friend_user_id: id })
+  );
+  const profilesResults = await Promise.all(profilesPromises);
+  const profiles = profilesResults
+    .filter(r => !r.error && r.data?.length > 0)
+    .map(r => r.data[0]);
+
+  const previews: ChatPreview[] = [];
+
+  conversationsMap.forEach((conv, partnerId) => {
+    const profile = profiles?.find(p => p.user_id === partnerId);
+    const latestMsg = conv.messages[0];
+    if (!latestMsg) return;
+    
+    const unreadCount = conv.messages.filter(
+      m => m.receiver_id === userId && !m.read_at
+    ).length;
+
+    let lastMessageText = latestMsg.content || '';
+    if (latestMsg.message_type === 'recipe') {
+      lastMessageText = '📖 Udostępniono przepis';
+    } else if (latestMsg.message_type === 'shopping_list') {
+      lastMessageText = '🛒 Udostępniono listę zakupów';
+    } else if (latestMsg.message_type === 'shopping_list_activity') {
+      lastMessageText = latestMsg.content || '🛒 Aktywność na liście zakupów';
+    }
+
+    previews.push({
+      odgerId: partnerId,
+      displayName: profile?.display_name || 'Użytkownik',
+      username: profile?.username || null,
+      avatarUrl: profile?.avatar_url || null,
+      lastMessage: lastMessageText,
+      lastMessageTime: latestMsg.created_at,
+      unreadCount,
+    });
+  });
+
+  previews.sort((a, b) => 
+    new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
+  );
+
+  return previews;
+}
+
+// Fetch messages for a specific conversation
+async function fetchMessagesData(userId: string, friendId: string): Promise<DirectMessage[]> {
+  const { data, error } = await supabase
+    .from('direct_messages')
+    .select('*')
+    .or(
+      `and(sender_id.eq.${userId},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${userId})`
+    )
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching messages:', error);
+    return [];
+  }
+
+  const messagesWithReplies = (data || []).map(m => {
+    if (!m) return null;
+    const replyToMsg = m.reply_to_id ? data.find(r => r?.id === m.reply_to_id) : null;
+    return {
+      id: m.id,
+      senderId: m.sender_id,
+      receiverId: m.receiver_id,
+      content: m.content || '',
+      messageType: (m.message_type || 'text') as DirectMessage['messageType'],
+      recipeData: m.recipe_data,
+      shoppingListId: (m.recipe_data as any)?.shoppingListId,
+      createdAt: m.created_at,
+      readAt: m.read_at,
+      reactions: (m as any).reactions || {},
+      replyToId: (m as any).reply_to_id || null,
+      replyTo: replyToMsg ? {
+        id: replyToMsg.id,
+        content: replyToMsg.content || '',
+        senderName: replyToMsg.sender_id === userId ? 'Ty' : 'Znajomy',
+      } : null,
+    };
+  }).filter(Boolean) as DirectMessage[];
+
+  // Mark messages as read in background
+  (async () => {
+    try {
+      await supabase
+        .from('direct_messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('receiver_id', userId)
+        .eq('sender_id', friendId)
+        .is('read_at', null);
+    } catch (err) {
+      console.error('Error marking messages as read:', err);
+    }
+  })();
+
+  return messagesWithReplies;
+}
+
 export function useDirectMessages(friendId?: string) {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<DirectMessage[]>([]);
-  const [chatPreviews, setChatPreviews] = useState<ChatPreview[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Start with loading true for skeleton
+  const queryClient = useQueryClient();
   const [isSending, setIsSending] = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const mountedRef = useRef(true);
 
-  const fetchChatPreviews = useCallback(async () => {
-    if (!user) {
-      setChatPreviews([]);
-      return;
+  // Query for chat previews (when no friendId)
+  const previewsQuery = useQuery({
+    queryKey: ['chatPreviews', user?.id],
+    queryFn: () => fetchChatPreviewsData(user!.id),
+    enabled: !!user && !friendId,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes cache
+  });
+
+  // Query for messages (when friendId is provided)
+  const messagesQuery = useQuery({
+    queryKey: ['directMessages', user?.id, friendId],
+    queryFn: () => fetchMessagesData(user!.id, friendId!),
+    enabled: !!user && !!friendId,
+    staleTime: 10 * 1000, // 10 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes cache
+  });
+
+  // Subscribe to realtime updates
+  useEffect(() => {
+    if (!user) return;
+
+    // Cleanup previous channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
     }
 
-    try {
-      const { data: messagesData, error } = await supabase
-        .from('direct_messages')
-        .select('*')
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .order('created_at', { ascending: false });
+    const channel = supabase
+      .channel(`direct-messages-${friendId || 'all'}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'direct_messages',
+        },
+        (payload) => {
+          const newRecord = payload.new as any;
+          const oldRecord = payload.old as any;
+          
+          // Check if this message is relevant to the current user
+          const isRelevant = 
+            newRecord?.sender_id === user.id || 
+            newRecord?.receiver_id === user.id ||
+            oldRecord?.sender_id === user.id ||
+            oldRecord?.receiver_id === user.id;
+            
+          if (!isRelevant) return;
 
-      if (error) {
-        console.error('Error fetching messages:', error);
-        return;
-      }
-
-      if (!mountedRef.current) return;
-
-      const conversationsMap = new Map<string, {
-        messages: any[];
-        partnerId: string;
-      }>();
-
-      (messagesData || []).forEach(msg => {
-        if (!msg) return;
-        const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
-        
-        if (!conversationsMap.has(partnerId)) {
-          conversationsMap.set(partnerId, { messages: [], partnerId });
+          // Invalidate queries to refetch
+          if (friendId) {
+            queryClient.invalidateQueries({ queryKey: ['directMessages', user.id, friendId] });
+          } else {
+            queryClient.invalidateQueries({ queryKey: ['chatPreviews', user.id] });
+          }
         }
-        conversationsMap.get(partnerId)!.messages.push(msg);
-      });
+      )
+      .subscribe();
 
-      const partnerIds = Array.from(conversationsMap.keys());
-      
-      if (partnerIds.length === 0) {
-        if (mountedRef.current) setChatPreviews([]);
-        return;
+    channelRef.current = channel;
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
-
-      // Use RPC function for secure profile access
-      const profilesPromises = partnerIds.map(id => 
-        supabase.rpc('get_friend_profile', { friend_user_id: id })
-      );
-      const profilesResults = await Promise.all(profilesPromises);
-      const profiles = profilesResults
-        .filter(r => !r.error && r.data?.length > 0)
-        .map(r => r.data[0]);
-
-      if (!mountedRef.current) return;
-
-      const previews: ChatPreview[] = [];
-
-      conversationsMap.forEach((conv, partnerId) => {
-        const profile = profiles?.find(p => p.user_id === partnerId);
-        const latestMsg = conv.messages[0];
-        if (!latestMsg) return;
-        
-        const unreadCount = conv.messages.filter(
-          m => m.receiver_id === user.id && !m.read_at
-        ).length;
-
-        let lastMessageText = latestMsg.content || '';
-        if (latestMsg.message_type === 'recipe') {
-          lastMessageText = '📖 Udostępniono przepis';
-        } else if (latestMsg.message_type === 'shopping_list') {
-          lastMessageText = '🛒 Udostępniono listę zakupów';
-        } else if (latestMsg.message_type === 'shopping_list_activity') {
-          lastMessageText = latestMsg.content || '🛒 Aktywność na liście zakupów';
-        }
-
-        previews.push({
-          odgerId: partnerId,
-          displayName: profile?.display_name || 'Użytkownik',
-          username: profile?.username || null,
-          avatarUrl: profile?.avatar_url || null,
-          lastMessage: lastMessageText,
-          lastMessageTime: latestMsg.created_at,
-          unreadCount,
-        });
-      });
-
-      previews.sort((a, b) => 
-        new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
-      );
-
-      if (mountedRef.current) {
-        setChatPreviews(previews);
-      }
-    } catch (error) {
-      console.error('Error fetching chat previews:', error);
-      if (mountedRef.current) setChatPreviews([]);
-    }
-  }, [user]);
-
-  const fetchMessages = useCallback(async () => {
-    if (!user || !friendId) {
-      setMessages([]);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('direct_messages')
-        .select('*')
-        .or(
-          `and(sender_id.eq.${user.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${user.id})`
-        )
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching messages:', error);
-        if (mountedRef.current) {
-          setMessages([]);
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      if (!mountedRef.current) return;
-
-      const messagesWithReplies = (data || []).map(m => {
-        if (!m) return null;
-        const replyToMsg = m.reply_to_id ? data.find(r => r?.id === m.reply_to_id) : null;
-        return {
-          id: m.id,
-          senderId: m.sender_id,
-          receiverId: m.receiver_id,
-          content: m.content || '',
-          messageType: (m.message_type || 'text') as DirectMessage['messageType'],
-          recipeData: m.recipe_data,
-          shoppingListId: (m.recipe_data as any)?.shoppingListId,
-          createdAt: m.created_at,
-          readAt: m.read_at,
-          reactions: (m as any).reactions || {},
-          replyToId: (m as any).reply_to_id || null,
-          replyTo: replyToMsg ? {
-            id: replyToMsg.id,
-            content: replyToMsg.content || '',
-            senderName: replyToMsg.sender_id === user.id ? 'Ty' : 'Znajomy',
-          } : null,
-        };
-      }).filter(Boolean) as DirectMessage[];
-
-      if (mountedRef.current) {
-        setMessages(messagesWithReplies);
-      }
-
-      // Mark messages as read
-      try {
-        await supabase
-          .from('direct_messages')
-          .update({ read_at: new Date().toISOString() })
-          .eq('receiver_id', user.id)
-          .eq('sender_id', friendId)
-          .is('read_at', null);
-      } catch (err) {
-        console.error('Error marking messages as read:', err);
-      }
-
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      if (mountedRef.current) setMessages([]);
-    } finally {
-      if (mountedRef.current) setIsLoading(false);
-    }
-  }, [user, friendId]);
+    };
+  }, [user, friendId, queryClient]);
 
   const sendMessage = useCallback(async (
     content: string, 
@@ -253,6 +285,9 @@ export function useDirectMessages(friendId?: string) {
         console.error('Error sending message:', error);
         return false;
       }
+      
+      // Invalidate to refetch
+      queryClient.invalidateQueries({ queryKey: ['directMessages', user.id, friendId] });
       return true;
     } catch (error) {
       console.error('Error sending message:', error);
@@ -260,27 +295,23 @@ export function useDirectMessages(friendId?: string) {
     } finally {
       setIsSending(false);
     }
-  }, [user, friendId]);
+  }, [user, friendId, queryClient]);
 
-  // Send image message
   const sendImageMessage = useCallback(async (imageUrl: string) => {
     if (!imageUrl) return false;
     return sendMessage(imageUrl, 'image');
   }, [sendMessage]);
 
-  // Send voice message
   const sendVoiceMessage = useCallback(async (audioUrl: string, duration: number) => {
     if (!audioUrl) return false;
     return sendMessage(audioUrl, 'voice', { duration });
   }, [sendMessage]);
 
-  // Send shopping list
   const sendShoppingListMessage = useCallback(async (listId: string) => {
     if (!listId) return false;
     return sendMessage('🛒 Udostępniono Ci listę zakupów!', 'shopping_list', { shoppingListId: listId });
   }, [sendMessage]);
 
-  // Delete a message
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!user || !messageId) return false;
 
@@ -296,22 +327,22 @@ export function useDirectMessages(friendId?: string) {
         return false;
       }
 
-      if (mountedRef.current) {
-        setMessages(prev => prev.filter(m => m.id !== messageId));
-      }
+      // Optimistic update
+      queryClient.setQueryData(
+        ['directMessages', user.id, friendId],
+        (old: DirectMessage[] | undefined) => old?.filter(m => m.id !== messageId) || []
+      );
       return true;
     } catch (error) {
       console.error('Error deleting message:', error);
       return false;
     }
-  }, [user]);
+  }, [user, friendId, queryClient]);
 
-  // Toggle reaction on a message
   const toggleReaction = useCallback(async (messageId: string, emoji: string, userName: string) => {
     if (!user || !messageId || !emoji) return false;
 
     try {
-      // Get current message
       const { data: msgData, error: fetchError } = await supabase
         .from('direct_messages')
         .select('reactions')
@@ -329,7 +360,6 @@ export function useDirectMessages(friendId?: string) {
 
       let newReactions: MessageReactions;
       if (hasReacted) {
-        // Remove reaction
         newReactions = {
           ...currentReactions,
           [emoji]: emojiReactions.filter(r => r.odgerId !== user.id)
@@ -338,14 +368,12 @@ export function useDirectMessages(friendId?: string) {
           delete newReactions[emoji];
         }
       } else {
-        // Add reaction
         newReactions = {
           ...currentReactions,
           [emoji]: [...emojiReactions, { odgerId: user.id, name: userName || 'Ty' }]
         };
       }
 
-      // Use raw SQL-style update to bypass type checking for new column
       const { error } = await supabase
         .from('direct_messages')
         .update({ reactions: newReactions } as any)
@@ -356,90 +384,24 @@ export function useDirectMessages(friendId?: string) {
         return false;
       }
 
-      // Update local state
-      if (mountedRef.current) {
-        setMessages(prev => prev.map(m => 
-          m.id === messageId ? { ...m, reactions: newReactions } : m
-        ));
-      }
+      // Optimistic update
+      queryClient.setQueryData(
+        ['directMessages', user.id, friendId],
+        (old: DirectMessage[] | undefined) => 
+          old?.map(m => m.id === messageId ? { ...m, reactions: newReactions } : m) || []
+      );
 
       return true;
     } catch (error) {
       console.error('Error toggling reaction:', error);
       return false;
     }
-  }, [user]);
-
-  // Subscribe to realtime updates
-  useEffect(() => {
-    mountedRef.current = true;
-    
-    if (!user) return;
-
-    // Cleanup previous channel
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-    }
-
-    const channel = supabase
-      .channel(`direct-messages-${friendId || 'all'}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'direct_messages',
-        },
-        (payload) => {
-          if (!mountedRef.current) return;
-          
-          const newRecord = payload.new as any;
-          const oldRecord = payload.old as any;
-          
-          // Check if this message is relevant to the current user
-          const isRelevant = 
-            newRecord?.sender_id === user.id || 
-            newRecord?.receiver_id === user.id ||
-            oldRecord?.sender_id === user.id ||
-            oldRecord?.receiver_id === user.id;
-            
-          if (!isRelevant) return;
-
-          if (friendId) {
-            fetchMessages();
-          } else {
-            fetchChatPreviews();
-          }
-        }
-      )
-      .subscribe();
-
-    channelRef.current = channel;
-
-    return () => {
-      mountedRef.current = false;
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
-  }, [user, friendId, fetchMessages, fetchChatPreviews]);
-
-  // Initial fetch - immediately when user is available
-  useEffect(() => {
-    if (!user) return;
-    
-    if (friendId) {
-      fetchMessages();
-    } else {
-      fetchChatPreviews();
-    }
-  }, [user, friendId, fetchMessages, fetchChatPreviews]);
+  }, [user, friendId, queryClient]);
 
   return {
-    messages,
-    chatPreviews,
-    isLoading,
+    messages: messagesQuery.data || [],
+    chatPreviews: previewsQuery.data || [],
+    isLoading: friendId ? messagesQuery.isLoading : previewsQuery.isLoading,
     isSending,
     sendMessage,
     sendImageMessage,
@@ -447,7 +409,7 @@ export function useDirectMessages(friendId?: string) {
     sendShoppingListMessage,
     deleteMessage,
     toggleReaction,
-    refreshMessages: fetchMessages,
-    refreshPreviews: fetchChatPreviews,
+    refreshMessages: () => queryClient.invalidateQueries({ queryKey: ['directMessages', user?.id, friendId] }),
+    refreshPreviews: () => queryClient.invalidateQueries({ queryKey: ['chatPreviews', user?.id] }),
   };
 }
