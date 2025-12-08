@@ -44,7 +44,7 @@ export interface ChatPreview {
 }
 
 export function useDirectMessages(friendId?: string) {
-  const { user, isInitialized } = useAuth();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [chatPreviews, setChatPreviews] = useState<ChatPreview[]>([]);
   const [isLoading, setIsLoading] = useState(false); // No initial loading delay
@@ -374,7 +374,7 @@ export function useDirectMessages(friendId?: string) {
   useEffect(() => {
     mountedRef.current = true;
     
-    if (!isInitialized || !user) return;
+    if (!user) return;
 
     // Cleanup previous channel
     if (channelRef.current) {
@@ -423,19 +423,18 @@ export function useDirectMessages(friendId?: string) {
         channelRef.current = null;
       }
     };
-  }, [user, isInitialized, friendId, fetchMessages, fetchChatPreviews]);
+  }, [user, friendId, fetchMessages, fetchChatPreviews]);
 
-  // Initial fetch
+  // Initial fetch - immediately when user is available
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!user) return;
     
     if (friendId) {
       fetchMessages();
     } else {
       fetchChatPreviews();
-      setIsLoading(false);
     }
-  }, [isInitialized, friendId, fetchMessages, fetchChatPreviews]);
+  }, [user, friendId, fetchMessages, fetchChatPreviews]);
 
   return {
     messages,
