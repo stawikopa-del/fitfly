@@ -91,7 +91,7 @@ export default function Workouts() {
       </div>
 
       {/* Filtry kategorii */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide relative z-10">
+      <div className="flex gap-2 overflow-x-auto pb-3 pt-1 -mx-4 px-4 scrollbar-hide relative z-10">
         {categories.map((category) => (
           <Button
             key={category}
@@ -99,7 +99,7 @@ export default function Workouts() {
             size="sm"
             onClick={() => setSelectedCategory(category)}
             className={cn(
-              'whitespace-nowrap rounded-2xl font-bold h-10 px-4',
+              'whitespace-nowrap rounded-2xl font-bold h-10 px-4 flex-shrink-0',
               selectedCategory === category ? 'shadow-playful' : 'border-2'
             )}
           >
