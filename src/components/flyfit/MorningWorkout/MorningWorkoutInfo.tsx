@@ -11,6 +11,16 @@ interface MorningWorkoutInfoProps {
 export function MorningWorkoutInfo({ onStart, onBack }: MorningWorkoutInfoProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-primary/5 flex flex-col">
+      {/* Header */}
+      <header className="p-4">
+        <button 
+          onClick={onBack}
+          className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+        >
+          ← Wróć
+        </button>
+      </header>
+
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-24">
         {/* Mascot */}
