@@ -134,6 +134,45 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_summaries: {
+        Row: {
+          created_at: string
+          id: string
+          key_points: string[] | null
+          mood: string | null
+          questions_asked: string[] | null
+          summary: string
+          summary_date: string
+          topics: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_points?: string[] | null
+          mood?: string | null
+          questions_asked?: string[] | null
+          summary: string
+          summary_date: string
+          topics?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_points?: string[] | null
+          mood?: string | null
+          questions_asked?: string[] | null
+          summary?: string
+          summary_date?: string
+          topics?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_progress: {
         Row: {
           active_minutes: number

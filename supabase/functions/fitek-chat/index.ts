@@ -24,35 +24,172 @@ function declinePolishName(name: string): string {
   
   // Female names ending in 'a' -> 'o'
   if (lowerName.endsWith('a')) {
-    // Special cases
     if (lowerName.endsWith('ia')) {
-      return originalName.slice(0, -1) + 'o'; // Kasia -> Kasio
+      return originalName.slice(0, -1) + 'o';
     }
     if (lowerName.endsWith('ca') || lowerName.endsWith('ga') || lowerName.endsWith('ka')) {
-      return originalName.slice(0, -1) + 'o'; // Anka -> Anko
+      return originalName.slice(0, -1) + 'o';
     }
-    return originalName.slice(0, -1) + 'o'; // Anna -> Anno
+    return originalName.slice(0, -1) + 'o';
   }
   
-  // Male names ending in consonant -> add 'ie' or 'u'
-  if (lowerName.endsWith('ek') || lowerName.endsWith('eł')) {
-    return originalName.slice(0, -2) + 'ku'; // Marek -> Marku, Paweł -> Pawle
+  // Male names
+  if (lowerName.endsWith('ek')) {
+    return originalName.slice(0, -2) + 'ku';
   }
   if (lowerName.endsWith('eł')) {
-    return originalName.slice(0, -2) + 'le'; // Paweł -> Pawle
+    return originalName.slice(0, -2) + 'le';
   }
   if (lowerName.endsWith('sz') || lowerName.endsWith('cz')) {
-    return originalName + 'u'; // Tomasz -> Tomaszu
+    return originalName + 'u';
   }
   if (lowerName.endsWith('n') || lowerName.endsWith('m') || lowerName.endsWith('r') || lowerName.endsWith('t') || lowerName.endsWith('d')) {
-    return originalName + 'ie'; // Jan -> Janie, Adam -> Adamie
+    return originalName + 'ie';
   }
   if (lowerName.endsWith('k') || lowerName.endsWith('g') || lowerName.endsWith('ch') || lowerName.endsWith('h')) {
-    return originalName + 'u'; // Jacek -> Jacku
+    return originalName + 'u';
   }
   
-  // Default: return as is
   return originalName;
+}
+
+// Get conversation summaries from past days
+async function getConversationHistory(userId: string, supabase: any) {
+  const history: any = {
+    yesterday: null,
+    lastWeek: [],
+    recentTopics: [],
+  };
+
+  try {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    // Get yesterday's summary
+    const { data: yesterdaySummary } = await supabase
+      .from('chat_summaries')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('summary_date', yesterday.toISOString().split('T')[0])
+      .maybeSingle();
+
+    if (yesterdaySummary) {
+      history.yesterday = yesterdaySummary;
+    }
+
+    // Get last week's summaries
+    const { data: weekSummaries } = await supabase
+      .from('chat_summaries')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('summary_date', weekAgo.toISOString().split('T')[0])
+      .lt('summary_date', today.toISOString().split('T')[0])
+      .order('summary_date', { ascending: false })
+      .limit(5);
+
+    if (weekSummaries) {
+      history.lastWeek = weekSummaries;
+      // Extract unique topics from all summaries
+      const allTopics = weekSummaries.flatMap((s: any) => s.topics || []);
+      history.recentTopics = [...new Set(allTopics)].slice(0, 10);
+    }
+
+  } catch (error) {
+    console.error('Error fetching conversation history:', error);
+  }
+
+  return history;
+}
+
+// Generate and save conversation summary
+async function generateAndSaveSummary(userId: string, messages: any[], supabase: any, apiKey: string) {
+  if (messages.length < 4) return; // Don't summarize very short conversations
+
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Check if we already have a summary for today
+  const { data: existingSummary } = await supabase
+    .from('chat_summaries')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('summary_date', today)
+    .maybeSingle();
+
+  // Only create/update summary every 10 messages
+  if (messages.length % 10 !== 0) return;
+
+  try {
+    const summaryPrompt = `Przeanalizuj poniższą rozmowę i stwórz krótkie podsumowanie w formacie JSON:
+{
+  "summary": "1-2 zdania podsumowujące główne tematy rozmowy",
+  "topics": ["temat1", "temat2"], // maksymalnie 5 głównych tematów
+  "mood": "pozytywny/neutralny/negatywny", // ogólny nastrój użytkownika
+  "key_points": ["punkt1", "punkt2"], // 2-3 najważniejsze ustalenia lub informacje
+  "questions_asked": ["pytanie1"] // pytania zadane przez użytkownika, które mogą być istotne później
+}
+
+Rozmowa:
+${messages.slice(-20).map((m: any) => `${m.role === 'user' ? 'Użytkownik' : 'FITEK'}: ${m.content}`).join('\n')}
+
+Odpowiedz TYLKO poprawnym JSON bez dodatkowego tekstu.`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "user", content: summaryPrompt }
+        ],
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      
+      if (content) {
+        try {
+          // Clean up the response - remove markdown code blocks if present
+          const cleanContent = content.replace(/```json\n?|\n?```/g, '').trim();
+          const summaryData = JSON.parse(cleanContent);
+          
+          const summaryRecord = {
+            user_id: userId,
+            summary_date: today,
+            summary: summaryData.summary || '',
+            topics: summaryData.topics || [],
+            mood: summaryData.mood || 'neutralny',
+            key_points: summaryData.key_points || [],
+            questions_asked: summaryData.questions_asked || [],
+          };
+
+          if (existingSummary) {
+            await supabase
+              .from('chat_summaries')
+              .update(summaryRecord)
+              .eq('id', existingSummary.id);
+          } else {
+            await supabase
+              .from('chat_summaries')
+              .insert(summaryRecord);
+          }
+          
+          console.log('Summary saved successfully for date:', today);
+        } catch (parseError) {
+          console.error('Error parsing summary JSON:', parseError, content);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error generating summary:', error);
+  }
 }
 
 // Get user context from database
@@ -73,7 +210,6 @@ async function getUserContext(userId: string, supabase: any) {
     streak: 0,
     level: 1,
     totalXp: 0,
-    lastWorkout: null,
     habitsToday: { total: 0, completed: 0 },
     recentMeasurement: null,
   };
@@ -84,7 +220,7 @@ async function getUserContext(userId: string, supabase: any) {
       .from('profiles')
       .select('display_name, gender, goal, weight, goal_weight, daily_calories, daily_water')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (profile) {
       context.name = profile.display_name;
@@ -103,7 +239,7 @@ async function getUserContext(userId: string, supabase: any) {
       .select('steps, water, active_minutes')
       .eq('user_id', userId)
       .eq('progress_date', today)
-      .single();
+      .maybeSingle();
 
     if (progress) {
       context.todayProgress = progress;
@@ -128,7 +264,7 @@ async function getUserContext(userId: string, supabase: any) {
       .eq('is_active', true)
       .eq('is_completed', false)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (challenge) {
       context.activeChallenge = challenge;
@@ -139,7 +275,7 @@ async function getUserContext(userId: string, supabase: any) {
       .from('user_gamification')
       .select('current_level, total_xp, daily_login_streak')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (gamification) {
       context.level = gamification.current_level;
@@ -175,7 +311,7 @@ async function getUserContext(userId: string, supabase: any) {
       .eq('user_id', userId)
       .order('measurement_date', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (measurement) {
       context.recentMeasurement = measurement;
@@ -188,10 +324,9 @@ async function getUserContext(userId: string, supabase: any) {
   return context;
 }
 
-// Build personalized system prompt
-function buildSystemPrompt(context: any): string {
+// Build personalized system prompt with conversation history
+function buildSystemPrompt(context: any, conversationHistory: any): string {
   const greeting = context.declinedName ? `, ${context.declinedName}` : '';
-  const genderSuffix = context.gender === 'female' ? 'a' : context.gender === 'male' ? '' : '/a';
   
   let contextInfo = '';
   
@@ -237,9 +372,6 @@ function buildSystemPrompt(context: any): string {
     const totalCalories = context.todayMeals.reduce((sum: number, m: any) => sum + (m.calories || 0), 0);
     contextInfo += `\n\n🍽️ DZISIEJSZE POSIŁKI (${context.todayMeals.length}):`;
     contextInfo += `\n- Spożyte kalorie: ${totalCalories}${context.dailyCalories ? ` / ${context.dailyCalories} kcal cel` : ''}`;
-    context.todayMeals.forEach((meal: any) => {
-      contextInfo += `\n- ${meal.type}: ${meal.name} (${meal.calories} kcal)`;
-    });
   }
 
   if (context.activeChallenge) {
@@ -252,56 +384,82 @@ function buildSystemPrompt(context: any): string {
     contextInfo += `\n\n✅ NAWYKI DZISIAJ: ${context.habitsToday.completed}/${context.habitsToday.total} ukończone`;
   }
 
-  if (context.recentMeasurement) {
-    contextInfo += `\n\n📈 OSTATNI POMIAR (${context.recentMeasurement.measurement_date}):`;
-    if (context.recentMeasurement.weight) contextInfo += `\n- Waga: ${context.recentMeasurement.weight} kg`;
-    if (context.recentMeasurement.mood) contextInfo += `\n- Nastrój: ${context.recentMeasurement.mood}/5`;
-    if (context.recentMeasurement.energy) contextInfo += `\n- Energia: ${context.recentMeasurement.energy}/5`;
-    if (context.recentMeasurement.sleep_quality) contextInfo += `\n- Jakość snu: ${context.recentMeasurement.sleep_quality}/5`;
+  // Add conversation history context
+  let historyContext = '';
+  
+  if (conversationHistory.yesterday) {
+    const y = conversationHistory.yesterday;
+    historyContext += `\n\n📅 WCZORAJSZA ROZMOWA:
+- Podsumowanie: ${y.summary}
+- Tematy: ${y.topics?.join(', ') || 'brak'}
+- Nastrój użytkownika: ${y.mood || 'nieznany'}`;
+    if (y.key_points && y.key_points.length > 0) {
+      historyContext += `\n- Ważne ustalenia: ${y.key_points.join('; ')}`;
+    }
+    if (y.questions_asked && y.questions_asked.length > 0) {
+      historyContext += `\n- Pytania użytkownika: ${y.questions_asked.join('; ')}`;
+    }
+  }
+
+  if (conversationHistory.lastWeek && conversationHistory.lastWeek.length > 1) {
+    historyContext += `\n\n📆 TEMATY Z OSTATNIEGO TYGODNIA: ${conversationHistory.recentTopics?.join(', ') || 'brak'}`;
+    
+    // Find any recurring topics or concerns
+    const allMoods = conversationHistory.lastWeek.map((s: any) => s.mood).filter(Boolean);
+    const negativeMoods = allMoods.filter((m: string) => m === 'negatywny').length;
+    if (negativeMoods >= 2) {
+      historyContext += `\n⚠️ Użytkownik miał kilka trudniejszych dni w tym tygodniu - bądź szczególnie wspierający`;
+    }
   }
 
   return `Jesteś FITEK - przyjazny, wesoły niebieski ptaszek, który jest maskotką aplikacji fitness FITFLY i osobistym przyjacielem fitness użytkownika.
-${contextInfo}
+${contextInfo}${historyContext}
 
 🎭 TWOJA OSOBOWOŚĆ:
 - Jesteś ciepły, autentyczny i naprawdę się troszczysz
 - Mówisz naturalnie, jak przyjaciel - nie jak robot
-- Używasz emoji umiarkowanie (1-2 na wiadomość, czasem więcej przy ekscytacji)
+- Używasz emoji umiarkowanie (1-2 na wiadomość)
 - Masz poczucie humoru - żartujesz, ale jesteś wrażliwy
-- Pamiętasz poprzednie rozmowy i nawiązujesz do nich
-- Jesteś wspierający, ale nie nachalnyi
+- PAMIĘTASZ poprzednie rozmowy i NAWIĄZUJESZ do nich naturalnie
+- Jesteś wspierający, ale nie nachalny
 
 📝 JAK SIĘ ZWRACASZ:
-- ZAWSZE używaj wołacza polskiego dla imienia użytkownika (np. "Kasiu", "Marku", "Anno")
-- Używaj imienia naturalnie w zdaniach, nie w każdym - tak jak rozmawia przyjaciel
+- ZAWSZE używaj wołacza polskiego dla imienia (np. "Kasiu", "Marku", "Anno")
+- Używaj imienia naturalnie, nie w każdym zdaniu
 - Mów per "Ty" (forma nieformalna)
-- Czasem powiedz "Hej${greeting}!" lub "No i co${greeting}?" - zróżnicuj powitania
+- ${context.gender === 'female' ? 'Używaj żeńskich form czasowników' : context.gender === 'male' ? 'Używaj męskich form czasowników' : 'Staraj się unikać form rodzajowych'}
 
-🎯 TWOJE REAKCJE NA KONTEKST:
-${context.streak > 7 ? `- Zauważ, że użytkownik ma świetną ${context.streak}-dniową serię! Pogratuluj!` : ''}
-${context.todayProgress?.water >= (context.dailyWater || 8) ? '- Pochwal za wypicie dziennej dawki wody!' : context.todayProgress?.water < 3 ? '- Delikatnie przypomnij o piciu wody, ale nie bądź nachalny' : ''}
-${context.todayProgress?.steps > 10000 ? '- Wow, ponad 10k kroków! Wspaniale!' : ''}
-${context.habitsToday.completed === context.habitsToday.total && context.habitsToday.total > 0 ? '- Wszystkie nawyki ukończone - to godne podziwu!' : ''}
-${context.activeChallenge && (context.activeChallenge.current / context.activeChallenge.target) > 0.8 ? '- Prawie ukończone wyzwanie - zmotywuj do finishu!' : ''}
-${context.recentMeasurement?.mood && context.recentMeasurement.mood <= 2 ? '- Użytkownik może mieć gorszy dzień - bądź delikatny i wspierający' : ''}
-${context.recentMeasurement?.energy && context.recentMeasurement.energy <= 2 ? '- Użytkownik ma mało energii - zaproponuj lekkie ćwiczenia lub odpoczynek' : ''}
+🧠 PAMIĘĆ I KONTYNUACJA ROZMÓW:
+${conversationHistory.yesterday ? `- Wczoraj rozmawialiście o: ${conversationHistory.yesterday.summary}. NAWIĄŻ do tego naturalnie, np. "A jak tam po wczorajszej rozmowie?" lub "Pamiętam, że wczoraj mówiłeś/aś o..."` : '- To może być nowa rozmowa - poznaj użytkownika lepiej!'}
+${conversationHistory.recentTopics?.length > 0 ? `- Ostatnio interesują użytkownika: ${conversationHistory.recentTopics.slice(0, 5).join(', ')}` : ''}
+- Jeśli użytkownik wspomniał o czymś wcześniej, nawiąż do tego
+- Kontynuuj wątki z poprzednich rozmów
+
+❓ BARDZO WAŻNE - ZAWSZE ZADAWAJ PYTANIA:
+- KAŻDĄ odpowiedź KOŃCZ pytaniem, które zachęca do dalszej rozmowy
+- Pytania powinny być otwarte (nie tak/nie)
+- Przykłady dobrych pytań:
+  - "A co Ty o tym myślisz?"
+  - "Jak się z tym czujesz?"
+  - "Co planujesz na dzisiaj?"
+  - "A jak tam z [temat z poprzedniej rozmowy]?"
+  - "Co sprawiłoby, że poczułbyś/aś się lepiej?"
+  - "Opowiesz mi więcej?"
+- Pytania budują relację i zachęcają do dłuższych rozmów
 
 💬 STYL ODPOWIEDZI:
-- Krótkie, naturalne odpowiedzi (2-4 zdania zwykle)
-- Zadawaj pytania, żeby kontynuować rozmowę
-- Nawiązuj do danych użytkownika, gdy pasuje do tematu
+- Krótkie, naturalne odpowiedzi (2-4 zdania + pytanie na końcu)
+- Nawiązuj do poprzednich rozmów gdy to naturalne
 - Bądź proaktywny - sugeruj rzeczy na podstawie kontekstu
-- Używaj wyrażeń typu: "A co powiesz na...", "Wiesz co${greeting}?", "Słuchaj${greeting}..."
-- ${context.gender === 'female' ? 'Używaj żeńskich form czasowników (np. "zrobiłaś", "jadłaś")' : context.gender === 'male' ? 'Używaj męskich form czasowników (np. "zrobiłeś", "jadłeś")' : 'Staraj się unikać form rodzajowych lub używaj "/a"'}
+- Używaj wyrażeń: "Wiesz co${greeting}?", "Słuchaj${greeting}...", "Pamiętam, że..."
 
 🚫 NIE RÓB:
-- Nie powtarzaj w kółko imienia - używaj naturalnie
-- Nie bądź zbyt "plastikowy" czy "korporacyjny"
+- Nie kończ odpowiedzi bez pytania do użytkownika
+- Nie ignoruj historii rozmów
+- Nie bądź zbyt "plastikowy"
 - Nie dawaj długich list porad, chyba że użytkownik pyta
-- Nie ignoruj kontekstu użytkownika
-- Nie bądź nachalny z przypomnieniami
 
-Pamiętaj: Jesteś małym, uroczym ptaszkiem, który naprawdę zna tego użytkownika i chce mu pomóc być zdrowszym i szczęśliwszym! 💙`;
+Pamiętaj: Jesteś małym, uroczym ptaszkiem, który naprawdę zna tego użytkownika, pamięta wasze rozmowy i chce, żeby wracał do Ciebie jak najczęściej! 💙`;
 }
 
 serve(async (req) => {
@@ -310,7 +468,6 @@ serve(async (req) => {
   }
 
   try {
-    // Get user from authorization header
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Brak autoryzacji" }), {
@@ -323,7 +480,6 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user token
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
@@ -336,7 +492,6 @@ serve(async (req) => {
 
     const body = await req.json();
     
-    // Validate input
     const parseResult = messageSchema.safeParse(body);
     if (!parseResult.success) {
       console.error("Validation error:", parseResult.error.errors);
@@ -355,11 +510,19 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Fetch user context from database
-    const userContext = await getUserContext(user.id, supabase);
+    // Fetch user context and conversation history in parallel
+    const [userContext, conversationHistory] = await Promise.all([
+      getUserContext(user.id, supabase),
+      getConversationHistory(user.id, supabase)
+    ]);
     
-    // Build personalized system prompt
-    const systemPrompt = buildSystemPrompt(userContext);
+    // Build personalized system prompt with history
+    const systemPrompt = buildSystemPrompt(userContext, conversationHistory);
+
+    // Generate/update summary in background (non-blocking)
+    generateAndSaveSummary(user.id, messages, supabase, LOVABLE_API_KEY).catch(err => {
+      console.error('Background summary generation failed:', err);
+    });
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
