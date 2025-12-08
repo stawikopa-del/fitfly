@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Clock, Flame, Trophy, ChevronRight, Play, Sparkles } from 'lucide-react';
 import { WorkoutProgram, difficultyConfig } from '@/data/workoutPrograms';
 import { cn } from '@/lib/utils';
@@ -13,12 +12,10 @@ interface WorkoutProgramCardProps {
 export function WorkoutProgramCard({ workout, onSelect, featured, compact }: WorkoutProgramCardProps) {
   if (compact) {
     return (
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+      <button
         onClick={onSelect}
         className={cn(
-          'w-full bg-gradient-to-br rounded-2xl p-4 border-2 text-left transition-all',
+          'w-full bg-gradient-to-br rounded-2xl p-4 border-2 text-left transition-all duration-300 active:scale-[0.98]',
           workout.gradient,
           'border-white/20'
         )}
@@ -29,18 +26,16 @@ export function WorkoutProgramCard({ workout, onSelect, featured, compact }: Wor
           <Clock className="w-3 h-3" />
           <span>{workout.duration} min</span>
         </div>
-      </motion.button>
+      </button>
     );
   }
 
   if (featured) {
     return (
-      <motion.button
-        whileHover={{ scale: 1.01, y: -2 }}
-        whileTap={{ scale: 0.99 }}
+      <button
         onClick={onSelect}
         className={cn(
-          'w-full rounded-3xl p-6 border-2 text-left transition-all relative overflow-hidden',
+          'w-full rounded-3xl p-6 border-2 text-left transition-all duration-300 relative overflow-hidden active:scale-[0.99]',
           'bg-gradient-to-br',
           workout.gradient,
           'border-white/30 shadow-lg'
@@ -88,17 +83,15 @@ export function WorkoutProgramCard({ workout, onSelect, featured, compact }: Wor
             <span className="text-sm font-bold text-white">Rozpocznij</span>
           </div>
         </div>
-      </motion.button>
+      </button>
     );
   }
 
   // Default card
   return (
-    <motion.button
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
+    <button
       onClick={onSelect}
-      className="w-full bg-card rounded-2xl p-4 border border-border/50 shadow-sm text-left transition-all hover:shadow-md flex items-center gap-4"
+      className="w-full bg-card rounded-2xl p-4 border border-border/50 shadow-sm text-left transition-all duration-300 hover:shadow-md active:scale-[0.99] flex items-center gap-4"
     >
       {/* Icon */}
       <div className={cn(
@@ -139,6 +132,6 @@ export function WorkoutProgramCard({ workout, onSelect, featured, compact }: Wor
       
       {/* Arrow */}
       <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
-    </motion.button>
+    </button>
   );
 }

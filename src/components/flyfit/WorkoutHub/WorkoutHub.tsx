@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { WorkoutProgramCard } from './WorkoutProgramCard';
 import { PreWorkoutCheck } from './PreWorkoutCheck';
 import { EnhancedWorkoutPlayer } from './EnhancedWorkoutPlayer';
@@ -8,7 +7,7 @@ import { WorkoutProgram, workoutPrograms, categoryNames, WorkoutCategory } from 
 import { useGamification } from '@/hooks/useGamification';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useWorkout } from '@/contexts/WorkoutContext';
-import { Flame, Clock, Zap, Trophy, TrendingUp, Filter } from 'lucide-react';
+import { Flame, Clock, Zap, Trophy, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type HubScreen = 'browse' | 'precheck' | 'player' | 'summary';
@@ -118,43 +117,24 @@ export function WorkoutHub() {
 
   // Browse screen
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="space-y-6 pb-6"
-    >
+    <div className="space-y-6 pb-6">
       {/* Header Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl p-4 border border-primary/20"
-        >
+        <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl p-4 border border-primary/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-card-playful">
           <Flame className="w-5 h-5 text-primary mb-1" />
           <p className="text-2xl font-bold text-foreground">{workoutPrograms.length}</p>
           <p className="text-xs text-muted-foreground">Treningów</p>
-        </motion.div>
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-gradient-to-br from-amber-500/20 to-amber-500/5 rounded-2xl p-4 border border-amber-500/20"
-        >
+        </div>
+        <div className="bg-gradient-to-br from-amber-500/20 to-amber-500/5 rounded-2xl p-4 border border-amber-500/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-card-playful">
           <Clock className="w-5 h-5 text-amber-500 mb-1" />
           <p className="text-2xl font-bold text-foreground">5-15</p>
           <p className="text-xs text-muted-foreground">Minut</p>
-        </motion.div>
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-gradient-to-br from-green-500/20 to-green-500/5 rounded-2xl p-4 border border-green-500/20"
-        >
+        </div>
+        <div className="bg-gradient-to-br from-green-500/20 to-green-500/5 rounded-2xl p-4 border border-green-500/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-card-playful">
           <Trophy className="w-5 h-5 text-green-500 mb-1" />
           <p className="text-2xl font-bold text-foreground">+XP</p>
           <p className="text-xs text-muted-foreground">Za każdy</p>
-        </motion.div>
+        </div>
       </div>
 
       {/* Category Filter */}
@@ -164,7 +144,7 @@ export function WorkoutHub() {
             key={cat}
             onClick={() => setSelectedCategory(cat)}
             className={cn(
-              'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all',
+              'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300',
               selectedCategory === cat
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -183,19 +163,14 @@ export function WorkoutHub() {
             <h2 className="font-bold text-lg">Polecane dla Ciebie</h2>
           </div>
           <div className="space-y-3">
-            {recommendedWorkouts.map((workout, index) => (
-              <motion.div
-                key={workout.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
+            {recommendedWorkouts.map((workout) => (
+              <div key={workout.id} className="transition-all duration-300 hover:-translate-y-1">
                 <WorkoutProgramCard
                   workout={workout}
                   onSelect={() => handleSelectWorkout(workout)}
                   featured
                 />
-              </motion.div>
+              </div>
             ))}
           </div>
         </section>
@@ -209,20 +184,14 @@ export function WorkoutHub() {
             <h2 className="font-bold text-lg">Szybkie treningi (do 7 min)</h2>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            {quickWorkouts.map((workout, index) => (
-              <motion.div
-                key={workout.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                className="min-w-[200px]"
-              >
+            {quickWorkouts.map((workout) => (
+              <div key={workout.id} className="min-w-[200px] transition-all duration-300 hover:-translate-y-1">
                 <WorkoutProgramCard
                   workout={workout}
                   onSelect={() => handleSelectWorkout(workout)}
                   compact
                 />
-              </motion.div>
+              </div>
             ))}
           </div>
         </section>
@@ -234,25 +203,16 @@ export function WorkoutHub() {
           {selectedCategory === 'all' ? 'Wszystkie treningi' : categoryNames[selectedCategory]}
         </h2>
         <div className="space-y-3">
-          <AnimatePresence mode="popLayout">
-            {filteredWorkouts.map((workout, index) => (
-              <motion.div
-                key={workout.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: index * 0.05 }}
-                layout
-              >
-                <WorkoutProgramCard
-                  workout={workout}
-                  onSelect={() => handleSelectWorkout(workout)}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          {filteredWorkouts.map((workout) => (
+            <div key={workout.id} className="transition-all duration-300 hover:-translate-y-1">
+              <WorkoutProgramCard
+                workout={workout}
+                onSelect={() => handleSelectWorkout(workout)}
+              />
+            </div>
+          ))}
         </div>
       </section>
-    </motion.div>
+    </div>
   );
 }
