@@ -46,7 +46,8 @@ serve(async (req) => {
     const recipeCount = singleRecipe ? 1 : 3;
     let excludeText = '';
     if (excludeRecipes && excludeRecipes.length > 0) {
-      excludeText = `\n\nNIE GENERUJ tych przepisów (już zostały zaproponowane): ${excludeRecipes.join(', ')}. Wygeneruj INNE, alternatywne przepisy!`;
+      excludeText = `\n\n⚠️ KRYTYCZNE: NIE GENERUJ tych przepisów (już zostały pokazane użytkownikowi): ${excludeRecipes.join(', ')}. 
+Zaproponuj CAŁKOWICIE INNE przepisy - inne dania, inne techniki gotowania, inne kombinacje składników!`;
     }
     
     if (!LOVABLE_API_KEY) {
@@ -57,36 +58,77 @@ serve(async (req) => {
     let preferencesText = '';
     if (preferences) {
       const parts = [];
-      if (preferences.taste === 'sweet') parts.push('przepisy słodkie');
-      if (preferences.taste === 'salty') parts.push('przepisy słone/wytrawne');
-      if (preferences.maxTime) parts.push(`czas przygotowania maksymalnie ${preferences.maxTime} minut`);
-      if (preferences.maxCalories) parts.push(`maksymalnie ${preferences.maxCalories} kcal na porcję`);
-      if (preferences.description) parts.push(`użytkownik chce: "${preferences.description}"`);
+      if (preferences.taste === 'sweet') parts.push('TYLKO przepisy słodkie (desery, słodkie śniadania)');
+      if (preferences.taste === 'salty') parts.push('TYLKO przepisy wytrawne/słone');
+      if (preferences.maxTime) parts.push(`czas przygotowania MAKSYMALNIE ${preferences.maxTime} minut (uwzględnij to w krokach!)`);
+      if (preferences.maxCalories) parts.push(`MAKSYMALNIE ${preferences.maxCalories} kcal na porcję - ŚCIŚLE PRZESTRZEGAJ`);
+      if (preferences.description) parts.push(`SPECJALNE WYMAGANIA UŻYTKOWNIKA: "${preferences.description}" - TO JEST PRIORYTET!`);
       
       if (parts.length > 0) {
-        preferencesText = `\n\nUWAGA - Preferencje użytkownika:\n- ${parts.join('\n- ')}\n\nDostosuj przepisy do tych preferencji!`;
+        preferencesText = `\n\n🎯 OBOWIĄZKOWE PREFERENCJE UŻYTKOWNIKA:\n- ${parts.join('\n- ')}\n\nKAŻDY przepis MUSI spełniać WSZYSTKIE te wymagania!`;
       }
     }
 
     let userContent: any[];
 
+    const systemPrompt = `Jesteś MISTRZEM KUCHNI i EKSPERTEM DIETETYKIEM z wieloletnim doświadczeniem.
+Twoja specjalizacja: tworzenie REALISTYCZNYCH, PROSTYCH przepisów z dostępnych składników.
+
+## ZASADY TWORZENIA PRZEPISÓW
+
+### ZASADA 1: REALIZM I PROSTOTA
+- Twórz przepisy, które NAPRAWDĘ da się przygotować
+- Używaj TYLKO składników, które użytkownik podał (+ podstawowe przyprawy)
+- Nie wymyślaj egzotycznych technik
+- Preferuj proste, domowe metody gotowania
+
+### ZASADA 2: DOKŁADNOŚĆ CZASOWA
+- Podawaj REALISTYCZNY czas przygotowania
+- Uwzględnij: krojenie, gotowanie, smażenie, czekanie
+- Każdy krok musi mieć sensowny czas
+- Suma czasów kroków ≈ total_time_minutes
+
+### ZASADA 3: PRECYZJA ŻYWIENIOWA
+Oblicz makro dla KAŻDEGO składnika i zsumuj:
+
+BAZA KALORYCZNA (na 100g gotowego produktu):
+MIĘSA: pierś kurczaka 165kcal/31B, wołowina 250kcal/26B, wieprzowina 200kcal/25B
+RYBY: łosoś 208kcal/25B, dorsz 105kcal/23B, tuńczyk 130kcal/29B
+WĘGLE: ryż gotowany 130kcal/28W, makaron 131kcal/25W, ziemniaki 87kcal/20W
+NABIAŁ: jajko 155kcal/13B, ser żółty 350kcal/25B, jogurt 60kcal/4B
+WARZYWA: większość 20-50kcal, pomidor 18kcal, papryka 26kcal
+
+WALIDACJA: Kalorie ≈ (B×4) + (W×4) + (T×9) z tolerancją ±10%
+
+### ZASADA 4: SPRZĘT KUCHENNY
+Wymieniaj TYLKO niezbędne URZĄDZENIA:
+✅ Poprawne: piekarnik, kuchenka, mikrofalówka, mikser, blender, robot kuchenny, toster, grill, frytkownica, parowar
+❌ NIE wymieniaj: noże, deski, garnki, patelnie, miski (to oczywiste)
+
+### ZASADA 5: SZCZEGÓŁOWE KROKI
+Każdy krok musi zawierać:
+- Konkretną instrukcję (nie ogólniki)
+- Czas trwania tego kroku
+- Składniki używane w tym kroku
+- Opcjonalną wskazówkę dla początkujących`;
+
     const recipeJsonStructure = `{
-  "detected_ingredients": ["składnik1", "składnik2", ...], // tylko przy analizie zdjęcia
+  "detected_ingredients": ["produkt1", "produkt2", ...], // TYLKO przy analizie zdjęcia lodówki
   "recipes": [
     {
-      "name": "Nazwa przepisu",
-      "ingredients": ["100g składnik1", "2 składnik2"],
-      "description": "Krótki opis dania",
+      "name": "Konkretna nazwa dania",
+      "ingredients": ["150g składnik1", "2 łyżki składnik2", "szczypta soli"],
+      "description": "Krótki, apetyczny opis dania (1-2 zdania)",
       "servings": 2,
-      "total_time_minutes": 45,
-      "tools_needed": ["piekarnik", "mikser", "blender"], // TYLKO sprzęt kuchenny jak: piekarnik, mikrofalówka, kuchenka, mikser, blender, robot kuchenny, toster, grill elektryczny, frytkownica - NIE akcesoria jak noże czy deski
+      "total_time_minutes": 35,
+      "tools_needed": ["piekarnik", "mikser"],
       "steps": [
         {
           "step_number": 1,
-          "instruction": "Szczegółowa instrukcja kroku...",
+          "instruction": "Szczegółowa instrukcja - CO robić, JAK i DLACZEGO",
           "duration_minutes": 5,
-          "ingredients_needed": ["100g składnik1"],
-          "tip": "Opcjonalna wskazówka"
+          "ingredients_needed": ["150g składnik1", "sól"],
+          "tip": "Wskazówka dla początkujących (opcjonalna)"
         }
       ],
       "macros": {
@@ -100,31 +142,47 @@ serve(async (req) => {
 }`;
 
     if (imageBase64) {
-      // Analyze fridge image
+      // Analyze fridge image with advanced prompt
       userContent = [
-        {
-          type: "text",
-          text: `Przeanalizuj zdjęcie lodówki i zidentyfikuj wszystkie widoczne produkty spożywcze. Następnie zaproponuj ${recipeCount} ${recipeCount === 1 ? 'przepis' : 'przepisy'}, które można przygotować z tych składników.
-${preferencesText}${excludeText}
-
-Dla każdego przepisu podaj szczegółowe informacje:
-- Nazwa przepisu
-- Pełna lista składników z ilościami
-- Krótki opis dania
-- Liczba porcji
-- Całkowity czas przygotowania w minutach
-- Lista potrzebnego sprzętu kuchennego (TYLKO urządzenia jak: piekarnik, mikrofalówka, kuchenka, płyta indukcyjna, mikser, blender, robot kuchenny, toster, grill elektryczny, frytkownica, parowar - NIE akcesoria jak noże, deski, garnki)
-- Kroki wykonania (każdy krok osobno z czasem trwania, składnikami potrzebnymi w danym kroku i opcjonalną wskazówką)
-- Wartości odżywcze na porcję
-
-Odpowiedz TYLKO w formacie JSON (bez markdown):
-${recipeJsonStructure}`
-        },
         {
           type: "image_url",
           image_url: {
             url: `data:image/jpeg;base64,${imageBase64}`
           }
+        },
+        {
+          type: "text",
+          text: `## ZADANIE: Analiza lodówki i generowanie przepisów
+
+### KROK 1: SKANOWANIE LODÓWKI
+Przeanalizuj zdjęcie BARDZO DOKŁADNIE:
+- Szukaj produktów na KAŻDEJ półce
+- Zwróć uwagę na drzwi lodówki
+- Identyfikuj produkty po opakowaniach, kolorach, kształtach
+- Uwzględnij częściowo widoczne produkty
+
+SZUKAJ:
+🥛 Nabiał: mleko, jogurty, sery, masło, śmietana
+🥚 Jajka
+🥩 Mięso i wędliny
+🐟 Ryby
+🥬 Warzywa: pomidory, ogórki, papryka, sałata, cebula, marchew
+🍎 Owoce
+🥫 Słoiki i puszki
+🧃 Napoje i sosy
+🍞 Pieczywo
+
+### KROK 2: GENEROWANIE ${recipeCount} PRZEPISÓW
+Stwórz ${recipeCount} ${recipeCount === 1 ? 'przepis' : 'różne przepisy'} używając TYLKO wykrytych składników.
+${preferencesText}${excludeText}
+
+Pamiętaj:
+- Przepisy muszą być REALISTYCZNE
+- Używaj TYLKO tego, co widzisz + podstawowe przyprawy
+- Różnicuj techniki gotowania między przepisami
+
+### FORMAT ODPOWIEDZI (TYLKO JSON!):
+${recipeJsonStructure}`
         }
       ];
     } else if (ingredients && ingredients.length > 0) {
@@ -132,22 +190,24 @@ ${recipeJsonStructure}`
       userContent = [
         {
           type: "text",
-          text: `Mam następujące składniki: ${ingredients.join(", ")}.
+          text: `## ZADANIE: Stwórz ${recipeCount} ${recipeCount === 1 ? 'przepis' : 'przepisy'}
 
-Zaproponuj ${recipeCount} ${recipeCount === 1 ? 'przepis' : 'przepisy'}, które można przygotować z tych składników (możesz założyć, że mam podstawowe przyprawy).
+### DOSTĘPNE SKŁADNIKI:
+${ingredients.map(i => `- ${i}`).join('\n')}
+
+### ZAŁOŻENIA:
+- Masz dostęp do podstawowych przypraw: sól, pieprz, olej, cukier
+- Masz podstawowe zioła: bazylia, oregano, tymianek
+- Nie dodawaj składników, których użytkownik nie podał
 ${preferencesText}${excludeText}
 
-Dla każdego przepisu podaj szczegółowe informacje:
-- Nazwa przepisu
-- Pełna lista składników z ilościami
-- Krótki opis dania
-- Liczba porcji
-- Całkowity czas przygotowania w minutach
-- Lista potrzebnego sprzętu kuchennego (TYLKO urządzenia jak: piekarnik, mikrofalówka, kuchenka, płyta indukcyjna, mikser, blender, robot kuchenny, toster, grill elektryczny, frytkownica, parowar - NIE akcesoria jak noże, deski, garnki)
-- Kroki wykonania (każdy krok osobno z czasem trwania, składnikami potrzebnymi w danym kroku i opcjonalną wskazówką)
-- Wartości odżywcze na porcję
+### WYMAGANIA:
+- Każdy przepis musi używać GŁÓWNIE podanych składników
+- Przepisy mają być RÓŻNORODNE (różne techniki, różne smaki)
+- Makra muszą być PRECYZYJNE i ZWALIDOWANE
+- Kroki muszą być SZCZEGÓŁOWE i dla POCZĄTKUJĄCYCH zrozumiałe
 
-Odpowiedz TYLKO w formacie JSON (bez markdown):
+### FORMAT ODPOWIEDZI (TYLKO JSON!):
 ${recipeJsonStructure}`
         }
       ];
@@ -157,6 +217,9 @@ ${recipeJsonStructure}`
 
     console.log("Sending request to Lovable AI...");
 
+    // Use gemini-2.5-pro for image analysis (better at visual recognition)
+    const modelToUse = imageBase64 ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -164,11 +227,11 @@ ${recipeJsonStructure}`
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: modelToUse,
         messages: [
           {
             role: "system",
-            content: "Jesteś ekspertem kulinarnym i dietetykiem. Tworzysz zdrowe, smaczne przepisy dopasowane do dostępnych składników. Zawsze odpowiadasz w formacie JSON bez dodatkowego tekstu czy markdown."
+            content: systemPrompt
           },
           {
             role: "user",
@@ -216,6 +279,23 @@ ${recipeJsonStructure}`
       cleanContent = cleanContent.replace(/,\s*\}/g, '}'); // trailing comma in object
       
       parsedContent = JSON.parse(cleanContent);
+      
+      // Validate macros for each recipe
+      if (parsedContent.recipes) {
+        for (const recipe of parsedContent.recipes) {
+          if (recipe.macros) {
+            const { calories, protein, carbs, fat } = recipe.macros;
+            const calculated = (protein * 4) + (carbs * 4) + (fat * 9);
+            const diff = Math.abs(calculated - calories);
+            const percentDiff = (diff / calories) * 100;
+            
+            if (percentDiff > 15) {
+              console.warn(`Recipe "${recipe.name}": macro mismatch - calculated ${calculated}, reported ${calories}`);
+            }
+          }
+        }
+      }
+      
     } catch (parseError) {
       console.error("JSON parse error:", parseError);
       console.error("Content that failed to parse:", content?.substring(0, 500));

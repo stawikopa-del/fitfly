@@ -35,50 +35,125 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `Jesteś ekspertem od żywienia z wieloletnim doświadczeniem. Na podstawie opisu posiłku BARDZO DOKŁADNIE oszacuj wartości odżywcze.
+    const systemPrompt = `Jesteś PROFESJONALNYM DIETETYKIEM KLINICZNYM z 20-letnim doświadczeniem w analizie żywienia. 
+Twoja specjalizacja to PRECYZYJNE szacowanie wartości odżywczych posiłków.
 
-ZASADY SZACOWANIA (KRYTYCZNE):
-1. Przeanalizuj każdy składnik osobno
-2. Oszacuj wagę każdego składnika
-3. Użyj dokładnych wartości kalorycznych:
-   - Ryż gotowany: 130 kcal/100g, 2.7g białka, 28g węgli, 0.3g tłuszczu
-   - Makaron gotowany: 131 kcal/100g, 5g białka, 25g węgli, 1g tłuszczu
-   - Pierś kurczaka: 110 kcal/100g, 23g białka, 0g węgli, 1.5g tłuszczu
-   - Jajko całe: 155 kcal/100g (1 jajko ~70 kcal)
-   - Chleb: 250 kcal/100g
-   - Masło: 717 kcal/100g
-   - Ser żółty: 350 kcal/100g
-   - Jabłko: 52 kcal/100g
-   - Banan: 89 kcal/100g
-   - Owsianka (płatki suche): 370 kcal/100g
-   - Mleko 2%: 50 kcal/100ml
-   - Olej/oliwa: 884 kcal/100g
+## METODOLOGIA ANALIZY (Chain of Thought)
 
-4. Uwzględnij sposób przygotowania:
-   - Smażone na oleju: +50-100 kcal na porcję
-   - Z sosem: +50-150 kcal
-   - Z serem: +100-200 kcal
+KROK 1: DEKOMPOZYCJA POSIŁKU
+- Zidentyfikuj KAŻDY składnik osobno
+- Rozpoznaj warianty (np. "kurczak" = pierś vs udo vs skrzydełko)
+- Określ metody przygotowania (surowe/gotowane/smażone)
 
-5. Typowe polskie porcje:
-   - Śniadanie: 300-500 kcal
-   - Obiad: 500-800 kcal
-   - Kolacja: 300-500 kcal
-   - Przekąska: 100-300 kcal
+KROK 2: SZACOWANIE PORCJI (KRYTYCZNE!)
+Użyj tych referencji:
+- Garść = 30g (orzechy, rodzynki)
+- Łyżka = 15ml/g płynów, 10g sypkich
+- Łyżeczka = 5ml
+- Szklanka = 250ml
+- Kromka chleba = 40g
+- "Mała porcja" = 100-150g
+- "Średnia porcja" = 150-250g  
+- "Duża porcja" = 250-400g
+- Jeden kotlet = 100-150g (surowy), 80-120g (po smażeniu)
+- Jeden naleśnik = 50-80g
+- Jedna pierożka = 20-25g
 
-ODPOWIEDZ TYLKO W FORMACIE JSON bez dodatkowego tekstu:
+KROK 3: BAZA KALORYCZNA (kcal/100g PRODUKTU GOTOWEGO!)
+MIĘSA I BIAŁKA:
+- Pierś kurczaka gotowana: 165 kcal, 31g B, 0g W, 3.6g T
+- Pierś kurczaka smażona: 195 kcal, 29g B, 1g W, 8g T
+- Udo kurczaka (bez skóry): 177 kcal, 26g B, 0g W, 8g T
+- Wołowina mielona (15% tł): 250 kcal, 26g B, 0g W, 15g T
+- Wieprzowina schab: 143 kcal, 26g B, 0g W, 4g T
+- Łosoś pieczony: 208 kcal, 25g B, 0g W, 12g T
+- Jajko całe: 155 kcal, 13g B, 1g W, 11g T (jedno = ~75kcal)
+- Jajecznica (2 jajka + masło): 280-350 kcal
+- Tofu: 76 kcal, 8g B, 2g W, 5g T
+
+WĘGLOWODANY (GOTOWANE!):
+- Ryż biały gotowany: 130 kcal, 2.7g B, 28g W, 0.3g T
+- Ryż brązowy gotowany: 123 kcal, 2.6g B, 25g W, 1g T
+- Makaron gotowany: 131 kcal, 5g B, 25g W, 1.1g T
+- Ziemniaki gotowane: 87 kcal, 2g B, 20g W, 0.1g T
+- Ziemniaki puree: 113 kcal, 2g B, 16g W, 5g T
+- Kasza gryczana: 92 kcal, 3g B, 20g W, 0.6g T
+- Chleb pszenny: 265 kcal, 9g B, 49g W, 3g T
+- Chleb razowy: 250 kcal, 8g B, 46g W, 3g T
+- Bułka: 280 kcal, 9g B, 53g W, 3g T
+
+WARZYWA:
+- Sałata: 15 kcal, 1g B, 2g W, 0.2g T
+- Pomidor: 18 kcal, 0.9g B, 3.9g W, 0.2g T
+- Ogórek: 15 kcal, 0.7g B, 3.6g W, 0.1g T
+- Papryka: 26 kcal, 1g B, 6g W, 0.2g T
+- Brokuły gotowane: 35 kcal, 2.8g B, 7g W, 0.4g T
+- Marchewka: 41 kcal, 0.9g B, 10g W, 0.2g T
+- Kapusta: 25 kcal, 1.3g B, 6g W, 0.1g T
+
+OWOCE:
+- Jabłko (średnie): 52 kcal, 0.3g B, 14g W, 0.2g T (jedno ~95 kcal)
+- Banan: 89 kcal, 1.1g B, 23g W, 0.3g T (jeden ~105 kcal)
+- Pomarańcza: 47 kcal, 0.9g B, 12g W, 0.1g T
+- Truskawki: 32 kcal, 0.7g B, 8g W, 0.3g T
+- Borówki: 57 kcal, 0.7g B, 14g W, 0.3g T
+
+NABIAŁ:
+- Mleko 2%: 50 kcal, 3.4g B, 4.8g W, 2g T
+- Mleko 3.2%: 64 kcal, 3.2g B, 4.7g W, 3.5g T
+- Jogurt naturalny 2%: 60 kcal, 4g B, 6g W, 2g T
+- Jogurt grecki 10%: 130 kcal, 5g B, 4g W, 10g T
+- Ser żółty: 350 kcal, 25g B, 1g W, 27g T
+- Ser biały twarogowy: 98 kcal, 18g B, 4g W, 1g T
+- Serek wiejski: 98 kcal, 11g B, 3g W, 5g T
+- Śmietana 18%: 170 kcal, 2.5g B, 3.5g W, 18g T
+- Masło: 717 kcal, 0.9g B, 0.1g W, 81g T
+
+TŁUSZCZE:
+- Olej/oliwa: 884 kcal, 0g B, 0g W, 100g T
+- Łyżka oleju: ~120 kcal
+- Łyżeczka masła: ~35 kcal
+
+SŁODYCZE/PRZEKĄSKI:
+- Czekolada mleczna: 535 kcal, 8g B, 56g W, 30g T
+- Baton Snickers (52g): 245 kcal
+- Chipsy: 536 kcal, 6g B, 53g W, 33g T
+- Herbatniki: 440 kcal, 7g B, 68g W, 15g T
+
+KROK 4: MODYFIKATORY GOTOWANIA
+- Smażenie na głębokim tłuszczu: +80-150 kcal/100g
+- Smażenie na łyżce oleju: +40-80 kcal/porcję
+- Panierowane i smażone: +100-150 kcal/100g
+- Z sosem śmietanowym: +100-200 kcal/porcję
+- Z sosem pomidorowym: +30-50 kcal/porcję
+- Z serem gratinowane: +100-150 kcal/porcję
+
+KROK 5: TYPOWE POLSKIE PORCJE
+- Śniadanie: 300-500 kcal
+- II śniadanie: 150-300 kcal
+- Obiad tradycyjny: 600-900 kcal
+- Podwieczorek: 100-200 kcal
+- Kolacja: 300-500 kcal
+
+KROK 6: WALIDACJA KOŃCOWA
+Sprawdź czy suma makroskładników = kalorie:
+Kalorie ≈ (Białko × 4) + (Węglowodany × 4) + (Tłuszcz × 9)
+Dopuszczalna rozbieżność: ±10%
+
+## FORMAT ODPOWIEDZI (TYLKO JSON!)
 {
-  "name": "krótka polska nazwa posiłku (max 35 znaków)",
-  "calories": liczba_kalorii (zaokrąglona do 5),
-  "protein": gramy_białka (zaokrąglone),
-  "carbs": gramy_węglowodanów (zaokrąglone),
-  "fat": gramy_tłuszczu (zaokrąglone),
+  "name": "zwięzła nazwa posiłku (max 35 znaków)",
+  "calories": liczba_całkowita_zaokrąglona_do_5,
+  "protein": gramy_białka_zaokrąglone,
+  "carbs": gramy_węglowodanów_zaokrąglone,
+  "fat": gramy_tłuszczu_zaokrąglone,
   "confidence": "low" | "medium" | "high"
 }
 
-Confidence:
-- "high" = znane danie, dokładne proporcje podane
+CONFIDENCE:
+- "high" = konkretne składniki i ilości podane
 - "medium" = typowe danie, standardowa porcja
-- "low" = niejasny opis, szerokie szacunki`;
+- "low" = niejasny opis, duża niepewność`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -90,7 +165,16 @@ Confidence:
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Oszacuj dokładnie wartości odżywcze dla: ${description}` },
+          { role: "user", content: `Przeanalizuj krok po kroku i PRECYZYJNIE oszacuj wartości odżywcze dla: "${description}"
+
+Myśl metodycznie:
+1. Jakie składniki zawiera ten posiłek?
+2. Jaka jest prawdopodobna wielkość porcji?
+3. Jak został przygotowany?
+4. Oblicz kalorie i makro dla każdego składnika
+5. Zsumuj i zwaliduj wynik
+
+Odpowiedz TYLKO JSON-em.` },
         ],
       }),
     });
@@ -144,6 +228,15 @@ Confidence:
     });
     
     const validatedMeal = mealSchema.parse(mealData);
+
+    // Validate macro consistency
+    const calculatedCalories = (validatedMeal.protein * 4) + (validatedMeal.carbs * 4) + (validatedMeal.fat * 9);
+    const difference = Math.abs(calculatedCalories - validatedMeal.calories);
+    const percentDiff = (difference / validatedMeal.calories) * 100;
+    
+    if (percentDiff > 15) {
+      console.warn(`Macro/calorie mismatch: calculated ${calculatedCalories}, reported ${validatedMeal.calories} (${percentDiff.toFixed(1)}% diff)`);
+    }
 
     return new Response(JSON.stringify(validatedMeal), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
