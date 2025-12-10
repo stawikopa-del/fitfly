@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Target, Plus, Trash2, Calculator, TrendingDown, TrendingUp, Loader2, Scale, Flame, Trophy, Calendar, ChevronRight, Sparkles } from 'lucide-react';
+import { Target, Plus, Trash2, TrendingDown, TrendingUp, Loader2, Scale, Flame, Trophy, Calendar, ChevronRight, Calculator, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { soundFeedback } from '@/utils/soundFeedback';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/flyfit/PageHeader';
 import fitekCel from '@/assets/fitek/fitek-cel.png';
 
 interface Goal {
@@ -208,37 +209,12 @@ export default function Goals() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
-        <div className="px-5 py-4 flex items-center gap-4">
-          <button
-            onClick={() => {
-              soundFeedback.navTap();
-              navigate('/inne');
-            }}
-            className="w-10 h-10 rounded-xl bg-card border border-border/50 flex items-center justify-center hover:bg-muted transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-xl font-extrabold font-display text-foreground">
-              Twoje Cele 🎯
-            </h1>
-            <p className="text-sm text-muted-foreground">Ustal i śledź swoje cele</p>
-          </div>
-          <Button
-            size="sm"
-            onClick={() => {
-              soundFeedback.buttonClick();
-              resetForm();
-              setShowAddDialog(true);
-            }}
-            className="rounded-xl bg-primary text-primary-foreground"
-          >
-            <Plus className="w-4 h-4 mr-1" /> Dodaj
-          </Button>
-        </div>
-      </header>
+      <PageHeader 
+        title="Twoje Cele" 
+        emoji="🎯" 
+        subtitle="Ustal i śledź swoje cele"
+        icon={<Target className="w-5 h-5 text-primary" />} 
+      />
 
       <div className="px-5 py-6 pb-32 space-y-6">
         {loading ? (
@@ -276,6 +252,21 @@ export default function Goals() {
           </button>
         ) : (
           <div className="space-y-4">
+            {/* Add button */}
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={() => {
+                  soundFeedback.buttonClick();
+                  resetForm();
+                  setShowAddDialog(true);
+                }}
+                className="rounded-xl bg-primary text-primary-foreground"
+              >
+                <Plus className="w-4 h-4 mr-1" /> Dodaj cel
+              </Button>
+            </div>
+            
             {/* Stats summary */}
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-card rounded-2xl p-4 border border-border/50 text-center">

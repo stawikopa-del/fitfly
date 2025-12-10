@@ -241,22 +241,27 @@ export default function Friends() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen pb-24 px-4 pt-4">
-        <div className="flex items-center justify-between mb-2">
-          <PageHeader title="Znajomi" backTo="/inne" />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              soundFeedback.buttonClick();
-              shareInviteLink();
-            }}
-            className="rounded-xl"
-          >
-            <Send className="h-4 w-4 mr-1" />
-            Zaproś
-          </Button>
-        </div>
+      <div className="min-h-screen pb-24">
+        <PageHeader 
+          title="Znajomi" 
+          emoji="👥"
+          icon={<Users className="w-5 h-5 text-primary" />}
+        />
+        <div className="px-4 pt-4">
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                soundFeedback.buttonClick();
+                shareInviteLink();
+              }}
+              className="rounded-xl"
+            >
+              <Send className="h-4 w-4 mr-1" />
+              Zaproś
+            </Button>
+          </div>
 
         <Tabs defaultValue="friends" className="mt-4">
           <TabsList className="w-full grid grid-cols-3 bg-card/50">
@@ -340,7 +345,8 @@ export default function Friends() {
               ))}
             </div>
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
       </div>
     </AppLayout>
   );
