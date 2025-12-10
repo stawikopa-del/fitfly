@@ -1,5 +1,6 @@
 // Audio context for generating sounds - lazy initialized
 let audioContext: AudioContext | null = null;
+let audioInitialized = false;
 
 const getAudioContext = (): AudioContext | null => {
   if (typeof window === 'undefined') return null;
@@ -11,11 +12,37 @@ const getAudioContext = (): AudioContext | null => {
         audioContext = new AudioContextClass();
       }
     }
+    // Auto-resume if suspended
+    if (audioContext && audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
     return audioContext;
   } catch {
     return null;
   }
 };
+
+// Initialize audio on first user interaction
+const initAudioOnInteraction = () => {
+  if (audioInitialized) return;
+  audioInitialized = true;
+  
+  const ctx = getAudioContext();
+  if (ctx && ctx.state === 'suspended') {
+    ctx.resume();
+  }
+};
+
+// Auto-init on first click/touch
+if (typeof window !== 'undefined') {
+  const initHandler = () => {
+    initAudioOnInteraction();
+    window.removeEventListener('click', initHandler);
+    window.removeEventListener('touchstart', initHandler);
+  };
+  window.addEventListener('click', initHandler, { once: true });
+  window.addEventListener('touchstart', initHandler, { once: true });
+}
 
 // Generate a beep sound
 const playTone = (frequency: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.3) => {
@@ -53,80 +80,80 @@ const vibrate = (pattern: number | number[]) => {
   }
 };
 
-// App-wide sound & vibration effects - soft, warm tones
+// App-wide sound & vibration effects - soft, warm tones (increased volume)
 export const soundFeedback = {
   buttonClick: () => {
-    playTone(392, 0.05, 'sine', 0.12); // G4 - gentle tap
+    playTone(392, 0.08, 'sine', 0.25); // G4 - gentle tap
     vibrate(15);
   },
   
   primaryClick: () => {
-    playTone(523, 0.07, 'sine', 0.15); // C5 - soft click
+    playTone(523, 0.1, 'sine', 0.3); // C5 - soft click
     vibrate(25);
   },
   
   secondaryClick: () => {
-    playTone(349, 0.04, 'sine', 0.1); // F4 - subtle
+    playTone(349, 0.06, 'sine', 0.2); // F4 - subtle
     vibrate(12);
   },
   
   navTap: () => {
-    playTone(440, 0.04, 'sine', 0.08); // A4 - minimal
+    playTone(440, 0.06, 'sine', 0.18); // A4 - minimal
     vibrate(10);
   },
   
   success: () => {
     // Warm major chord arpeggio
-    playTone(392, 0.12, 'sine', 0.18); // G4
-    setTimeout(() => playTone(494, 0.12, 'sine', 0.18), 100); // B4
-    setTimeout(() => playTone(587, 0.15, 'sine', 0.2), 200); // D5
+    playTone(392, 0.15, 'sine', 0.35); // G4
+    setTimeout(() => playTone(494, 0.15, 'sine', 0.35), 100); // B4
+    setTimeout(() => playTone(587, 0.18, 'sine', 0.4), 200); // D5
     vibrate([40, 30, 60]);
   },
   
   toggle: () => {
-    playTone(466, 0.04, 'sine', 0.1); // Bb4 - soft pop
+    playTone(466, 0.06, 'sine', 0.2); // Bb4 - soft pop
     vibrate(18);
   },
   
   cardTap: () => {
-    playTone(330, 0.03, 'sine', 0.08); // E4 - whisper
+    playTone(330, 0.05, 'sine', 0.15); // E4 - whisper
     vibrate(8);
   },
   
   error: () => {
     // Gentle descending tone instead of harsh
-    playTone(392, 0.12, 'sine', 0.15); // G4
-    setTimeout(() => playTone(330, 0.15, 'sine', 0.12), 120); // E4
+    playTone(392, 0.15, 'sine', 0.3); // G4
+    setTimeout(() => playTone(330, 0.18, 'sine', 0.25), 120); // E4
     vibrate([60, 40, 60]);
   },
   
   notification: () => {
     // Soft bell-like chime
-    playTone(659, 0.08, 'sine', 0.15); // E5
-    setTimeout(() => playTone(784, 0.1, 'sine', 0.12), 80); // G5
+    playTone(659, 0.1, 'sine', 0.3); // E5
+    setTimeout(() => playTone(784, 0.12, 'sine', 0.25), 80); // G5
     vibrate([30, 30, 30]);
   },
   
   achievement: () => {
     // Warm celebratory melody
-    playTone(392, 0.1, 'sine', 0.2); // G4
-    setTimeout(() => playTone(494, 0.1, 'sine', 0.2), 120); // B4
-    setTimeout(() => playTone(587, 0.1, 'sine', 0.22), 240); // D5
-    setTimeout(() => playTone(784, 0.18, 'sine', 0.25), 360); // G5
+    playTone(392, 0.12, 'sine', 0.4); // G4
+    setTimeout(() => playTone(494, 0.12, 'sine', 0.4), 120); // B4
+    setTimeout(() => playTone(587, 0.12, 'sine', 0.45), 240); // D5
+    setTimeout(() => playTone(784, 0.2, 'sine', 0.5), 360); // G5
     vibrate([80, 50, 80, 50, 150]);
   },
   
   messageSent: () => {
     // Soft whoosh up
-    playTone(440, 0.06, 'sine', 0.12); // A4
-    setTimeout(() => playTone(554, 0.05, 'sine', 0.1), 40); // C#5
+    playTone(440, 0.08, 'sine', 0.25); // A4
+    setTimeout(() => playTone(554, 0.07, 'sine', 0.2), 40); // C#5
     vibrate(20);
   },
   
   messageReceived: () => {
     // Gentle notification drop
-    playTone(587, 0.08, 'sine', 0.14); // D5
-    setTimeout(() => playTone(494, 0.1, 'sine', 0.12), 70); // B4
+    playTone(587, 0.1, 'sine', 0.28); // D5
+    setTimeout(() => playTone(494, 0.12, 'sine', 0.25), 70); // B4
     vibrate([25, 15, 25]);
   },
 };

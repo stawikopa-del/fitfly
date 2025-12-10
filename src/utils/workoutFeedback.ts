@@ -1,12 +1,33 @@
 // Audio context for generating sounds
 let audioContext: AudioContext | null = null;
+let audioInitialized = false;
 
 const getAudioContext = () => {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
+  // Auto-resume if suspended
+  if (audioContext && audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
   return audioContext;
 };
+
+// Initialize audio on first user interaction
+if (typeof window !== 'undefined') {
+  const initHandler = () => {
+    if (audioInitialized) return;
+    audioInitialized = true;
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    window.removeEventListener('click', initHandler);
+    window.removeEventListener('touchstart', initHandler);
+  };
+  window.addEventListener('click', initHandler, { once: true });
+  window.addEventListener('touchstart', initHandler, { once: true });
+}
 
 // Generate a beep sound
 const playTone = (frequency: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.3) => {
