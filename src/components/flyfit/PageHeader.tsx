@@ -8,14 +8,22 @@ interface PageHeaderProps {
   emoji?: string;
   backTo?: string;
   icon?: React.ReactNode;
+  useHistory?: boolean; // If true, use browser history instead of fixed path
 }
 
-export function PageHeader({ title, subtitle, emoji, backTo = '/inne', icon }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, emoji, backTo = '/inne', icon, useHistory = true }: PageHeaderProps) {
   const navigate = useNavigate();
 
   const handleBack = () => {
     soundFeedback.navTap();
-    navigate(backTo);
+    
+    if (useHistory && window.history.length > 1) {
+      // Use browser history to go back - this preserves scroll position
+      navigate(-1);
+    } else {
+      // Fallback to specific route if no history
+      navigate(backTo);
+    }
   };
 
   return (
