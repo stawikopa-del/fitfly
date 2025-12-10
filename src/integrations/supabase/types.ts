@@ -560,6 +560,7 @@ export type Database = {
           id: string
           meal_schedule: Json | null
           meals_count: number | null
+          sound_theme: string | null
           updated_at: string | null
           user_id: string
           username: string | null
@@ -581,6 +582,7 @@ export type Database = {
           id?: string
           meal_schedule?: Json | null
           meals_count?: number | null
+          sound_theme?: string | null
           updated_at?: string | null
           user_id: string
           username?: string | null
@@ -602,6 +604,7 @@ export type Database = {
           id?: string
           meal_schedule?: Json | null
           meals_count?: number | null
+          sound_theme?: string | null
           updated_at?: string | null
           user_id?: string
           username?: string | null
