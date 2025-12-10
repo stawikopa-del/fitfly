@@ -132,49 +132,55 @@ const playSoftChime = (baseFreq: number = 800, volume: number = 0.1) => {
   } catch {}
 };
 
-// ============= TONES THEME (melodic) =============
-const playTone = (frequency: number, duration: number, volume: number = 0.25) => {
+// ============= TONES THEME (crystal/glass sounds) =============
+const playCrystal = (frequency: number, duration: number = 0.3, volume: number = 0.15) => {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
     
     const oscillator = ctx.createOscillator();
+    const oscillator2 = ctx.createOscillator();
     const gainNode = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
     
-    oscillator.connect(gainNode);
+    filter.type = 'highpass';
+    filter.frequency.value = 2000;
+    filter.Q.value = 5;
+    
+    oscillator.connect(filter);
+    oscillator2.connect(filter);
+    filter.connect(gainNode);
     gainNode.connect(ctx.destination);
     
     oscillator.frequency.value = frequency;
     oscillator.type = 'sine';
     
-    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    oscillator2.frequency.value = frequency * 2.5;
+    oscillator2.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0, ctx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.005);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     
     oscillator.start(ctx.currentTime);
+    oscillator2.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration);
+    oscillator2.stop(ctx.currentTime + duration);
   } catch {}
 };
 
-// ============= RETRO THEME (8-bit) =============
-const playRetroBeep = (frequency: number, duration: number, volume: number = 0.15) => {
+const playCrystalChime = (baseFreq: number = 1200, volume: number = 0.12) => {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
     
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
+    const frequencies = [baseFreq, baseFreq * 1.5, baseFreq * 2];
     
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    oscillator.frequency.value = frequency;
-    oscillator.type = 'square';
-    
-    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
-    gainNode.gain.setValueAtTime(0, ctx.currentTime + duration);
-    
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + duration + 0.01);
+    frequencies.forEach((freq, i) => {
+      setTimeout(() => {
+        playCrystal(freq, 0.4, volume * (1 - i * 0.2));
+      }, i * 50);
+    });
   } catch {}
 };
 
@@ -243,10 +249,7 @@ const playThemedButtonClick = (theme: SoundTheme) => {
       playSoftClick(0.025, 0.06);
       break;
     case 'tones':
-      playTone(392, 0.08, 0.2);
-      break;
-    case 'retro':
-      playRetroBeep(440, 0.03, 0.1);
+      playCrystal(1800, 0.08, 0.1);
       break;
     case 'nature':
       playNatureWhoosh(0.08, 0.08);
@@ -261,14 +264,9 @@ const playThemedSuccess = (theme: SoundTheme) => {
       setTimeout(() => playSoftChime(600, 0.08), 60);
       break;
     case 'tones':
-      playTone(392, 0.12, 0.25);
-      setTimeout(() => playTone(494, 0.12, 0.25), 100);
-      setTimeout(() => playTone(587, 0.15, 0.28), 200);
-      break;
-    case 'retro':
-      playRetroBeep(523, 0.08, 0.12);
-      setTimeout(() => playRetroBeep(659, 0.08, 0.12), 80);
-      setTimeout(() => playRetroBeep(784, 0.12, 0.15), 160);
+      playCrystal(1400, 0.15, 0.12);
+      setTimeout(() => playCrystal(1800, 0.15, 0.1), 80);
+      setTimeout(() => playCrystal(2200, 0.2, 0.08), 160);
       break;
     case 'nature':
       playNatureDrop(1.2, 0.12);
@@ -284,12 +282,8 @@ const playThemedError = (theme: SoundTheme) => {
       setTimeout(() => playSoftPop(0.5, 0.08), 80);
       break;
     case 'tones':
-      playTone(330, 0.12, 0.2);
-      setTimeout(() => playTone(277, 0.15, 0.18), 100);
-      break;
-    case 'retro':
-      playRetroBeep(200, 0.1, 0.12);
-      setTimeout(() => playRetroBeep(150, 0.15, 0.1), 100);
+      playCrystal(800, 0.12, 0.1);
+      setTimeout(() => playCrystal(600, 0.15, 0.08), 100);
       break;
     case 'nature':
       playNatureDrop(0.6, 0.1);
@@ -303,12 +297,7 @@ const playThemedNotification = (theme: SoundTheme) => {
       playSoftChime(700, 0.1);
       break;
     case 'tones':
-      playTone(659, 0.1, 0.25);
-      setTimeout(() => playTone(784, 0.12, 0.22), 80);
-      break;
-    case 'retro':
-      playRetroBeep(880, 0.05, 0.1);
-      setTimeout(() => playRetroBeep(1047, 0.08, 0.12), 60);
+      playCrystalChime(1600, 0.1);
       break;
     case 'nature':
       playNatureWhoosh(0.1, 0.12);
@@ -325,16 +314,10 @@ const playThemedAchievement = (theme: SoundTheme) => {
       setTimeout(() => playSoftChime(1000, 0.08), 180);
       break;
     case 'tones':
-      playTone(392, 0.1, 0.3);
-      setTimeout(() => playTone(494, 0.1, 0.3), 120);
-      setTimeout(() => playTone(587, 0.1, 0.32), 240);
-      setTimeout(() => playTone(784, 0.2, 0.35), 360);
-      break;
-    case 'retro':
-      playRetroBeep(523, 0.06, 0.12);
-      setTimeout(() => playRetroBeep(659, 0.06, 0.12), 70);
-      setTimeout(() => playRetroBeep(784, 0.06, 0.14), 140);
-      setTimeout(() => playRetroBeep(1047, 0.15, 0.16), 210);
+      playCrystal(1200, 0.2, 0.12);
+      setTimeout(() => playCrystal(1600, 0.2, 0.1), 100);
+      setTimeout(() => playCrystal(2000, 0.2, 0.1), 200);
+      setTimeout(() => playCrystalChime(2400, 0.1), 300);
       break;
     case 'nature':
       playNatureDrop(1.2, 0.1);

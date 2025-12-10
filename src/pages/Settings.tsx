@@ -281,7 +281,7 @@ export default function Settings() {
     },
   ];
 
-  const soundThemes: SoundTheme[] = ['off', 'soft', 'tones', 'retro', 'nature'];
+  const soundThemes: SoundTheme[] = ['off', 'soft', 'tones', 'nature'];
 
   const handleSoundThemeChange = (newTheme: SoundTheme) => {
     setSoundTheme(newTheme);
