@@ -2,6 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Play, Pause, SkipForward, List, Coffee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { morningWorkoutData, MorningExercise } from '@/data/morningWorkoutData';
 import { workoutFeedback, resumeAudioContext } from '@/utils/workoutFeedback';
 import fitekPajacyki from '@/assets/fitek-pajacyki.png';
@@ -24,11 +34,28 @@ export function MorningWorkoutPlayer({ startIndex, onComplete, onBackToList }: M
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
   const [breakTimeLeft, setBreakTimeLeft] = useState(15);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   const exercises = morningWorkoutData.exercises;
   const currentExercise = exercises[currentExerciseIndex];
   const totalExercises = exercises.length;
   const progressPercent = ((currentExerciseIndex + 1) / totalExercises) * 100;
+
+  const handleExitClick = useCallback(() => {
+    if (isRunning) {
+      setIsRunning(false);
+    }
+    setShowExitConfirm(true);
+  }, [isRunning]);
+
+  const handleConfirmExit = useCallback(() => {
+    setShowExitConfirm(false);
+    onBackToList();
+  }, [onBackToList]);
+
+  const handleCancelExit = useCallback(() => {
+    setShowExitConfirm(false);
+  }, []);
 
   // Resume audio context on first interaction
   useEffect(() => {
@@ -141,7 +168,7 @@ export function MorningWorkoutPlayer({ startIndex, onComplete, onBackToList }: M
         {/* Header */}
         <header className="p-4 flex items-center justify-between">
           <button 
-            onClick={onBackToList}
+            onClick={handleExitClick}
             className="w-10 h-10 rounded-xl bg-card border-2 border-border/50 flex items-center justify-center"
           >
             <List className="w-5 h-5 text-foreground" />
@@ -182,6 +209,26 @@ export function MorningWorkoutPlayer({ startIndex, onComplete, onBackToList }: M
         <div className="p-4">
           <Progress value={progressPercent} className="h-2" />
         </div>
+
+        {/* Exit Confirmation Dialog */}
+        <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+          <AlertDialogContent className="rounded-3xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-display text-xl">Przerwać trening?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Czy na pewno chcesz przerwać trening? Twój postęp nie zostanie zapisany.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleCancelExit} className="rounded-xl">
+                Kontynuuj trening
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmExit} className="rounded-xl bg-destructive hover:bg-destructive/90">
+                Przerwij
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
@@ -192,7 +239,7 @@ export function MorningWorkoutPlayer({ startIndex, onComplete, onBackToList }: M
       {/* Header */}
       <header className="p-4 flex items-center justify-between">
         <button 
-          onClick={onBackToList}
+          onClick={handleExitClick}
           className="w-10 h-10 rounded-xl bg-card border-2 border-border/50 flex items-center justify-center"
         >
           <List className="w-5 h-5 text-foreground" />
@@ -259,7 +306,7 @@ export function MorningWorkoutPlayer({ startIndex, onComplete, onBackToList }: M
           <Button
             variant="outline"
             size="lg"
-            onClick={onBackToList}
+            onClick={handleExitClick}
             className="flex-1 h-12 rounded-xl"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -276,6 +323,26 @@ export function MorningWorkoutPlayer({ startIndex, onComplete, onBackToList }: M
           </Button>
         </div>
       </div>
+
+      {/* Exit Confirmation Dialog */}
+      <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-xl">Przerwać trening?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz przerwać trening? Twój postęp nie zostanie zapisany.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelExit} className="rounded-xl">
+              Kontynuuj trening
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmExit} className="rounded-xl bg-destructive hover:bg-destructive/90">
+              Przerwij
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
