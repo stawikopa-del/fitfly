@@ -257,122 +257,6 @@ export default function Settings() {
     }
   };
 
-  // Sound theme options
-  const soundThemes = [
-    { value: 'off', label: 'Ciche', emoji: '🔇', description: 'Brak dźwięków' },
-    { value: 'soft', label: 'Delikatne', emoji: '🎵', description: 'Ciche, melodyjne' },
-    { value: 'tones', label: 'Tony', emoji: '🎶', description: 'Wyraziste dźwięki' },
-    { value: 'nature', label: 'Natura', emoji: '🌿', description: 'Dźwięki natury' },
-    { value: 'retro', label: 'Retro', emoji: '🕹️', description: '8-bitowe dźwięki' },
-    { value: 'arcade', label: 'Arcade', emoji: '🎮', description: 'Gry automatowe' },
-  ];
-
-  const [soundTheme, setSoundTheme] = useState('off');
-  const [isLoadingSoundTheme, setIsLoadingSoundTheme] = useState(true);
-
-  // Load sound theme from Supabase
-  useEffect(() => {
-    const loadSoundTheme = async () => {
-      if (!user) {
-        setIsLoadingSoundTheme(false);
-        return;
-      }
-      
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('sound_theme')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (error) throw error;
-        
-        if (data?.sound_theme) {
-          setSoundTheme(data.sound_theme);
-        }
-      } catch (e) {
-        console.error('Error loading sound theme:', e);
-      } finally {
-        setIsLoadingSoundTheme(false);
-      }
-    };
-    
-    loadSoundTheme();
-  }, [user]);
-
-  // Save sound theme to Supabase
-  const saveSoundTheme = async (theme: string) => {
-    setSoundTheme(theme);
-    
-    if (!user) return;
-    
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ sound_theme: theme })
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      toast.success('Dźwięki zmienione! 🔊');
-    } catch (e) {
-      console.error('Error saving sound theme:', e);
-      toast.error('Nie udało się zapisać ustawień');
-    }
-  };
-
-  // Test sound for selected theme
-  const testSound = () => {
-    if (soundTheme === 'off') {
-      toast.info('Dźwięki są wyłączone');
-      return;
-    }
-    // Play a test tone based on theme
-    try {
-      if (typeof window === 'undefined') return;
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-      
-      const ctx = new AudioContextClass();
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      // Different sounds for different themes
-      switch (soundTheme) {
-        case 'soft':
-          oscillator.frequency.value = 523;
-          oscillator.type = 'sine';
-          break;
-        case 'tones':
-          oscillator.frequency.value = 659;
-          oscillator.type = 'triangle';
-          break;
-        case 'nature':
-          oscillator.frequency.value = 392;
-          oscillator.type = 'sine';
-          break;
-        case 'retro':
-          oscillator.frequency.value = 440;
-          oscillator.type = 'square';
-          break;
-        case 'arcade':
-          oscillator.frequency.value = 880;
-          oscillator.type = 'sawtooth';
-          break;
-      }
-      
-      gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.3);
-    } catch {
-      // Audio not available
-    }
-  };
-
   const settingsSections = [
     {
       title: 'Powiadomienia',
@@ -383,6 +267,15 @@ export default function Settings() {
         { key: 'waterReminders', label: 'Przypomnienia o piciu wody', emoji: '💧', disabled: true, note: '(wkrótce)' },
         { key: 'workoutReminders', label: 'Przypomnienia o treningu', emoji: '🏃', disabled: true, note: '(wkrótce)' },
         { key: 'challengeReminders', label: 'Nowe wyzwania', emoji: '🏆', disabled: true, note: '(wkrótce)' },
+      ],
+    },
+    {
+      title: 'Dźwięki i wibracje',
+      icon: Volume2,
+      emoji: '🔊',
+      items: [
+        { key: 'sounds', label: 'Dźwięki aplikacji', emoji: '🎵' },
+        { key: 'vibrations', label: 'Wibracje', emoji: '📳' },
       ],
     },
   ];
@@ -620,61 +513,6 @@ export default function Settings() {
           </div>
         </div>
       ))}
-
-      {/* Sound Theme Section */}
-      <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful relative z-10 animate-float">
-        <h2 className="font-bold font-display text-foreground mb-4 flex items-center gap-2 text-lg">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Volume2 className="w-5 h-5 text-primary" />
-          </div>
-          Dźwięki aplikacji 🔊
-        </h2>
-        
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          {soundThemes.map((theme) => (
-            <button
-              key={theme.value}
-              onClick={() => saveSoundTheme(theme.value)}
-              className={cn(
-                "p-3 rounded-2xl border-2 transition-all text-left",
-                soundTheme === theme.value 
-                  ? "border-primary bg-primary/10" 
-                  : "border-border/50 bg-muted/30 hover:border-primary/50"
-              )}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">{theme.emoji}</span>
-                <span className="font-bold text-sm text-foreground">{theme.label}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">{theme.description}</p>
-            </button>
-          ))}
-        </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={testSound}
-          className="w-full rounded-2xl"
-        >
-          🔊 Testuj dźwięk
-        </Button>
-
-        {/* Vibrations toggle */}
-        <div className="flex items-center justify-between bg-muted/50 rounded-2xl p-4 mt-4">
-          <Label 
-            htmlFor="vibrations" 
-            className="text-sm text-foreground font-medium flex items-center gap-2 cursor-pointer"
-          >
-            Wibracje 📳
-          </Label>
-          <Switch 
-            id="vibrations"
-            checked={settings.vibrations}
-            onCheckedChange={() => toggleSetting('vibrations')}
-          />
-        </div>
-      </div>
 
       {/* Inne opcje */}
       <div className="space-y-3 relative z-10">
