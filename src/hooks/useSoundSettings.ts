@@ -82,6 +82,6 @@ export const getSoundTheme = (): SoundTheme => {
 export const soundThemeInfo: Record<SoundTheme, { name: string; description: string; emoji: string }> = {
   off: { name: 'Wyłączone', description: 'Brak dźwięków', emoji: '🔇' },
   soft: { name: 'Delikatne', description: 'Ciche kliknięcia', emoji: '🎵' },
-  tones: { name: 'Kryształowe', description: 'Czyste, szklane tony', emoji: '💎' },
+  tones: { name: 'Melodyjne', description: 'Harmoniczne tony', emoji: '🎶' },
   nature: { name: 'Natura', description: 'Organiczne brzmienia', emoji: '🌿' },
 };
