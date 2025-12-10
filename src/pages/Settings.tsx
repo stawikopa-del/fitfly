@@ -69,21 +69,60 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
-  const [settings, setSettings] = useState({
-    notifications: false,
-    waterReminders: true,
-    workoutReminders: true,
-    challengeReminders: false,
-    sounds: true,
-    vibrations: true,
-    darkMode: false,
-    biometricLogin: false,
-  });
+  // Initialize from localStorage safely
+  const getInitialSettings = () => {
+    if (typeof window === 'undefined') {
+      return {
+        notifications: false,
+        waterReminders: true,
+        workoutReminders: true,
+        challengeReminders: false,
+        sounds: false,
+        vibrations: true,
+        darkMode: false,
+        biometricLogin: false,
+      };
+    }
+    try {
+      const saved = localStorage.getItem('fitfly-settings');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // Ignore parsing errors
+    }
+    return {
+      notifications: false,
+      waterReminders: true,
+      workoutReminders: true,
+      challengeReminders: false,
+      sounds: false,
+      vibrations: true,
+      darkMode: false,
+      biometricLogin: false,
+    };
+  };
+
+  const [settings, setSettings] = useState(getInitialSettings);
 
   // Meal personalization state
   const [mealsCount, setMealsCount] = useState(4);
   const [mealSchedule, setMealSchedule] = useState(defaultMealConfigs[4]);
   const [isLoadingMeals, setIsLoadingMeals] = useState(true);
+
+  // Load settings from localStorage on mount (SSR safe)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const saved = localStorage.getItem('fitfly-settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setSettings(prev => ({ ...prev, ...parsed }));
+      }
+    } catch {
+      // Ignore errors
+    }
+  }, []);
 
   // Load meal settings from Supabase
   useEffect(() => {
@@ -233,7 +272,16 @@ export default function Settings() {
   };
 
   const toggleSetting = async (key: keyof typeof settings) => {
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    const newSettings = { ...settings, [key]: !settings[key] };
+    setSettings(newSettings);
+    
+    // Persist to localStorage
+    try {
+      localStorage.setItem('fitfly-settings', JSON.stringify(newSettings));
+    } catch {
+      // Ignore storage errors
+    }
+    
     toast.success('Ustawienia zapisane');
   };
 
