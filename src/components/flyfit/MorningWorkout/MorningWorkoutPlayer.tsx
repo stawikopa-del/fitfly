@@ -3,7 +3,7 @@ import { ArrowLeft, Play, Pause, SkipForward, List, Coffee } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { morningWorkoutData, MorningExercise } from '@/data/morningWorkoutData';
-import { workoutFeedback, resumeAudioContext } from '@/utils/workoutFeedback';
+import { workoutFeedback, resumeAudioContext } from '@/utils/soundFeedback';
 import fitekPajacyki from '@/assets/fitek-pajacyki.png';
 
 interface MorningWorkoutPlayerProps {

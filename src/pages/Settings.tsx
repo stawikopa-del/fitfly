@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Bell, Moon, Sun, Palette, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2, Settings as SettingsIcon, Utensils, Clock, Plus, Minus } from 'lucide-react';
+import { Bell, Moon, Sun, Palette, Volume2, Vibrate, Shield, HelpCircle, ChevronRight, LogOut, Smartphone, Fingerprint, Trash2, Settings as SettingsIcon, Utensils, Clock, Plus, Minus, Play } from 'lucide-react';
 import { useTheme, Theme } from '@/hooks/useTheme';
+import { useSoundSettings, soundThemeInfo, SoundTheme } from '@/hooks/useSoundSettings';
+import { soundFeedback } from '@/utils/soundFeedback';
 import { PageHeader } from '@/components/flyfit/PageHeader';
 import {
   AlertDialog,
@@ -67,6 +69,7 @@ export default function Settings() {
   const { user, signOut } = useAuth();
   const { isSupported: isBiometricSupported, hasRegisteredBiometric, registerBiometric, removeBiometric, isRegistering } = useWebAuthn();
   const { theme, setTheme } = useTheme();
+  const { soundTheme, setSoundTheme } = useSoundSettings();
   const navigate = useNavigate();
 
   const [settings, setSettings] = useState({
@@ -74,7 +77,6 @@ export default function Settings() {
     waterReminders: true,
     workoutReminders: true,
     challengeReminders: false,
-    sounds: true,
     vibrations: true,
     darkMode: false,
     biometricLogin: false,
@@ -270,15 +272,25 @@ export default function Settings() {
       ],
     },
     {
-      title: 'Dźwięki i wibracje',
-      icon: Volume2,
-      emoji: '🔊',
+      title: 'Wibracje',
+      icon: Vibrate,
+      emoji: '📳',
       items: [
-        { key: 'sounds', label: 'Dźwięki aplikacji', emoji: '🎵' },
-        { key: 'vibrations', label: 'Wibracje', emoji: '📳' },
+        { key: 'vibrations', label: 'Wibracje dotykowe', emoji: '📳' },
       ],
     },
   ];
+
+  const soundThemes: SoundTheme[] = ['off', 'soft', 'tones', 'retro', 'nature'];
+
+  const handleSoundThemeChange = (newTheme: SoundTheme) => {
+    setSoundTheme(newTheme);
+    if (newTheme !== 'off') {
+      // Play preview sound
+      setTimeout(() => soundFeedback.success(), 100);
+    }
+    toast.success(newTheme === 'off' ? 'Dźwięki wyłączone' : `Styl dźwięków: ${soundThemeInfo[newTheme].name}`);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -396,6 +408,51 @@ export default function Settings() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Sound Theme Section */}
+      <div className="bg-card rounded-3xl p-5 border-2 border-border/50 shadow-card-playful relative z-10 animate-float">
+        <h2 className="font-bold font-display text-foreground mb-4 flex items-center gap-2 text-lg">
+          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Volume2 className="w-5 h-5 text-primary" />
+          </div>
+          Dźwięki aplikacji 🔊
+        </h2>
+        
+        <div className="grid grid-cols-2 gap-3">
+          {soundThemes.map((themeKey) => {
+            const info = soundThemeInfo[themeKey];
+            return (
+              <button
+                key={themeKey}
+                onClick={() => handleSoundThemeChange(themeKey)}
+                className={cn(
+                  "p-4 rounded-2xl border-2 transition-all text-left relative",
+                  soundTheme === themeKey 
+                    ? "border-primary bg-primary/10" 
+                    : "border-border/50 bg-muted/30 hover:border-primary/50"
+                )}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">{info.emoji}</span>
+                  <span className="font-bold text-sm">{info.name}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{info.description}</p>
+                {soundTheme === themeKey && themeKey !== 'off' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      soundFeedback.success();
+                    }}
+                    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30 transition-colors"
+                  >
+                    <Play className="w-3 h-3 text-primary" />
+                  </button>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
