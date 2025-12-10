@@ -1,6 +1,24 @@
 // Audio context for generating sounds - lazy initialized
 let audioContext: AudioContext | null = null;
 
+// Get settings from localStorage
+const getSettings = (): { sounds: boolean; vibrations: boolean } => {
+  if (typeof window === 'undefined') return { sounds: false, vibrations: true };
+  try {
+    const saved = localStorage.getItem('fitfly-settings');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        sounds: parsed.sounds ?? false,
+        vibrations: parsed.vibrations ?? true,
+      };
+    }
+  } catch {
+    // Ignore errors
+  }
+  return { sounds: false, vibrations: true };
+};
+
 const getAudioContext = (): AudioContext | null => {
   if (typeof window === 'undefined') return null;
   
@@ -19,6 +37,10 @@ const getAudioContext = (): AudioContext | null => {
 
 // Generate a beep sound
 const playTone = (frequency: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.3) => {
+  // Check if sounds are enabled
+  const { sounds } = getSettings();
+  if (!sounds) return;
+  
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -44,6 +66,10 @@ const playTone = (frequency: number, duration: number, type: OscillatorType = 's
 
 // Vibration patterns (in milliseconds)
 const vibrate = (pattern: number | number[]) => {
+  // Check if vibrations are enabled
+  const { vibrations } = getSettings();
+  if (!vibrations) return;
+  
   try {
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate(pattern);
