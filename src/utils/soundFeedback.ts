@@ -221,7 +221,7 @@ const playThemedButtonClick = (theme: SoundTheme) => {
       playSoftClick(0.025, 0.06);
       break;
     case 'tones':
-      playTone(523, 0.08, 0.15); // C5
+      playTone(659, 0.08, 0.15); // E5
       break;
     case 'nature':
       playNatureWhoosh(0.08, 0.08);
@@ -236,9 +236,9 @@ const playThemedSuccess = (theme: SoundTheme) => {
       setTimeout(() => playSoftChime(600, 0.08), 60);
       break;
     case 'tones':
-      playTone(523, 0.12, 0.18); // C5
-      setTimeout(() => playTone(659, 0.12, 0.18), 100); // E5
-      setTimeout(() => playTone(784, 0.15, 0.2), 200); // G5
+      playTone(659, 0.12, 0.18); // E5
+      setTimeout(() => playTone(831, 0.12, 0.18), 100); // G#5
+      setTimeout(() => playTone(988, 0.15, 0.2), 200); // B5
       break;
     case 'nature':
       playNatureDrop(1.2, 0.12);
@@ -254,8 +254,8 @@ const playThemedError = (theme: SoundTheme) => {
       setTimeout(() => playSoftPop(0.5, 0.08), 80);
       break;
     case 'tones':
-      playTone(392, 0.12, 0.15); // G4
-      setTimeout(() => playTone(330, 0.15, 0.12), 100); // E4
+      playTone(494, 0.12, 0.15); // B4
+      setTimeout(() => playTone(415, 0.15, 0.12), 100); // G#4
       break;
     case 'nature':
       playNatureDrop(0.6, 0.1);
@@ -269,8 +269,8 @@ const playThemedNotification = (theme: SoundTheme) => {
       playSoftChime(700, 0.1);
       break;
     case 'tones':
-      playTone(880, 0.1, 0.18); // A5
-      setTimeout(() => playTone(1047, 0.12, 0.15), 80); // C6
+      playTone(988, 0.1, 0.18); // B5
+      setTimeout(() => playTone(1319, 0.12, 0.15), 80); // E6
       break;
     case 'nature':
       playNatureWhoosh(0.1, 0.12);
@@ -287,10 +287,10 @@ const playThemedAchievement = (theme: SoundTheme) => {
       setTimeout(() => playSoftChime(1000, 0.08), 180);
       break;
     case 'tones':
-      playTone(523, 0.1, 0.2); // C5
-      setTimeout(() => playTone(659, 0.1, 0.2), 120); // E5
-      setTimeout(() => playTone(784, 0.1, 0.22), 240); // G5
-      setTimeout(() => playTone(1047, 0.2, 0.25), 360); // C6
+      playTone(659, 0.1, 0.2); // E5
+      setTimeout(() => playTone(831, 0.1, 0.2), 120); // G#5
+      setTimeout(() => playTone(988, 0.1, 0.22), 240); // B5
+      setTimeout(() => playTone(1319, 0.2, 0.25), 360); // E6
       break;
     case 'nature':
       playNatureDrop(1.2, 0.1);
