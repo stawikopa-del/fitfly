@@ -132,55 +132,27 @@ const playSoftChime = (baseFreq: number = 800, volume: number = 0.1) => {
   } catch {}
 };
 
-// ============= TONES THEME (crystal/glass sounds) =============
-const playCrystal = (frequency: number, duration: number = 0.3, volume: number = 0.15) => {
+// ============= TONES THEME (melodic) =============
+const playTone = (frequency: number, duration: number, volume: number = 0.2) => {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
     
     const oscillator = ctx.createOscillator();
-    const oscillator2 = ctx.createOscillator();
     const gainNode = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
     
-    filter.type = 'highpass';
-    filter.frequency.value = 2000;
-    filter.Q.value = 5;
-    
-    oscillator.connect(filter);
-    oscillator2.connect(filter);
-    filter.connect(gainNode);
+    oscillator.connect(gainNode);
     gainNode.connect(ctx.destination);
     
     oscillator.frequency.value = frequency;
     oscillator.type = 'sine';
     
-    oscillator2.frequency.value = frequency * 2.5;
-    oscillator2.type = 'sine';
-    
     gainNode.gain.setValueAtTime(0, ctx.currentTime);
-    gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.005);
+    gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.01);
     gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     
     oscillator.start(ctx.currentTime);
-    oscillator2.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration);
-    oscillator2.stop(ctx.currentTime + duration);
-  } catch {}
-};
-
-const playCrystalChime = (baseFreq: number = 1200, volume: number = 0.12) => {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    
-    const frequencies = [baseFreq, baseFreq * 1.5, baseFreq * 2];
-    
-    frequencies.forEach((freq, i) => {
-      setTimeout(() => {
-        playCrystal(freq, 0.4, volume * (1 - i * 0.2));
-      }, i * 50);
-    });
   } catch {}
 };
 
@@ -249,7 +221,7 @@ const playThemedButtonClick = (theme: SoundTheme) => {
       playSoftClick(0.025, 0.06);
       break;
     case 'tones':
-      playCrystal(1800, 0.08, 0.1);
+      playTone(523, 0.08, 0.15); // C5
       break;
     case 'nature':
       playNatureWhoosh(0.08, 0.08);
@@ -264,9 +236,9 @@ const playThemedSuccess = (theme: SoundTheme) => {
       setTimeout(() => playSoftChime(600, 0.08), 60);
       break;
     case 'tones':
-      playCrystal(1400, 0.15, 0.12);
-      setTimeout(() => playCrystal(1800, 0.15, 0.1), 80);
-      setTimeout(() => playCrystal(2200, 0.2, 0.08), 160);
+      playTone(523, 0.12, 0.18); // C5
+      setTimeout(() => playTone(659, 0.12, 0.18), 100); // E5
+      setTimeout(() => playTone(784, 0.15, 0.2), 200); // G5
       break;
     case 'nature':
       playNatureDrop(1.2, 0.12);
@@ -282,8 +254,8 @@ const playThemedError = (theme: SoundTheme) => {
       setTimeout(() => playSoftPop(0.5, 0.08), 80);
       break;
     case 'tones':
-      playCrystal(800, 0.12, 0.1);
-      setTimeout(() => playCrystal(600, 0.15, 0.08), 100);
+      playTone(392, 0.12, 0.15); // G4
+      setTimeout(() => playTone(330, 0.15, 0.12), 100); // E4
       break;
     case 'nature':
       playNatureDrop(0.6, 0.1);
@@ -297,7 +269,8 @@ const playThemedNotification = (theme: SoundTheme) => {
       playSoftChime(700, 0.1);
       break;
     case 'tones':
-      playCrystalChime(1600, 0.1);
+      playTone(880, 0.1, 0.18); // A5
+      setTimeout(() => playTone(1047, 0.12, 0.15), 80); // C6
       break;
     case 'nature':
       playNatureWhoosh(0.1, 0.12);
@@ -314,10 +287,10 @@ const playThemedAchievement = (theme: SoundTheme) => {
       setTimeout(() => playSoftChime(1000, 0.08), 180);
       break;
     case 'tones':
-      playCrystal(1200, 0.2, 0.12);
-      setTimeout(() => playCrystal(1600, 0.2, 0.1), 100);
-      setTimeout(() => playCrystal(2000, 0.2, 0.1), 200);
-      setTimeout(() => playCrystalChime(2400, 0.1), 300);
+      playTone(523, 0.1, 0.2); // C5
+      setTimeout(() => playTone(659, 0.1, 0.2), 120); // E5
+      setTimeout(() => playTone(784, 0.1, 0.22), 240); // G5
+      setTimeout(() => playTone(1047, 0.2, 0.25), 360); // C6
       break;
     case 'nature':
       playNatureDrop(1.2, 0.1);
