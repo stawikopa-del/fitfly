@@ -7,6 +7,16 @@ import { workoutFeedback, resumeAudioContext } from '@/utils/workoutFeedback';
 import { cn } from '@/lib/utils';
 import fitekPompki from '@/assets/fitek-pompki.png';
 import fitekPajacyki from '@/assets/fitek-pajacyki.png';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface EnhancedWorkoutPlayerProps {
   workout: WorkoutProgram;
@@ -30,6 +40,7 @@ export function EnhancedWorkoutPlayer({ workout, userEnergy, onComplete, onBack 
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showBreathing, setShowBreathing] = useState(false);
   const [currentTip, setCurrentTip] = useState('');
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   
   const exercises = workout.exercises;
   const currentExercise = exercises[currentExerciseIndex];
@@ -159,6 +170,22 @@ export function EnhancedWorkoutPlayer({ workout, userEnergy, onComplete, onBack 
     }
   }, [isBreak, currentExerciseIndex, exercises.length, adjustedBreakDuration, soundEnabled, handleComplete]);
 
+  // Handle exit with confirmation
+  const handleExitClick = useCallback(() => {
+    setIsRunning(false);
+    setShowExitConfirm(true);
+  }, []);
+
+  const handleConfirmExit = useCallback(() => {
+    setShowExitConfirm(false);
+    onBack();
+  }, [onBack]);
+
+  const handleCancelExit = useCallback(() => {
+    setShowExitConfirm(false);
+    // Resume workout if it was running
+  }, []);
+
   // Calculate progress
   const overallProgress = ((currentExerciseIndex + (isBreak ? 0.5 : 0)) / exercises.length) * 100;
   const exerciseProgress = isBreak 
@@ -186,7 +213,7 @@ export function EnhancedWorkoutPlayer({ workout, userEnergy, onComplete, onBack 
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
         <button 
-          onClick={onBack}
+          onClick={handleExitClick}
           className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -400,7 +427,7 @@ export function EnhancedWorkoutPlayer({ workout, userEnergy, onComplete, onBack 
         {/* Control Buttons */}
         <div className="flex items-center justify-center gap-4">
           <button
-            onClick={onBack}
+            onClick={handleExitClick}
             className="w-14 h-14 rounded-full bg-muted flex items-center justify-center transition-all duration-300 active:scale-95"
           >
             <ArrowLeft className="w-6 h-6" />
@@ -425,6 +452,29 @@ export function EnhancedWorkoutPlayer({ workout, userEnergy, onComplete, onBack 
           </button>
         </div>
       </div>
+
+      {/* Exit Confirmation Dialog */}
+      <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Przerwać trening?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Jeśli wyjdziesz teraz, Twój postęp nie zostanie zapisany. Czy na pewno chcesz przerwać?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelExit}>
+              Kontynuuj trening
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmExit}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Przerwij
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 }
