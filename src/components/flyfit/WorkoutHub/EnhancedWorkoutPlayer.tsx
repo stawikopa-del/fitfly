@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Pause, Play, SkipForward, ChevronRight, Heart, Flame, Clock, Volume2, VolumeX } from 'lucide-react';
 import { WorkoutProgram, WorkoutExercise, breathingPatterns, restTips } from '@/data/workoutPrograms';
 import { BreathingExercise } from './BreathingExercise';
-import { workoutFeedback, resumeAudioContext } from '@/utils/workoutFeedback';
+import { workoutFeedback, resumeAudioContext } from '@/utils/soundFeedback';
 import { cn } from '@/lib/utils';
 import fitekPompki from '@/assets/fitek-pompki.png';
 import fitekPajacyki from '@/assets/fitek-pajacyki.png';

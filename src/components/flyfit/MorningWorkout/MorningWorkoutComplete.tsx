@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import fitekPajacyki from '@/assets/fitek-pajacyki.png';
 import { useEffect } from 'react';
 import { triggerLevelUpConfetti } from '@/utils/confetti';
-import { workoutFeedback } from '@/utils/workoutFeedback';
+import { workoutFeedback } from '@/utils/soundFeedback';
 
 interface MorningWorkoutCompleteProps {
   onFinish: () => void;
