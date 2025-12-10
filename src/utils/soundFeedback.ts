@@ -1,8 +1,5 @@
-import { getSoundTheme, SoundTheme } from '@/hooks/useSoundSettings';
-
 // Audio context for generating sounds - lazy initialized
 let audioContext: AudioContext | null = null;
-let audioInitialized = false;
 
 const getAudioContext = (): AudioContext | null => {
   if (typeof window === 'undefined') return null;
@@ -14,126 +11,14 @@ const getAudioContext = (): AudioContext | null => {
         audioContext = new AudioContextClass();
       }
     }
-    if (audioContext && audioContext.state === 'suspended') {
-      audioContext.resume();
-    }
     return audioContext;
   } catch {
     return null;
   }
 };
 
-// Initialize audio on first user interaction
-const initAudioOnInteraction = () => {
-  if (audioInitialized) return;
-  audioInitialized = true;
-  
-  const ctx = getAudioContext();
-  if (ctx && ctx.state === 'suspended') {
-    ctx.resume();
-  }
-};
-
-if (typeof window !== 'undefined') {
-  const initHandler = () => {
-    initAudioOnInteraction();
-    window.removeEventListener('click', initHandler);
-    window.removeEventListener('touchstart', initHandler);
-  };
-  window.addEventListener('click', initHandler, { once: true });
-  window.addEventListener('touchstart', initHandler, { once: true });
-}
-
-// Vibration helper
-const vibrate = (pattern: number | number[]) => {
-  try {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate(pattern);
-    }
-  } catch {}
-};
-
-// ============= SOFT THEME (pops & clicks) =============
-const playSoftClick = (duration: number = 0.03, volume: number = 0.08) => {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    
-    const bufferSize = ctx.sampleRate * duration;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-    }
-    
-    const source = ctx.createBufferSource();
-    const gainNode = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-    
-    filter.type = 'lowpass';
-    filter.frequency.value = 2000;
-    
-    source.buffer = buffer;
-    source.connect(filter);
-    filter.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-    
-    source.start(ctx.currentTime);
-  } catch {}
-};
-
-const playSoftPop = (pitch: number = 1, volume: number = 0.12) => {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    oscillator.frequency.setValueAtTime(180 * pitch, ctx.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(80 * pitch, ctx.currentTime + 0.06);
-    oscillator.type = 'sine';
-    
-    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-    
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.1);
-  } catch {}
-};
-
-const playSoftChime = (baseFreq: number = 800, volume: number = 0.1) => {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    oscillator.frequency.setValueAtTime(baseFreq, ctx.currentTime);
-    oscillator.type = 'sine';
-    
-    gainNode.gain.setValueAtTime(0, ctx.currentTime);
-    gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.01);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-    
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.3);
-  } catch {}
-};
-
-// ============= TONES THEME (melodic) =============
-const playTone = (frequency: number, duration: number, volume: number = 0.2) => {
+// Generate a beep sound
+const playTone = (frequency: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.3) => {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -145,310 +30,156 @@ const playTone = (frequency: number, duration: number, volume: number = 0.2) => 
     gainNode.connect(ctx.destination);
     
     oscillator.frequency.value = frequency;
-    oscillator.type = 'sine';
+    oscillator.type = type;
     
-    gainNode.gain.setValueAtTime(0, ctx.currentTime);
-    gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.01);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
     
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration);
-  } catch {}
+  } catch {
+    // Audio not available - fail silently
+  }
 };
 
-// ============= NATURE THEME (organic) =============
-const playNatureWhoosh = (volume: number = 0.1, duration: number = 0.15) => {
+// Vibration patterns (in milliseconds)
+const vibrate = (pattern: number | number[]) => {
   try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    
-    const bufferSize = ctx.sampleRate * duration;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    
-    for (let i = 0; i < bufferSize; i++) {
-      const envelope = Math.sin((i / bufferSize) * Math.PI);
-      data[i] = (Math.random() * 2 - 1) * envelope;
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(pattern);
     }
-    
-    const source = ctx.createBufferSource();
-    const gainNode = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-    
-    filter.type = 'bandpass';
-    filter.frequency.value = 800;
-    filter.Q.value = 2;
-    
-    source.buffer = buffer;
-    source.connect(filter);
-    filter.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
-    
-    source.start(ctx.currentTime);
-  } catch {}
-};
-
-const playNatureDrop = (pitch: number = 1, volume: number = 0.12) => {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    oscillator.frequency.setValueAtTime(400 * pitch, ctx.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(150 * pitch, ctx.currentTime + 0.15);
-    oscillator.type = 'sine';
-    
-    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-    
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.25);
-  } catch {}
-};
-
-// ============= THEMED SOUND EFFECTS =============
-
-const playThemedButtonClick = (theme: SoundTheme) => {
-  switch (theme) {
-    case 'soft':
-      playSoftClick(0.025, 0.06);
-      break;
-    case 'tones':
-      playTone(523, 0.08, 0.15); // C5
-      break;
-    case 'nature':
-      playNatureWhoosh(0.08, 0.08);
-      break;
+  } catch {
+    // Vibration not available - fail silently
   }
 };
 
-const playThemedSuccess = (theme: SoundTheme) => {
-  switch (theme) {
-    case 'soft':
-      playSoftPop(1.5, 0.12);
-      setTimeout(() => playSoftChime(600, 0.08), 60);
-      break;
-    case 'tones':
-      playTone(523, 0.12, 0.18); // C5
-      setTimeout(() => playTone(659, 0.12, 0.18), 100); // E5
-      setTimeout(() => playTone(784, 0.15, 0.2), 200); // G5
-      break;
-    case 'nature':
-      playNatureDrop(1.2, 0.12);
-      setTimeout(() => playNatureDrop(1.5, 0.1), 100);
-      break;
-  }
-};
-
-const playThemedError = (theme: SoundTheme) => {
-  switch (theme) {
-    case 'soft':
-      playSoftPop(0.7, 0.1);
-      setTimeout(() => playSoftPop(0.5, 0.08), 80);
-      break;
-    case 'tones':
-      playTone(392, 0.12, 0.15); // G4
-      setTimeout(() => playTone(330, 0.15, 0.12), 100); // E4
-      break;
-    case 'nature':
-      playNatureDrop(0.6, 0.1);
-      break;
-  }
-};
-
-const playThemedNotification = (theme: SoundTheme) => {
-  switch (theme) {
-    case 'soft':
-      playSoftChime(700, 0.1);
-      break;
-    case 'tones':
-      playTone(880, 0.1, 0.18); // A5
-      setTimeout(() => playTone(1047, 0.12, 0.15), 80); // C6
-      break;
-    case 'nature':
-      playNatureWhoosh(0.1, 0.12);
-      setTimeout(() => playNatureDrop(1.3, 0.08), 80);
-      break;
-  }
-};
-
-const playThemedAchievement = (theme: SoundTheme) => {
-  switch (theme) {
-    case 'soft':
-      playSoftPop(1.4, 0.12);
-      setTimeout(() => playSoftChime(800, 0.1), 80);
-      setTimeout(() => playSoftChime(1000, 0.08), 180);
-      break;
-    case 'tones':
-      playTone(523, 0.1, 0.2); // C5
-      setTimeout(() => playTone(659, 0.1, 0.2), 120); // E5
-      setTimeout(() => playTone(784, 0.1, 0.22), 240); // G5
-      setTimeout(() => playTone(1047, 0.2, 0.25), 360); // C6
-      break;
-    case 'nature':
-      playNatureDrop(1.2, 0.1);
-      setTimeout(() => playNatureDrop(1.5, 0.12), 100);
-      setTimeout(() => playNatureWhoosh(0.12, 0.2), 200);
-      break;
-  }
-};
-
-// ============= EXPORTED SOUND FEEDBACK =============
-
+// App-wide sound & vibration effects
 export const soundFeedback = {
   buttonClick: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedButtonClick(theme);
-    vibrate(8);
+    playTone(600, 0.06, 'sine', 0.15);
+    vibrate(20);
   },
   
   primaryClick: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedButtonClick(theme);
-    vibrate(12);
+    playTone(700, 0.08, 'sine', 0.2);
+    vibrate(30);
   },
   
   secondaryClick: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedButtonClick(theme);
-    vibrate(6);
+    playTone(500, 0.05, 'sine', 0.12);
+    vibrate(15);
   },
   
   navTap: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedButtonClick(theme);
-    vibrate(5);
+    playTone(550, 0.05, 'sine', 0.1);
+    vibrate(15);
   },
   
   success: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedSuccess(theme);
-    vibrate([20, 20, 30]);
+    playTone(523, 0.1, 'sine', 0.25);
+    setTimeout(() => playTone(659, 0.12, 'sine', 0.25), 80);
+    vibrate([50, 30, 50]);
   },
   
   toggle: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedButtonClick(theme);
-    vibrate(10);
+    playTone(650, 0.05, 'sine', 0.15);
+    vibrate(25);
   },
   
   cardTap: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedButtonClick(theme);
-    vibrate(4);
-  },
-  
-  error: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedError(theme);
-    vibrate([30, 20, 30]);
-  },
-  
-  notification: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedNotification(theme);
-    vibrate([15, 15, 15]);
-  },
-  
-  achievement: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedAchievement(theme);
-    vibrate([40, 30, 40, 30, 80]);
-  },
-  
-  messageSent: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedButtonClick(theme);
+    playTone(480, 0.04, 'sine', 0.1);
     vibrate(10);
   },
   
+  error: () => {
+    playTone(300, 0.15, 'triangle', 0.2);
+    vibrate([100, 50, 100]);
+  },
+  
+  notification: () => {
+    playTone(800, 0.1, 'sine', 0.2);
+    setTimeout(() => playTone(1000, 0.1, 'sine', 0.2), 100);
+    vibrate([50, 50, 50]);
+  },
+  
+  achievement: () => {
+    playTone(523, 0.12, 'triangle', 0.3);
+    setTimeout(() => playTone(659, 0.12, 'triangle', 0.3), 100);
+    setTimeout(() => playTone(784, 0.12, 'triangle', 0.3), 200);
+    setTimeout(() => playTone(1047, 0.2, 'triangle', 0.35), 300);
+    vibrate([100, 50, 100, 50, 200]);
+  },
+  
+  messageSent: () => {
+    playTone(600, 0.08, 'sine', 0.2);
+    setTimeout(() => playTone(800, 0.06, 'sine', 0.15), 50);
+    vibrate(25);
+  },
+  
   messageReceived: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') return;
-    playThemedNotification(theme);
-    vibrate([12, 10, 12]);
+    playTone(500, 0.1, 'sine', 0.2);
+    setTimeout(() => playTone(700, 0.08, 'sine', 0.18), 80);
+    vibrate([30, 20, 30]);
   },
 };
 
+// Resume audio context after user interaction
 export const resumeAudioContext = () => {
   try {
     const ctx = getAudioContext();
     if (ctx && ctx.state === 'suspended') {
       ctx.resume();
     }
-  } catch {}
+  } catch {
+    // Fail silently
+  }
 };
 
-// ============= WORKOUT FEEDBACK (uses same themes) =============
+// Workout-specific sounds
 export const workoutFeedback = {
   tick: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') { vibrate(20); return; }
-    playThemedButtonClick(theme);
-    vibrate(20);
+    playTone(800, 0.1, 'sine', 0.2);
+    vibrate(50);
   },
   
   exerciseComplete: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') { vibrate([40, 25, 40]); return; }
-    playThemedSuccess(theme);
-    vibrate([40, 25, 40]);
+    playTone(523, 0.15, 'sine', 0.3);
+    setTimeout(() => playTone(659, 0.2, 'sine', 0.3), 150);
+    vibrate([100, 50, 100]);
   },
   
   breakComplete: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') { vibrate([30, 20, 30, 20, 60]); return; }
-    playThemedNotification(theme);
-    vibrate([30, 20, 30, 20, 60]);
+    playTone(523, 0.1, 'sine', 0.3);
+    setTimeout(() => playTone(659, 0.1, 'sine', 0.3), 100);
+    setTimeout(() => playTone(784, 0.15, 'sine', 0.3), 200);
+    vibrate([100, 50, 100, 50, 200]);
   },
   
   workoutComplete: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') { vibrate([80, 40, 80, 40, 150]); return; }
-    playThemedAchievement(theme);
-    vibrate([80, 40, 80, 40, 150]);
+    playTone(523, 0.15, 'triangle', 0.4);
+    setTimeout(() => playTone(659, 0.15, 'triangle', 0.4), 150);
+    setTimeout(() => playTone(784, 0.15, 'triangle', 0.4), 300);
+    setTimeout(() => playTone(1047, 0.3, 'triangle', 0.5), 450);
+    vibrate([200, 100, 200, 100, 400]);
   },
   
   start: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') { vibrate(40); return; }
-    playThemedButtonClick(theme);
-    vibrate(40);
+    playTone(440, 0.1, 'sine', 0.25);
+    vibrate(100);
   },
   
   pause: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') { vibrate(20); return; }
-    playThemedButtonClick(theme);
-    vibrate(20);
+    playTone(330, 0.15, 'sine', 0.2);
+    vibrate(50);
   },
   
   skip: () => {
-    const theme = getSoundTheme();
-    if (theme === 'off') { vibrate([15, 10, 15]); return; }
-    playThemedButtonClick(theme);
-    vibrate([15, 10, 15]);
+    playTone(600, 0.08, 'sine', 0.2);
+    setTimeout(() => playTone(500, 0.08, 'sine', 0.2), 80);
+    vibrate([50, 30, 50]);
   },
   
   buttonPress: () => {
-    vibrate(12);
+    vibrate(30);
   }
 };
