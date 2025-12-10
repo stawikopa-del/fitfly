@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { BottomNavigation } from './BottomNavigation';
 import { useWorkout } from '@/contexts/WorkoutContext';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
 export interface AppLayoutProps {
   children: ReactNode;
@@ -10,6 +11,9 @@ export interface AppLayoutProps {
 export function AppLayout({ children, hideNav = false }: AppLayoutProps) {
   const { isWorkoutActive } = useWorkout();
   const shouldHideNav = hideNav || isWorkoutActive;
+  
+  // Enable scroll position restoration
+  useScrollRestoration();
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
