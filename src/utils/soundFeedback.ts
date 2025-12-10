@@ -53,73 +53,81 @@ const vibrate = (pattern: number | number[]) => {
   }
 };
 
-// App-wide sound & vibration effects
+// App-wide sound & vibration effects - soft, warm tones
 export const soundFeedback = {
   buttonClick: () => {
-    playTone(600, 0.06, 'sine', 0.15);
-    vibrate(20);
+    playTone(392, 0.05, 'sine', 0.12); // G4 - gentle tap
+    vibrate(15);
   },
   
   primaryClick: () => {
-    playTone(700, 0.08, 'sine', 0.2);
-    vibrate(30);
+    playTone(523, 0.07, 'sine', 0.15); // C5 - soft click
+    vibrate(25);
   },
   
   secondaryClick: () => {
-    playTone(500, 0.05, 'sine', 0.12);
-    vibrate(15);
+    playTone(349, 0.04, 'sine', 0.1); // F4 - subtle
+    vibrate(12);
   },
   
   navTap: () => {
-    playTone(550, 0.05, 'sine', 0.1);
-    vibrate(15);
-  },
-  
-  success: () => {
-    playTone(523, 0.1, 'sine', 0.25);
-    setTimeout(() => playTone(659, 0.12, 'sine', 0.25), 80);
-    vibrate([50, 30, 50]);
-  },
-  
-  toggle: () => {
-    playTone(650, 0.05, 'sine', 0.15);
-    vibrate(25);
-  },
-  
-  cardTap: () => {
-    playTone(480, 0.04, 'sine', 0.1);
+    playTone(440, 0.04, 'sine', 0.08); // A4 - minimal
     vibrate(10);
   },
   
+  success: () => {
+    // Warm major chord arpeggio
+    playTone(392, 0.12, 'sine', 0.18); // G4
+    setTimeout(() => playTone(494, 0.12, 'sine', 0.18), 100); // B4
+    setTimeout(() => playTone(587, 0.15, 'sine', 0.2), 200); // D5
+    vibrate([40, 30, 60]);
+  },
+  
+  toggle: () => {
+    playTone(466, 0.04, 'sine', 0.1); // Bb4 - soft pop
+    vibrate(18);
+  },
+  
+  cardTap: () => {
+    playTone(330, 0.03, 'sine', 0.08); // E4 - whisper
+    vibrate(8);
+  },
+  
   error: () => {
-    playTone(300, 0.15, 'triangle', 0.2);
-    vibrate([100, 50, 100]);
+    // Gentle descending tone instead of harsh
+    playTone(392, 0.12, 'sine', 0.15); // G4
+    setTimeout(() => playTone(330, 0.15, 'sine', 0.12), 120); // E4
+    vibrate([60, 40, 60]);
   },
   
   notification: () => {
-    playTone(800, 0.1, 'sine', 0.2);
-    setTimeout(() => playTone(1000, 0.1, 'sine', 0.2), 100);
-    vibrate([50, 50, 50]);
+    // Soft bell-like chime
+    playTone(659, 0.08, 'sine', 0.15); // E5
+    setTimeout(() => playTone(784, 0.1, 'sine', 0.12), 80); // G5
+    vibrate([30, 30, 30]);
   },
   
   achievement: () => {
-    playTone(523, 0.12, 'triangle', 0.3);
-    setTimeout(() => playTone(659, 0.12, 'triangle', 0.3), 100);
-    setTimeout(() => playTone(784, 0.12, 'triangle', 0.3), 200);
-    setTimeout(() => playTone(1047, 0.2, 'triangle', 0.35), 300);
-    vibrate([100, 50, 100, 50, 200]);
+    // Warm celebratory melody
+    playTone(392, 0.1, 'sine', 0.2); // G4
+    setTimeout(() => playTone(494, 0.1, 'sine', 0.2), 120); // B4
+    setTimeout(() => playTone(587, 0.1, 'sine', 0.22), 240); // D5
+    setTimeout(() => playTone(784, 0.18, 'sine', 0.25), 360); // G5
+    vibrate([80, 50, 80, 50, 150]);
   },
   
   messageSent: () => {
-    playTone(600, 0.08, 'sine', 0.2);
-    setTimeout(() => playTone(800, 0.06, 'sine', 0.15), 50);
-    vibrate(25);
+    // Soft whoosh up
+    playTone(440, 0.06, 'sine', 0.12); // A4
+    setTimeout(() => playTone(554, 0.05, 'sine', 0.1), 40); // C#5
+    vibrate(20);
   },
   
   messageReceived: () => {
-    playTone(500, 0.1, 'sine', 0.2);
-    setTimeout(() => playTone(700, 0.08, 'sine', 0.18), 80);
-    vibrate([30, 20, 30]);
+    // Gentle notification drop
+    playTone(587, 0.08, 'sine', 0.14); // D5
+    setTimeout(() => playTone(494, 0.1, 'sine', 0.12), 70); // B4
+    vibrate([25, 15, 25]);
   },
 };
 
@@ -135,51 +143,54 @@ export const resumeAudioContext = () => {
   }
 };
 
-// Workout-specific sounds
+// Workout-specific sounds - energetic but warm
 export const workoutFeedback = {
   tick: () => {
-    playTone(800, 0.1, 'sine', 0.2);
-    vibrate(50);
+    playTone(587, 0.08, 'sine', 0.15); // D5 - softer tick
+    vibrate(40);
   },
   
   exerciseComplete: () => {
-    playTone(523, 0.15, 'sine', 0.3);
-    setTimeout(() => playTone(659, 0.2, 'sine', 0.3), 150);
-    vibrate([100, 50, 100]);
+    // Satisfying completion sound
+    playTone(392, 0.12, 'sine', 0.22); // G4
+    setTimeout(() => playTone(494, 0.15, 'sine', 0.25), 130); // B4
+    vibrate([70, 40, 70]);
   },
   
   breakComplete: () => {
-    playTone(523, 0.1, 'sine', 0.3);
-    setTimeout(() => playTone(659, 0.1, 'sine', 0.3), 100);
-    setTimeout(() => playTone(784, 0.15, 'sine', 0.3), 200);
-    vibrate([100, 50, 100, 50, 200]);
+    // Energizing start sound
+    playTone(392, 0.08, 'sine', 0.2); // G4
+    setTimeout(() => playTone(494, 0.08, 'sine', 0.2), 90); // B4
+    setTimeout(() => playTone(587, 0.12, 'sine', 0.22), 180); // D5
+    vibrate([60, 40, 60, 40, 120]);
   },
   
   workoutComplete: () => {
-    playTone(523, 0.15, 'triangle', 0.4);
-    setTimeout(() => playTone(659, 0.15, 'triangle', 0.4), 150);
-    setTimeout(() => playTone(784, 0.15, 'triangle', 0.4), 300);
-    setTimeout(() => playTone(1047, 0.3, 'triangle', 0.5), 450);
-    vibrate([200, 100, 200, 100, 400]);
+    // Triumphant but warm celebration
+    playTone(392, 0.12, 'sine', 0.25); // G4
+    setTimeout(() => playTone(494, 0.12, 'sine', 0.25), 140); // B4
+    setTimeout(() => playTone(587, 0.12, 'sine', 0.28), 280); // D5
+    setTimeout(() => playTone(784, 0.25, 'sine', 0.3), 420); // G5
+    vibrate([150, 80, 150, 80, 300]);
   },
   
   start: () => {
-    playTone(440, 0.1, 'sine', 0.25);
-    vibrate(100);
+    playTone(392, 0.1, 'sine', 0.18); // G4 - ready sound
+    vibrate(80);
   },
   
   pause: () => {
-    playTone(330, 0.15, 'sine', 0.2);
-    vibrate(50);
+    playTone(330, 0.12, 'sine', 0.12); // E4 - gentle pause
+    vibrate(40);
   },
   
   skip: () => {
-    playTone(600, 0.08, 'sine', 0.2);
-    setTimeout(() => playTone(500, 0.08, 'sine', 0.2), 80);
-    vibrate([50, 30, 50]);
+    playTone(494, 0.06, 'sine', 0.12); // B4
+    setTimeout(() => playTone(392, 0.06, 'sine', 0.1), 60); // G4
+    vibrate([35, 25, 35]);
   },
   
   buttonPress: () => {
-    vibrate(30);
+    vibrate(25);
   }
 };
