@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MorningWorkoutInfo } from './MorningWorkoutInfo';
 import { MorningWorkoutList } from './MorningWorkoutList';
 import { MorningWorkoutPlayer } from './MorningWorkoutPlayer';
 import { MorningWorkoutComplete } from './MorningWorkoutComplete';
 import { useGamification } from '@/hooks/useGamification';
 import { useUserProgress } from '@/hooks/useUserProgress';
+import { useWorkout } from '@/contexts/WorkoutContext';
 
 type Screen = 'info' | 'list' | 'player' | 'complete';
 
@@ -17,6 +18,17 @@ export function MorningWorkoutModule({ onClose }: MorningWorkoutModuleProps) {
   const [startExerciseIndex, setStartExerciseIndex] = useState(0);
   const { onWorkoutCompleted } = useGamification();
   const { addActiveMinutes } = useUserProgress();
+  const { setWorkoutActive } = useWorkout();
+
+  // Mark workout as active when in player screen
+  useEffect(() => {
+    const isActive = currentScreen === 'player';
+    setWorkoutActive(isActive);
+    
+    return () => {
+      setWorkoutActive(false);
+    };
+  }, [currentScreen, setWorkoutActive]);
 
   const handleStartFromInfo = () => {
     setCurrentScreen('list');
