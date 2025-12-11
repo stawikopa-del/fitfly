@@ -209,10 +209,34 @@ Odpowiedz TYLKO JSON-em.` },
 
     console.log("AI response:", content);
 
-    // Parse JSON from response (handle markdown code blocks)
+    // Parse JSON from response (handle markdown code blocks and text before JSON)
     let jsonStr = content.trim();
-    if (jsonStr.startsWith("```")) {
-      jsonStr = jsonStr.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+    
+    // Remove markdown code blocks
+    if (jsonStr.includes("```")) {
+      const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        jsonStr = codeBlockMatch[1].trim();
+      } else {
+        jsonStr = jsonStr.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+      }
+    }
+    
+    // If response contains text before JSON, extract only the JSON object
+    if (!jsonStr.startsWith("{")) {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonStr = jsonMatch[0];
+      } else {
+        // AI returned text instead of JSON - return error with helpful message
+        console.error("AI returned non-JSON response:", jsonStr.substring(0, 200));
+        return new Response(JSON.stringify({ 
+          error: "AI nie zwróciło prawidłowej odpowiedzi. Spróbuj ponownie." 
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
     
     const mealData = JSON.parse(jsonStr);
