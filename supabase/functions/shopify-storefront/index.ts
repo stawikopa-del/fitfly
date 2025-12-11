@@ -6,8 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SHOPIFY_STORE_URL = Deno.env.get('SHOPIFY_STORE_URL') || '';
-const SHOPIFY_ACCESS_TOKEN = Deno.env.get('SHOPIFY_ACCESS_TOKEN') || '';
+const SHOPIFY_STORE_URL = Deno.env.get('SHOPIFY_STORE_URL') || 'fitfly-6ke6w.myshopify.com';
+const SHOPIFY_STOREFRONT_TOKEN = Deno.env.get('SHOPIFY_STOREFRONT_ACCESS_TOKEN') || '';
+const SHOPIFY_API_VERSION = '2025-07';
 
 // Input validation schemas
 const cartItemSchema = z.object({
@@ -15,10 +16,18 @@ const cartItemSchema = z.object({
   quantity: z.number().int().positive().max(100)
 });
 
-const requestSchema = z.object({
+const graphqlRequestSchema = z.object({
+  action: z.literal('graphql'),
+  query: z.string().min(1).max(10000),
+  variables: z.record(z.unknown()).optional()
+});
+
+const legacyRequestSchema = z.object({
   action: z.enum(['getProducts', 'createCheckout']),
   items: z.array(cartItemSchema).max(50).optional()
 });
+
+const requestSchema = z.union([graphqlRequestSchema, legacyRequestSchema]);
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -41,18 +50,65 @@ serve(async (req) => {
       });
     }
     
-    const { action, items } = parseResult.data;
-    console.log(`Shopify Storefront API - Action: ${action}`);
+    const validatedData = parseResult.data;
+    console.log(`Shopify Storefront API - Action: ${validatedData.action}`);
 
-    if (!SHOPIFY_STORE_URL || !SHOPIFY_ACCESS_TOKEN) {
+    if (!SHOPIFY_STORE_URL || !SHOPIFY_STOREFRONT_TOKEN) {
       console.error('Missing Shopify configuration');
       throw new Error('Shopify configuration is missing');
     }
 
-    const storefrontUrl = `https://${SHOPIFY_STORE_URL}/api/2024-01/graphql.json`;
+    const storefrontUrl = `https://${SHOPIFY_STORE_URL}/api/${SHOPIFY_API_VERSION}/graphql.json`;
 
-    // Fetch products
-    if (action === 'getProducts') {
+    // Handle GraphQL proxy requests (new unified approach)
+    if (validatedData.action === 'graphql') {
+      console.log('Processing GraphQL request...');
+      
+      const response = await fetch(storefrontUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_TOKEN,
+        },
+        body: JSON.stringify({
+          query: validatedData.query,
+          variables: validatedData.variables || {},
+        }),
+      });
+
+      if (response.status === 402) {
+        console.error('Shopify payment required');
+        return new Response(JSON.stringify({ 
+          error: 'Shopify wymaga aktywnego planu płatności' 
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (!response.ok) {
+        console.error(`Shopify API HTTP error: ${response.status}`);
+        return new Response(JSON.stringify({ 
+          error: `Shopify API error: ${response.status}` 
+        }), {
+          status: response.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const data = await response.json();
+      
+      if (data.errors) {
+        console.error('Shopify GraphQL errors:', data.errors);
+      }
+
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Legacy: Fetch products
+    if (validatedData.action === 'getProducts') {
       console.log('Fetching products from Shopify...');
       
       const query = `
@@ -101,7 +157,7 @@ serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Shopify-Storefront-Access-Token': SHOPIFY_ACCESS_TOKEN,
+          'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_TOKEN,
         },
         body: JSON.stringify({ query }),
       });
@@ -137,15 +193,15 @@ serve(async (req) => {
       });
     }
 
-    // Create checkout
-    if (action === 'createCheckout') {
-      console.log('Creating checkout with items:', items);
+    // Legacy: Create checkout
+    if (validatedData.action === 'createCheckout') {
+      console.log('Creating checkout with items:', validatedData.items);
 
-      if (!items || items.length === 0) {
+      if (!validatedData.items || validatedData.items.length === 0) {
         throw new Error('No items provided for checkout');
       }
 
-      const lineItems = items.map((item) => ({
+      const lineItems = validatedData.items.map((item) => ({
         variantId: item.variantId,
         quantity: item.quantity,
       }));
@@ -174,7 +230,7 @@ serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Shopify-Storefront-Access-Token': SHOPIFY_ACCESS_TOKEN,
+          'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_TOKEN,
         },
         body: JSON.stringify({
           query: mutation,
@@ -215,7 +271,7 @@ serve(async (req) => {
       });
     }
 
-    throw new Error(`Unknown action: ${action}`);
+    throw new Error(`Unknown action: ${validatedData.action}`);
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An error occurred';

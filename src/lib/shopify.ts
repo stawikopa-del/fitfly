@@ -1,10 +1,9 @@
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
-// Shopify Storefront API configuration
+// Shopify configuration (no secrets exposed)
 export const SHOPIFY_API_VERSION = '2025-07';
 export const SHOPIFY_STORE_PERMANENT_DOMAIN = 'fitfly-6ke6w.myshopify.com';
-export const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
-export const SHOPIFY_STOREFRONT_TOKEN = '10eebf939cc48c51f4a74307efa6cc81';
 
 export interface ShopifyProduct {
   node: {
@@ -50,37 +49,30 @@ export interface ShopifyProduct {
   };
 }
 
-// Storefront API helper function
+// Storefront API helper function - routes through Edge Function
 export async function storefrontApiRequest(query: string, variables: Record<string, unknown> = {}) {
   try {
-    const response = await fetch(SHOPIFY_STOREFRONT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_TOKEN
-      },
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('shopify-storefront', {
+      body: {
+        action: 'graphql',
         query,
         variables,
-      }),
+      },
     });
 
-    if (response.status === 402) {
-      toast.error("Shopify: Wymagana płatność", {
-        description: "API Shopify wymaga aktywnego planu. Odwiedź admin.shopify.com aby upgrade'ować."
-      });
+    if (error) {
+      console.error('Shopify Edge Function error:', error);
+      
+      if (error.message?.includes('402') || error.message?.includes('Payment')) {
+        toast.error("Shopify: Wymagana płatność", {
+          description: "API Shopify wymaga aktywnego planu. Odwiedź admin.shopify.com aby upgrade'ować."
+        });
+      }
       return null;
     }
 
-    if (!response.ok) {
-      console.error(`Shopify API HTTP error: ${response.status}`);
-      return null;
-    }
-
-    const data = await response.json();
-    
-    if (data.errors) {
-      console.error('Shopify API errors:', data.errors);
+    if (data?.error) {
+      console.error('Shopify API error:', data.error);
       return null;
     }
 
@@ -218,7 +210,7 @@ export async function fetchSubscriptionProducts(): Promise<ShopifyProduct[]> {
 
     if (!data) return [];
 
-    return data.data.products.edges || [];
+    return data.data?.products?.edges || [];
   } catch (error) {
     console.error('Error fetching products:', error);
     return [];
