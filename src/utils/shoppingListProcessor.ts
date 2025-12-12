@@ -678,11 +678,10 @@ function isValidFoodProduct(word: string): boolean {
   const lemma = POLISH_LEMMAS[lower];
   if (lemma && VALID_FOOD_PRODUCTS.has(lemma.toLowerCase())) return true;
   
-  // Sprawdź częściowe dopasowanie do znanych produktów
-  for (const product of VALID_FOOD_PRODUCTS) {
-    if (product.includes(lower) && lower.length >= 4) return true;
-    if (lower.includes(product) && product.length >= 4) return true;
-  }
+  // Świadomie rezygnujemy z agresywnych częściowych dopasowań typu
+  // "jogurt" ⊂ "jogurtowo", żeby nie łapać przymiotników i przysłówków
+  // jako osobnych produktów. Jeśli czegoś tu nie ma, musi być jawnie
+  // ujęte w VALID_FOOD_PRODUCTS lub POLISH_LEMMAS.
   
   return false;
 }
@@ -698,6 +697,13 @@ function normalizeIngredientName(raw: string): string | null {
   
   // Odrzuć za krótkie słowa
   if (cleaned.length < 3) return null;
+  
+  // Odrzuć typowe formy przymiotnikowe/przysłówkowe typu
+  // "jogurtowy", "jogurtowa", "jogurtowe", "jogurtowo" itp.
+  const adjectiveSuffixes = ['owy', 'owa', 'owe', 'owych', 'owego', 'owej', 'owemu', 'owym', 'owo'];
+  if (adjectiveSuffixes.some(suffix => cleaned.endsWith(suffix)) && !VALID_FOOD_PRODUCTS.has(cleaned)) {
+    return null;
+  }
   
   // Lematyzacja - zamiana formy gramatycznej na podstawową
   if (POLISH_LEMMAS[cleaned]) {
@@ -1039,8 +1045,14 @@ export function processShoppingList(
     // Formatuj wyświetlanie
     const displayText = formatDisplayText(count, size, packageName, data.totalAmount, data.unit);
     
+    // Dodatkowa weryfikacja „absurdu”: bardzo duże liczby opakowań
+    const absurdlyHighCount = (
+      (packageName === 'bochenek' || packageName === 'kubek' || packageName === 'opakowanie') &&
+      count > 20
+    );
+    
     // Sprawdź czy wymaga weryfikacji
-    const needsVerification = count === 1 && size === 0;
+    const needsVerification = (count === 1 && size === 0) || absurdlyHighCount;
     
     results.push({
       name: bestName,
