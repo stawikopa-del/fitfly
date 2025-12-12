@@ -322,21 +322,30 @@ export default function Nutrition() {
           { icon: Beef, value: totals.protein, goal: dailyGoals.protein, label: 'Białko', color: 'text-destructive', unit: 'g' },
           { icon: Wheat, value: totals.carbs, goal: dailyGoals.carbs, label: 'Węgle', color: 'text-accent', unit: 'g' },
           { icon: null, value: totals.fat, goal: dailyGoals.fat, label: 'Tłuszcze', color: 'text-primary', unit: 'g', emoji: '🧈' },
-        ].map((item) => (
-          <div 
-            key={item.label}
-            className="bg-card rounded-3xl p-4 border-2 border-border/50 text-center shadow-card-playful hover:-translate-y-1 transition-all duration-300"
-          >
-            {item.icon ? (
-              <item.icon className={cn("w-6 h-6 mx-auto mb-2", item.color)} />
-            ) : (
-              <div className="w-6 h-6 mx-auto mb-2 flex items-center justify-center text-lg">{item.emoji}</div>
-            )}
-            <p className="text-xl font-extrabold font-display text-foreground">{item.value}{item.unit}</p>
-            <p className="text-[10px] text-muted-foreground font-medium">{item.label}</p>
-            <Progress value={(item.value / item.goal) * 100} className="h-1.5 mt-2" />
-          </div>
-        ))}
+        ].map((item) => {
+          const remaining = item.goal - item.value;
+          return (
+            <div 
+              key={item.label}
+              className="bg-card rounded-3xl p-4 border-2 border-border/50 text-center shadow-card-playful hover:-translate-y-1 transition-all duration-300"
+            >
+              {item.icon ? (
+                <item.icon className={cn("w-6 h-6 mx-auto mb-2", item.color)} />
+              ) : (
+                <div className="w-6 h-6 mx-auto mb-2 flex items-center justify-center text-lg">{item.emoji}</div>
+              )}
+              <p className="text-xl font-extrabold font-display text-foreground">{item.value}{item.unit}</p>
+              <p className="text-[10px] text-muted-foreground font-medium">{item.label}</p>
+              <Progress value={(item.value / item.goal) * 100} className="h-1.5 mt-2" />
+              <p className={cn(
+                "text-[10px] font-semibold mt-1.5",
+                remaining < 0 ? "text-destructive" : "text-secondary"
+              )}>
+                {remaining >= 0 ? `zostało ${remaining}${item.unit}` : `+${Math.abs(remaining)}${item.unit}`}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       {/* Plan odżywiania */}
