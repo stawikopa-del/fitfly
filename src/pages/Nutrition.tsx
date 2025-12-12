@@ -339,7 +339,7 @@ export default function Nutrition() {
               <Progress value={(item.value / item.goal) * 100} className="h-1.5 mt-2" />
               <p className={cn(
                 "text-[10px] font-semibold mt-1.5",
-                remaining < 0 ? "text-destructive" : "text-secondary"
+                remaining < 0 ? "text-destructive" : "text-orange-500"
               )}>
                 {remaining >= 0 ? `zostało ${remaining}${item.unit}` : `+${Math.abs(remaining)}${item.unit}`}
               </p>
