@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Check, Send, Calendar, ChevronLeft, ChevronRight, ChevronDown, Trash2, Copy, Users, Plus, X, Gift, User, Heart, FolderOpen } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Check, Send, Calendar, ChevronLeft, ChevronRight, ChevronDown, Trash2, Copy, Users, Plus, X, Gift, User, Heart, FolderOpen, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useFriends } from '@/hooks/useFriends';
 import { CreateCustomListDialog } from '@/components/flyfit/CreateCustomListDialog';
 import { MyShoppingListsSection } from '@/components/flyfit/MyShoppingListsSection';
+import { calculateShoppingListTotal } from '@/data/productPrices';
 interface Ingredient {
   name: string;
   amount: number;
@@ -2110,6 +2111,47 @@ export default function ShoppingList() {
 lub dodaj własne produkty</p>
             
           </div> : <>
+            {/* Estimated Cost */}
+            {(() => {
+              const { total } = calculateShoppingListTotal(
+                ingredients.map(ing => ({ 
+                  name: ing.name, 
+                  packageCount: ing.packageCount || 1 
+                }))
+              );
+              const uncheckedTotal = calculateShoppingListTotal(
+                ingredients
+                  .filter(ing => !checkedItems.has(ing.name.toLowerCase()))
+                  .map(ing => ({ 
+                    name: ing.name, 
+                    packageCount: ing.packageCount || 1 
+                  }))
+              ).total;
+              
+              return (
+                <div className="bg-gradient-to-br from-amber-500/20 via-orange-500/20 to-rose-500/20 rounded-2xl border-2 border-amber-500/40 p-4 shadow-card-playful">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg">
+                      <Wallet className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground font-medium">Szacunkowy koszt zakupów</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-extrabold font-display text-foreground">
+                          ~{total.toFixed(0)} zł
+                        </span>
+                        {checkedCount > 0 && (
+                          <span className="text-sm text-orange-600 font-medium">
+                            (zostało ~{uncheckedTotal.toFixed(0)} zł)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Progress Bar */}
             <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-card-playful">
               <div className="flex items-center justify-between mb-2">
