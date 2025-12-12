@@ -44,6 +44,7 @@ const SharedRecipe = lazy(() => import("./pages/SharedRecipe"));
 const Invite = lazy(() => import("./pages/Invite"));
 const DietConfig = lazy(() => import("./pages/DietConfig"));
 const Recipes = lazy(() => import("./pages/Recipes"));
+const RecipesDatabase = lazy(() => import("./pages/RecipesDatabase"));
 const QuickMeal = lazy(() => import("./pages/QuickMeal"));
 const QuickMealMethod = lazy(() => import("./pages/QuickMealMethod"));
 const ShoppingList = lazy(() => import("./pages/ShoppingList"));
@@ -348,6 +349,14 @@ const AppRoutes = () => (
         element={
           <ProtectedRoute>
             <Recipes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/baza-przepisow"
+        element={
+          <ProtectedRoute>
+            <RecipesDatabase />
           </ProtectedRoute>
         }
       />

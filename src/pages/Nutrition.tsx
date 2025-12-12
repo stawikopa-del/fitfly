@@ -324,7 +324,7 @@ export default function Nutrition() {
         ))}
       </div>
 
-      {/* Przepisy i posiłki - nowa zakładka */}
+      {/* Plan odżywiania */}
       <button
         onClick={() => {
           soundFeedback.buttonClick();
@@ -339,10 +339,33 @@ export default function Nutrition() {
           </div>
           <div className="text-left flex-1">
             <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
-              Przepisy i posiłki
-              <span>🍳</span>
+              Plan odżywiania
+              <span>📋</span>
             </h3>
-            <p className="text-sm text-muted-foreground">Odkryj pyszne przepisy z AI i gotuj krok po kroku</p>
+            <p className="text-sm text-muted-foreground">Kalendarz posiłków i ulubione przepisy</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+        </div>
+      </button>
+
+      {/* Przepisy i posiłki - baza przepisów */}
+      <button
+        onClick={() => {
+          soundFeedback.buttonClick();
+          navigate('/baza-przepisow');
+        }}
+        className="w-full bg-gradient-to-r from-red-500/20 via-pink-500/20 to-orange-400/20 rounded-3xl p-5 border-2 border-red-500/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500/20 to-pink-500/20 shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform text-3xl">
+            🍳
+          </div>
+          <div className="text-left flex-1">
+            <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+              Przepisy i posiłki
+              <span>❤️</span>
+            </h3>
+            <p className="text-sm text-muted-foreground">30 gotowych przepisów z trybem gotowania</p>
           </div>
           <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
         </div>
