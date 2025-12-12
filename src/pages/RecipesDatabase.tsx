@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Clock, Users, Flame, ChefHat, PlayCircle, Heart, Filter, X } from 'lucide-react';
+import { ArrowLeft, Search, Clock, Users, Flame, ChefHat, PlayCircle, Heart, Filter, X, Zap, Timer, Hourglass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { CookingMode } from '@/components/flyfit/CookingMode';
@@ -21,17 +22,29 @@ const categoryLabels: Record<string, { label: string; emoji: string }> = {
   dessert: { label: 'Desery', emoji: '🍰' },
 };
 
+const timeLabels: Record<string, { label: string; icon: React.ReactNode; max: number }> = {
+  all: { label: 'Dowolny', icon: <Clock className="w-4 h-4" />, max: Infinity },
+  quick: { label: 'Szybkie', icon: <Zap className="w-4 h-4" />, max: 15 },
+  medium: { label: 'Średnie', icon: <Timer className="w-4 h-4" />, max: 30 },
+  long: { label: 'Długie', icon: <Hourglass className="w-4 h-4" />, max: Infinity },
+};
+
 const difficultyLabels: Record<string, { label: string; color: string }> = {
   easy: { label: 'Łatwy', color: 'text-green-500 bg-green-500/10' },
   medium: { label: 'Średni', color: 'text-amber-500 bg-amber-500/10' },
   hard: { label: 'Trudny', color: 'text-red-500 bg-red-500/10' },
 };
 
+// Get max calories from all recipes
+const maxCaloriesInDB = Math.max(...recipesDatabase.map(r => r.macros.calories));
+
 export default function RecipesDatabase() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedTime, setSelectedTime] = useState<string>('all');
+  const [maxCalories, setMaxCalories] = useState<number>(maxCaloriesInDB);
   const [cookingRecipe, setCookingRecipe] = useState<DatabaseRecipe | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -41,6 +54,21 @@ export default function RecipesDatabase() {
       ? recipesDatabase 
       : getRecipesByCategory(selectedCategory as DatabaseRecipe['category']);
     
+    // Filter by time
+    if (selectedTime !== 'all') {
+      if (selectedTime === 'quick') {
+        recipes = recipes.filter(r => r.total_time_minutes <= 15);
+      } else if (selectedTime === 'medium') {
+        recipes = recipes.filter(r => r.total_time_minutes > 15 && r.total_time_minutes <= 30);
+      } else if (selectedTime === 'long') {
+        recipes = recipes.filter(r => r.total_time_minutes > 30);
+      }
+    }
+    
+    // Filter by calories
+    recipes = recipes.filter(r => r.macros.calories <= maxCalories);
+    
+    // Filter by search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       recipes = recipes.filter(r => 
@@ -52,7 +80,7 @@ export default function RecipesDatabase() {
     }
     
     return recipes;
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, selectedTime, maxCalories, searchQuery]);
 
   const handleStartCooking = (recipe: DatabaseRecipe) => {
     soundFeedback.buttonClick();
@@ -181,27 +209,103 @@ export default function RecipesDatabase() {
           />
         </div>
         
-        {/* Category filters */}
+        {/* Filters */}
         {showFilters && (
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-            {Object.entries(categoryLabels).map(([key, { label, emoji }]) => (
+          <div className="mt-4 space-y-4">
+            {/* Category filters */}
+            <div>
+              <p className="text-xs font-bold text-muted-foreground mb-2">Kategoria</p>
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                {Object.entries(categoryLabels).map(([key, { label, emoji }]) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      soundFeedback.buttonClick();
+                      setSelectedCategory(key);
+                    }}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border-2",
+                      selectedCategory === key
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-foreground border-border/50 hover:border-primary/50"
+                    )}
+                  >
+                    <span>{emoji}</span>
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Time filters */}
+            <div>
+              <p className="text-xs font-bold text-muted-foreground mb-2">Czas przygotowania</p>
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                {Object.entries(timeLabels).map(([key, { label, icon }]) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      soundFeedback.buttonClick();
+                      setSelectedTime(key);
+                    }}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border-2",
+                      selectedTime === key
+                        ? "bg-accent text-accent-foreground border-accent"
+                        : "bg-card text-foreground border-border/50 hover:border-accent/50"
+                    )}
+                  >
+                    {icon}
+                    <span>{label}</span>
+                    {key === 'quick' && <span className="text-muted-foreground">≤15 min</span>}
+                    {key === 'medium' && <span className="text-muted-foreground">15-30 min</span>}
+                    {key === 'long' && <span className="text-muted-foreground">&gt;30 min</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Calories slider */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold text-muted-foreground">Maksymalne kalorie</p>
+                <span className="text-sm font-bold text-destructive flex items-center gap-1">
+                  <Flame className="w-3.5 h-3.5" />
+                  {maxCalories} kcal
+                </span>
+              </div>
+              <Slider
+                value={[maxCalories]}
+                onValueChange={([value]) => setMaxCalories(value)}
+                max={maxCaloriesInDB}
+                min={100}
+                step={50}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>100 kcal</span>
+                <span>{maxCaloriesInDB} kcal</span>
+              </div>
+            </div>
+            
+            {/* Active filters count */}
+            <div className="flex items-center justify-between pt-2 border-t border-border/50">
+              <p className="text-xs text-muted-foreground">
+                Znaleziono: <span className="font-bold text-foreground">{filteredRecipes.length}</span> przepisów
+              </p>
               <button
-                key={key}
                 onClick={() => {
                   soundFeedback.buttonClick();
-                  setSelectedCategory(key);
+                  setSelectedCategory('all');
+                  setSelectedTime('all');
+                  setMaxCalories(maxCaloriesInDB);
+                  setSearchQuery('');
                 }}
-                className={cn(
-                  "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all border-2",
-                  selectedCategory === key
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card text-foreground border-border/50 hover:border-primary/50"
-                )}
+                className="text-xs font-bold text-primary hover:underline"
               >
-                <span>{emoji}</span>
-                <span>{label}</span>
+                Resetuj filtry
               </button>
-            ))}
+            </div>
           </div>
         )}
       </header>
