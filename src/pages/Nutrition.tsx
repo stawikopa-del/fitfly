@@ -298,6 +298,21 @@ export default function Nutrition() {
             </div>
           </div>
           <Progress value={(totals.calories / dailyGoals.calories) * 100} className="h-3 bg-white/20" />
+          
+          {/* Pozostałe kalorie */}
+          <div className="mt-4 pt-3 border-t border-white/20">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium opacity-80">Zostało do końca dnia:</span>
+              <span className={cn(
+                "text-2xl font-extrabold font-display",
+                dailyGoals.calories - totals.calories < 0 ? "text-red-300" : "text-white"
+              )}>
+                {dailyGoals.calories - totals.calories > 0 
+                  ? `${dailyGoals.calories - totals.calories} kcal` 
+                  : `${Math.abs(dailyGoals.calories - totals.calories)} kcal za dużo 😅`}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
