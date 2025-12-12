@@ -2685,8 +2685,46 @@ function GeneratedShoppingList({ dietPlan, startDate, endDate, checkedItems, onT
     );
   }
   
+  // Calculate costs
+  const { total: estimatedTotal } = calculateShoppingListTotal(
+    ingredients.map(ing => ({ 
+      name: ing.name, 
+      packageCount: ing.packageCount || 1 
+    }))
+  );
+  const { total: remainingTotal } = calculateShoppingListTotal(
+    ingredients
+      .filter(ing => !checkedItems.has(ing.name.toLowerCase()))
+      .map(ing => ({ 
+        name: ing.name, 
+        packageCount: ing.packageCount || 1 
+      }))
+  );
+  
   return (
     <div className="flex-1 overflow-y-auto space-y-4">
+      {/* Estimated Cost */}
+      <div className="bg-gradient-to-br from-amber-500/20 via-orange-500/20 to-rose-500/20 rounded-2xl border-2 border-amber-500/40 p-4 shadow-card-playful">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg">
+            <Wallet className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground font-medium">Szacunkowy koszt zakupów</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-extrabold font-display text-foreground">
+                ~{estimatedTotal.toFixed(0)} zł
+              </span>
+              {checkedCount > 0 && (
+                <span className="text-sm text-orange-600 font-medium">
+                  (zostało ~{remainingTotal.toFixed(0)} zł)
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      
       {/* Progress */}
       <div className="bg-muted/50 rounded-xl p-3">
         <div className="flex items-center justify-between mb-2">
