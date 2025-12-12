@@ -5,6 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 export const SHOPIFY_API_VERSION = '2025-07';
 export const SHOPIFY_STORE_PERMANENT_DOMAIN = 'fitfly-6ke6w.myshopify.com';
 
+// Tymczasowo wyłączona integracja Shopify, żeby uniknąć błędów 404,
+// dopóki sklep nie będzie w pełni skonfigurowany.
+const SHOPIFY_ENABLED = false;
+
 export interface ShopifyProduct {
   node: {
     id: string;
@@ -49,9 +53,14 @@ export interface ShopifyProduct {
   };
 }
 
-// Storefront API helper function - routes through Edge Function
+// Storefront API helper function - obecnie wyłączony, żeby nie dzwonić do edge function
 export async function storefrontApiRequest(query: string, variables: Record<string, unknown> = {}) {
   try {
+    if (!SHOPIFY_ENABLED) {
+      console.warn('Shopify integration is disabled — skipping API call');
+      return null;
+    }
+
     const { data, error } = await supabase.functions.invoke('shopify-storefront', {
       body: {
         action: 'graphql',
