@@ -10,6 +10,7 @@ import { recipesDatabase, DatabaseRecipe, getRecipesByCategory } from '@/data/re
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
 
 const categoryLabels: Record<string, { label: string; emoji: string }> = {
   all: { label: 'Wszystkie', emoji: '🍽️' },
@@ -82,14 +83,19 @@ export default function RecipesDatabase() {
         return;
       }
       
-      const recipeData = {
+      const recipeData: Json = {
         name: recipe.name,
         description: recipe.description,
         ingredients: recipe.ingredients,
         servings: recipe.servings,
         total_time_minutes: recipe.total_time_minutes,
         tools_needed: recipe.tools_needed,
-        steps: recipe.steps,
+        steps: recipe.steps.map(step => ({
+          instruction: step.instruction,
+          duration_minutes: step.duration_minutes,
+          ingredients_needed: step.ingredients_needed,
+          tip: step.tip
+        })),
         macros: recipe.macros,
         mealType: recipe.category === 'snack' || recipe.category === 'dessert' ? 'snack' : recipe.category
       };
@@ -99,7 +105,7 @@ export default function RecipesDatabase() {
         .insert([{
           user_id: user.id,
           recipe_name: recipe.name,
-          recipe_data: recipeData as unknown as Record<string, unknown>
+          recipe_data: recipeData
         }]);
       
       if (error) throw error;
