@@ -16,9 +16,8 @@ export interface PackageConfig {
 }
 
 export const PACKAGE_CONFIGURATIONS: Record<string, PackageConfig> = {
-  // === JAJKA ===
+  // === JAJKA (forma bazowa: jajko) ===
   'jajko': { sizes: [6, 10, 12], unit: 'szt', packageName: 'opakowanie', weightPerPiece: 50 },
-  'jajka': { sizes: [6, 10, 12], unit: 'szt', packageName: 'opakowanie', weightPerPiece: 50 },
   
   // === NABIAŁ ===
   'masło': { sizes: [200, 250], unit: 'g', packageName: 'kostka', defaultSize: 200 },
@@ -208,62 +207,61 @@ const NAME_EXPANSIONS: Record<string, string> = {
 // =====================================================
 
 const VALID_FOOD_PRODUCTS = new Set([
-  // === NABIAŁ ===
-  'jajko', 'jajka', 'mleko', 'masło', 'ser', 'ser żółty', 'ser biały', 'ser feta', 'ser mozzarella',
+  // === NABIAŁ (formy bazowe - liczba pojedyncza) ===
+  'jajko', 'mleko', 'masło', 'ser', 'ser żółty', 'ser biały', 'ser feta', 'ser mozzarella',
   'ser parmezan', 'ser ricotta', 'ser mascarpone', 'ser gorgonzola', 'ser camembert', 'ser brie',
   'twaróg', 'twaróg chudy', 'twaróg półtłusty', 'jogurt', 'jogurt naturalny', 'jogurt grecki',
   'śmietana', 'śmietanka', 'kefir', 'maślanka', 'serek wiejski', 'serek homogenizowany',
   
-  // === MIĘSO ===
-  'kurczak', 'pierś z kurczaka', 'udko z kurczaka', 'skrzydełka', 'podudzie',
+  // === MIĘSO (formy bazowe) ===
+  'kurczak', 'pierś z kurczaka', 'udko z kurczaka', 'skrzydełko', 'podudzie',
   'indyk', 'pierś z indyka', 'wołowina', 'antrykot', 'rostbef', 'befsztyk',
-  'wieprzowina', 'schab', 'karkówka', 'boczek', 'żeberka', 'golonka',
+  'wieprzowina', 'schab', 'karkówka', 'boczek', 'żeberko', 'golonka',
   'mięso mielone', 'mięso mielone wołowe', 'mięso mielone wieprzowe', 'mięso mielone drobiowe',
-  'szynka', 'kiełbasa', 'parówki', 'kabanosy', 'salami', 'mortadela',
-  'wędlina', 'polędwica', 'baleron',
+  'szynka', 'kiełbasa', 'parówka', 'kabanos', 'salami', 'mortadela',
+  'wędlina', 'polędwica', 'baleron', 'filet',
   
-  // === RYBY I OWOCE MORZA ===
+  // === RYBY I OWOCE MORZA (formy bazowe) ===
   'łosoś', 'filet z łososia', 'dorsz', 'filet z dorsza', 'tuńczyk', 'makrela', 'śledź',
   'pstrąg', 'tilapia', 'morszczuk', 'halibut', 'sandacz', 'karp', 'szczupak',
-  'krewetki', 'małże', 'ośmiornica', 'kalmary', 'przegrzebki',
+  'krewetki', 'małże', 'ośmiornica', 'kalmar', 'przegrzebka',
   
-  // === WARZYWA ===
-  'marchew', 'marchewka', 'cebula', 'czosnek', 'pomidor', 'pomidory', 'ogórek', 'ogórki',
-  'ogórek kiszony', 'ogórki kiszone', 'papryka', 'brokuł', 'brokuły', 'kalafior',
+  // === WARZYWA (formy bazowe - liczba pojedyncza) ===
+  'marchew', 'cebula', 'czosnek', 'pomidor', 'ogórek',
+  'ogórek kiszony', 'papryka', 'brokuł', 'kalafior',
   'szpinak', 'sałata', 'kapusta', 'kapusta pekińska', 'kapusta kiszona',
-  'ziemniaki', 'ziemniak', 'bataty', 'cukinia', 'bakłażan', 'dynia',
-  'por', 'seler', 'seler naciowy', 'burak', 'buraki', 'rzodkiewka',
+  'ziemniak', 'batat', 'cukinia', 'bakłażan', 'dynia',
+  'por', 'seler', 'seler naciowy', 'burak', 'rzodkiewka',
   'pietruszka', 'szczypiorek', 'koperek', 'rukola', 'roszponka',
   'awokado', 'kukurydza', 'groszek', 'fasola', 'fasola szparagowa',
-  'szparagi', 'karczoch', 'fenkuł', 'jarmuż', 'botwina',
-  'pomidory koktajlowe', 'pomidory suszone', 'koncentrat pomidorowy', 'passata',
+  'szparag', 'karczoch', 'fenkuł', 'jarmuż', 'botwina',
+  'pomidor koktajlowy', 'pomidory suszone', 'koncentrat pomidorowy', 'passata',
   
-  // === OWOCE ===
-  'jabłko', 'jabłka', 'banan', 'banany', 'pomarańcza', 'pomarańcze',
-  'cytryna', 'cytryny', 'limonka', 'grejpfrut', 'mandarynka',
+  // === OWOCE (formy bazowe - liczba pojedyncza) ===
+  'jabłko', 'banan', 'pomarańcza', 'cytryna', 'limonka', 'grejpfrut', 'mandarynka',
   'kiwi', 'mango', 'ananas', 'arbuz', 'melon', 'gruszka',
   'śliwka', 'brzoskwinia', 'nektarynka', 'morela', 'wiśnia', 'czereśnia',
-  'truskawki', 'maliny', 'borówki', 'jagody', 'jeżyny', 'porzeczki',
-  'winogrona', 'figi', 'daktyle', 'rodzynki', 'żurawina', 'granat',
+  'truskawka', 'malina', 'borówka', 'jagoda', 'jeżyna', 'porzeczka',
+  'winogrona', 'figa', 'daktyl', 'rodzynek', 'żurawina', 'granat',
   
-  // === PIECZYWO ===
+  // === PIECZYWO (formy bazowe) ===
   'chleb', 'chleb pszenny', 'chleb żytni', 'chleb razowy', 'chleb graham',
-  'bułka', 'bułki', 'bagietka', 'rogal', 'croissant', 'toast', 'tosty',
+  'bułka', 'bagietka', 'rogal', 'croissant', 'toast',
   'tortilla', 'pita', 'bułka tarta', 'chałka',
   
-  // === ZBOŻA I MAKARONY ===
+  // === ZBOŻA I MAKARONY (formy bazowe) ===
   'ryż', 'ryż biały', 'ryż brązowy', 'ryż basmati', 'ryż jaśminowy',
   'makaron', 'makaron spaghetti', 'makaron penne', 'makaron fusilli', 'makaron tagliatelle',
   'kasza', 'kasza gryczana', 'kasza jaglana', 'kasza jęczmienna', 'kasza kuskus',
   'mąka', 'mąka pszenna', 'mąka żytnia', 'mąka orkiszowa',
-  'płatki owsiane', 'płatki', 'owsianka', 'musli', 'granola',
+  'płatki owsiane', 'owsianka', 'musli', 'granola',
   'quinoa', 'bulgur', 'amarantus', 'kuskus',
   
   // === PRZYPRAWY I ZIOŁA ===
   'sól', 'pieprz', 'papryka słodka', 'papryka ostra', 'kurkuma', 'curry', 'chili',
   'oregano', 'bazylia', 'tymianek', 'rozmaryn', 'majeranek', 'lubczyk', 'estragon',
-  'cynamon', 'gałka muszkatołowa', 'imbir', 'goździki', 'anyż', 'kardamon',
-  'kminek', 'kolendra', 'koperek', 'natka pietruszki',
+  'cynamon', 'gałka muszkatołowa', 'imbir', 'goździk', 'anyż', 'kardamon',
+  'kminek', 'kolendra', 'natka pietruszki',
   'liść laurowy', 'ziele angielskie',
   
   // === OLEJE I TŁUSZCZE ===
@@ -272,7 +270,7 @@ const VALID_FOOD_PRODUCTS = new Set([
   
   // === OCTY I SOSY ===
   'ocet', 'ocet balsamiczny', 'ocet jabłkowy', 'ocet winny',
-  'sos sojowy', 'sos worcester', 'sos teriyaki', 'sos sriracha', 'sos tabasco',
+  'sos sojowy', 'sos', 'sos worcester', 'sos teriyaki', 'sos sriracha', 'sos tabasco',
   'ketchup', 'musztarda', 'majonez', 'sos tatarski',
   
   // === SŁODYCZE I PRZEKĄSKI ===
@@ -282,10 +280,11 @@ const VALID_FOOD_PRODUCTS = new Set([
   'kakao', 'kawa', 'herbata',
   
   // === ORZECHY I NASIONA ===
-  'orzechy', 'orzechy włoskie', 'orzechy laskowe', 'orzechy nerkowca', 'migdały',
-  'orzechy ziemne', 'orzeszki ziemne', 'pistacje', 'orzechy pekan', 'orzechy brazylijskie',
+  'orzechy', 'orzech włoski', 'orzech laskowy', 'orzech nerkowca', 'migdał',
+  'orzech ziemny', 'pistacja', 'orzech pekan', 'orzech brazylijski',
   'masło orzechowe', 'tahini', 'sezam', 'siemię lniane', 'nasiona chia',
-  'pestki dyni', 'pestki słonecznika', 'kokos', 'wiórki kokosowe',
+  'pestka dyni', 'pestka słonecznika', 'kokos', 'wiórki kokosowe',
+  'migdały',
   
   // === ROŚLINY STRĄCZKOWE ===
   'ciecierzyca', 'soczewica', 'soczewica czerwona', 'fasola biała', 'fasola czerwona',
@@ -293,11 +292,11 @@ const VALID_FOOD_PRODUCTS = new Set([
   
   // === PRODUKTY GOTOWE ===
   'tofu', 'tempeh', 'hummus', 'pesto', 'bulion', 'rosół', 'kostka rosołowa',
-  'mleko kokosowe', 'śmietanka kokosowa', 'pasta curry',
+  'mleko kokosowe', 'śmietanka kokosowa', 'pasta curry', 'pasta',
   
   // === PRZETWORY ===
   'pomidory w puszce', 'groszek w puszce', 'kukurydza w puszce',
-  'tuńczyk w puszce', 'sardynki', 'szprotki',
+  'tuńczyk w puszce', 'sardynka', 'szprotka',
   
   // === NAPOJE ===
   'woda', 'sok', 'sok pomarańczowy', 'sok jabłkowy', 'kompot',
@@ -446,105 +445,107 @@ const COMPOUND_PRODUCTS: Record<string, string> = {
 };
 
 // Formy gramatyczne -> forma podstawowa produktu
+// KRYTYCZNE: Wszystkie formy MUSZĄ mapować na TĘ SAMĄ formę bazową!
 const POLISH_LEMMAS: Record<string, string> = {
-  // Jajka
-  'jajkiem': 'jajko', 'jajka': 'jajka', 'jajek': 'jajka', 
-  'jajkami': 'jajka', 'jaj': 'jajka', 'jajo': 'jajko',
+  // Jajka - WSZYSTKO na "jajko"
+  'jajkiem': 'jajko', 'jajka': 'jajko', 'jajek': 'jajko', 
+  'jajkami': 'jajko', 'jaj': 'jajko', 'jajo': 'jajko',
   
-  // Nabiał
+  // Nabiał - ujednolicone formy bazowe
   'mlekiem': 'mleko', 'mleka': 'mleko', 'mleku': 'mleko',
   'masłem': 'masło', 'masła': 'masło', 'maśle': 'masło',
-  'serem': 'ser', 'sera': 'ser', 'serze': 'ser', 'serami': 'ser',
+  'serem': 'ser', 'sera': 'ser', 'serze': 'ser', 'serami': 'ser', 'sery': 'ser',
+  'jogurtem': 'jogurt', 'jogurtu': 'jogurt', 'jogurtami': 'jogurt', 'jogurty': 'jogurt',
+  'twarogiem': 'twaróg', 'twarogu': 'twaróg', 'twarogi': 'twaróg', 'twarogów': 'twaróg',
   'śmietaną': 'śmietana', 'śmietany': 'śmietana', 'śmietanie': 'śmietana',
   'śmietanką': 'śmietanka', 'śmietanki': 'śmietanka',
-  'jogurtem': 'jogurt', 'jogurtu': 'jogurt', 'jogurtami': 'jogurt',
-  'twarogiem': 'twaróg', 'twarogu': 'twaróg',
-  'kefirem': 'kefir', 'kefiru': 'kefir',
+  'kefirem': 'kefir', 'kefiru': 'kefir', 'kefiry': 'kefir',
   
-  // Mięso
-  'kurczakiem': 'kurczak', 'kurczaka': 'kurczak',
-  'piersią': 'pierś z kurczaka', 'piersi': 'pierś z kurczaka',
-  'filetem': 'filet', 'fileta': 'filet', 'filety': 'filet',
-  'indykiem': 'indyk', 'indyka': 'indyk',
+  // Mięso - ujednolicone formy bazowe
+  'kurczakiem': 'kurczak', 'kurczaka': 'kurczak', 'kurczaki': 'kurczak',
+  'piersią': 'pierś z kurczaka', 'piersi': 'pierś z kurczaka', 'pierś': 'pierś z kurczaka',
+  'filetem': 'filet', 'fileta': 'filet', 'filety': 'filet', 'filetów': 'filet',
+  'indykiem': 'indyk', 'indyka': 'indyk', 'indyki': 'indyk',
   'wołowiną': 'wołowina', 'wołowiny': 'wołowina',
   'wieprzowiną': 'wieprzowina', 'wieprzowiny': 'wieprzowina',
-  'łososiem': 'łosoś', 'łososia': 'łosoś',
-  'tuńczykiem': 'tuńczyk', 'tuńczyka': 'tuńczyk',
-  'krewetkami': 'krewetki', 'krewetkę': 'krewetki', 'krewetek': 'krewetki',
-  'szynką': 'szynka', 'szynki': 'szynka',
+  'łososiem': 'łosoś', 'łososia': 'łosoś', 'łososie': 'łosoś',
+  'tuńczykiem': 'tuńczyk', 'tuńczyka': 'tuńczyk', 'tuńczyki': 'tuńczyk',
+  'krewetkami': 'krewetki', 'krewetkę': 'krewetki', 'krewetek': 'krewetki', 'krewetka': 'krewetki',
+  'szynką': 'szynka', 'szynki': 'szynka', 'szynkę': 'szynka',
   'boczkiem': 'boczek', 'boczku': 'boczek',
-  'kiełbasą': 'kiełbasa', 'kiełbasy': 'kiełbasa',
+  'kiełbasą': 'kiełbasa', 'kiełbasy': 'kiełbasa', 'kiełbasę': 'kiełbasa',
   'mięsem': 'mięso', 'mięsa': 'mięso',
-  'mielonego': 'mięso mielone', 'mielonym': 'mięso mielone',
+  'mielonego': 'mięso mielone', 'mielonym': 'mięso mielone', 'mielone': 'mięso mielone',
   
-  // Warzywa
-  'marchewką': 'marchew', 'marchwi': 'marchew', 'marchewki': 'marchew',
-  'cebulą': 'cebula', 'cebuli': 'cebula', 'cebulę': 'cebula',
-  'czosnkiem': 'czosnek', 'czosnku': 'czosnek', 'ząbki': 'czosnek', 'ząbek': 'czosnek',
-  'pomidorem': 'pomidor', 'pomidora': 'pomidor', 'pomidorów': 'pomidory',
-  'ogórkiem': 'ogórek', 'ogórka': 'ogórek', 'ogórków': 'ogórki',
-  'papryką': 'papryka', 'papryki': 'papryka', 'papryce': 'papryka',
-  'brokułem': 'brokuł', 'brokułami': 'brokuły', 'brokułów': 'brokuły',
+  // Warzywa - ujednolicone formy bazowe (zawsze liczba pojedyncza)
+  'marchewką': 'marchew', 'marchwi': 'marchew', 'marchewki': 'marchew', 'marchewek': 'marchew',
+  'cebulą': 'cebula', 'cebuli': 'cebula', 'cebulę': 'cebula', 'cebule': 'cebula',
+  'czosnkiem': 'czosnek', 'czosnku': 'czosnek', 'ząbki': 'czosnek', 'ząbek': 'czosnek', 'ząbków': 'czosnek',
+  'pomidorem': 'pomidor', 'pomidora': 'pomidor', 'pomidorów': 'pomidor', 'pomidory': 'pomidor',
+  'ogórkiem': 'ogórek', 'ogórka': 'ogórek', 'ogórków': 'ogórek', 'ogórki': 'ogórek',
+  'papryką': 'papryka', 'papryki': 'papryka', 'papryce': 'papryka', 'papryk': 'papryka',
+  'brokułem': 'brokuł', 'brokułami': 'brokuł', 'brokułów': 'brokuł', 'brokuły': 'brokuł',
   'szpinakiem': 'szpinak', 'szpinaku': 'szpinak',
-  'sałatą': 'sałata', 'sałaty': 'sałata', 'sałacie': 'sałata',
-  'kapustą': 'kapusta', 'kapusty': 'kapusta', 'kapuście': 'kapusta',
-  'ziemniakami': 'ziemniaki', 'ziemniaków': 'ziemniaki',
-  'cukinią': 'cukinia', 'cukinii': 'cukinia',
-  'bakłażanem': 'bakłażan', 'bakłażana': 'bakłażan',
-  'kalafiorem': 'kalafior', 'kalafiora': 'kalafior',
-  'porem': 'por', 'pora': 'por',
-  'selerem': 'seler', 'selera': 'seler',
-  'burakiem': 'burak', 'buraka': 'burak', 'burakami': 'buraki',
+  'sałatą': 'sałata', 'sałaty': 'sałata', 'sałacie': 'sałata', 'sałatę': 'sałata',
+  'kapustą': 'kapusta', 'kapusty': 'kapusta', 'kapuście': 'kapusta', 'kapustę': 'kapusta',
+  'ziemniakami': 'ziemniak', 'ziemniaków': 'ziemniak', 'ziemniaki': 'ziemniak', 'ziemniaka': 'ziemniak',
+  'cukinią': 'cukinia', 'cukinii': 'cukinia', 'cukinię': 'cukinia', 'cukinie': 'cukinia',
+  'bakłażanem': 'bakłażan', 'bakłażana': 'bakłażan', 'bakłażany': 'bakłażan',
+  'kalafiorem': 'kalafior', 'kalafiora': 'kalafior', 'kalafiory': 'kalafior',
+  'porem': 'por', 'pora': 'por', 'pory': 'por',
+  'selerem': 'seler', 'selera': 'seler', 'selery': 'seler',
+  'burakiem': 'burak', 'buraka': 'burak', 'burakami': 'burak', 'buraki': 'burak', 'buraków': 'burak',
   'awokado': 'awokado',
   'pietruszkę': 'pietruszka', 'pietruszki': 'pietruszka', 'pietruszką': 'pietruszka',
   'szczypiorkiem': 'szczypiorek', 'szczypiorku': 'szczypiorek',
-  'rukolą': 'rukola', 'rukoli': 'rukola',
+  'rukolą': 'rukola', 'rukoli': 'rukola', 'rukolę': 'rukola',
   
-  // Owoce
-  'jabłkiem': 'jabłko', 'jabłka': 'jabłka', 'jabłek': 'jabłka',
-  'bananem': 'banan', 'banana': 'banan', 'bananów': 'banany',
-  'pomarańczą': 'pomarańcza', 'pomarańczy': 'pomarańcze',
-  'cytryną': 'cytryna', 'cytryny': 'cytryny',
-  'truskawkami': 'truskawki', 'truskawek': 'truskawki',
-  'malinami': 'maliny', 'malin': 'maliny',
-  'jagodami': 'jagody', 'jagód': 'jagody',
-  'borówkami': 'borówki', 'borówek': 'borówki',
+  // Owoce - ujednolicone formy bazowe (zawsze liczba pojedyncza)
+  'jabłkiem': 'jabłko', 'jabłka': 'jabłko', 'jabłek': 'jabłko', 'jabłkami': 'jabłko',
+  'bananem': 'banan', 'banana': 'banan', 'bananów': 'banan', 'banany': 'banan',
+  'pomarańczą': 'pomarańcza', 'pomarańczy': 'pomarańcza', 'pomarańcze': 'pomarańcza',
+  'cytryną': 'cytryna', 'cytryny': 'cytryna', 'cytrynę': 'cytryna',
+  'truskawkami': 'truskawka', 'truskawek': 'truskawka', 'truskawki': 'truskawka',
+  'malinami': 'malina', 'malin': 'malina', 'maliny': 'malina',
+  'jagodami': 'jagoda', 'jagód': 'jagoda', 'jagody': 'jagoda',
+  'borówkami': 'borówka', 'borówek': 'borówka', 'borówki': 'borówka',
   'winogronami': 'winogrona', 'winogron': 'winogrona',
   
-  // Zboża
+  // Zboża - ujednolicone formy bazowe
   'ryżem': 'ryż', 'ryżu': 'ryż',
-  'makaronem': 'makaron', 'makaronu': 'makaron',
-  'kaszą': 'kasza', 'kaszy': 'kasza',
-  'mąką': 'mąka', 'mąki': 'mąka',
-  'płatkami': 'płatki owsiane', 'płatków': 'płatki owsiane',
-  'chlebem': 'chleb', 'chleba': 'chleb',
-  'bułką': 'bułka', 'bułki': 'bułki', 'bułek': 'bułki',
+  'makaronem': 'makaron', 'makaronu': 'makaron', 'makarony': 'makaron',
+  'kaszą': 'kasza', 'kaszy': 'kasza', 'kasze': 'kasza',
+  'mąką': 'mąka', 'mąki': 'mąka', 'mąkę': 'mąka',
+  'płatkami': 'płatki owsiane', 'płatków': 'płatki owsiane', 'płatki': 'płatki owsiane',
+  'chlebem': 'chleb', 'chleba': 'chleb', 'chlebów': 'chleb', 'chleby': 'chleb',
+  'bułką': 'bułka', 'bułki': 'bułka', 'bułek': 'bułka', 'bułkę': 'bułka',
+  'tortillą': 'tortilla', 'tortilli': 'tortilla', 'tortille': 'tortilla', 'tortillę': 'tortilla',
   
-  // Przyprawy
+  // Przyprawy - ujednolicone formy bazowe
   'solą': 'sól', 'soli': 'sól',
   'pieprzem': 'pieprz', 'pieprzu': 'pieprz',
-  'bazylią': 'bazylia', 'bazylii': 'bazylia',
+  'bazylią': 'bazylia', 'bazylii': 'bazylia', 'bazylię': 'bazylia',
   'oregano': 'oregano',
   'tymiankiem': 'tymianek', 'tymianku': 'tymianek',
-  'kurkumą': 'kurkuma', 'kurkumy': 'kurkuma',
+  'kurkumą': 'kurkuma', 'kurkumy': 'kurkuma', 'kurkumę': 'kurkuma',
   'curry': 'curry',
   'cynamonem': 'cynamon', 'cynamonu': 'cynamon',
   'imbirem': 'imbir', 'imbiru': 'imbir',
-  'oliwą': 'oliwa z oliwek', 'oliwy': 'oliwa z oliwek',
+  'oliwą': 'oliwa z oliwek', 'oliwy': 'oliwa z oliwek', 'oliwę': 'oliwa z oliwek',
   'olejem': 'olej', 'oleju': 'olej',
   'octem': 'ocet', 'octu': 'ocet',
   'miodem': 'miód', 'miodu': 'miód',
   'cukrem': 'cukier', 'cukru': 'cukier',
   
-  // Inne
-  'orzechami': 'orzechy', 'orzechów': 'orzechy', 'orzeszkami': 'orzechy',
+  // Inne - ujednolicone formy bazowe
+  'orzechami': 'orzechy', 'orzechów': 'orzechy', 'orzeszkami': 'orzechy', 'orzeszków': 'orzechy',
   'migdałami': 'migdały', 'migdałów': 'migdały',
-  'czekoladą': 'czekolada', 'czekolady': 'czekolada',
+  'czekoladą': 'czekolada', 'czekolady': 'czekolada', 'czekoladę': 'czekolada',
   'dżemem': 'dżem', 'dżemu': 'dżem',
   'hummusem': 'hummus', 'hummusu': 'hummus',
   'tofu': 'tofu',
-  'sosem': 'sos sojowy', 'sosu': 'sos sojowy',
-  'pastą': 'pasta', 'pasty': 'pasta',
+  'sosem': 'sos', 'sosu': 'sos', 'sosy': 'sos',
+  'pastą': 'pasta', 'pasty': 'pasta', 'pastę': 'pasta',
 };
 
 // =====================================================
@@ -858,8 +859,10 @@ function calculatePackages(
       }
     }
     
+    // Ograniczenie maksymalnej liczby opakowań do rozsądnych wartości
+    const cappedCount = Math.min(Math.max(1, bestCount), 10);
     return { 
-      count: Math.max(1, bestCount), 
+      count: cappedCount, 
       size: bestSize, 
       packageName: config.packageName 
     };
@@ -867,8 +870,10 @@ function calculatePackages(
   
   // Dla produktów wagowych/objętościowych
   const count = Math.ceil(effectiveAmount / defaultSize);
+  // Ograniczenie maksymalnej liczby opakowań
+  const cappedCount = Math.min(Math.max(1, count), 15);
   return { 
-    count: Math.max(1, count), 
+    count: cappedCount, 
     size: defaultSize, 
     packageName: config.packageName 
   };
