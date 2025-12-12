@@ -938,7 +938,7 @@ function formatDisplayText(
     'doniczka': ['doniczka', 'doniczki', 'doniczek'],
     'saszetka': ['saszetka', 'saszetki', 'saszetek'],
     'kg': ['kg', 'kg', 'kg'],
-    'szt': ['szt', 'szt', 'szt'],
+    'ząbek': ['ząbek', 'ząbki', 'ząbków'],
   };
   
   const getPluralForm = (name: string, count: number): string => {
@@ -950,44 +950,51 @@ function formatDisplayText(
   
   const plural = getPluralForm(packageName, packageCount);
   
-  // Format ilości
-  let amountStr = '';
-  if (totalAmount > 0 && unit !== 'szt') {
-    if (totalAmount >= 1000 && unit === 'g') {
-      amountStr = `${(totalAmount / 1000).toFixed(1).replace('.0', '')} kg`;
-    } else if (totalAmount >= 1000 && unit === 'ml') {
-      amountStr = `${(totalAmount / 1000).toFixed(1).replace('.0', '')} l`;
-    } else {
-      amountStr = `${Math.round(totalAmount)} ${unit}`;
-    }
+  // Produkty sztukowe - bez nawiasów, proste wyświetlanie
+  // np. "3 sztuki", "1 główka", "2 bochenki"
+  if (packageName === 'sztuka' || packageName === 'główka' || packageName === 'bochenek' || 
+      packageName === 'ząbek' || packageName === 'pęczek' || packageName === 'korzeń') {
+    return `${packageCount} ${plural}`;
   }
   
-  // Dla produktów sztukowych bez dodatkowego opakowania
-  if (packageName === 'sztuka' || packageName === 'szt') {
-    return `${packageCount} ${getPluralForm('szt', packageCount)}`;
-  }
-  
-  // Dla opakowań z wieloma sztukami (jajka)
+  // Dla jajek - wyświetl liczbę sztuk w opakowaniu
+  // np. "1 opakowanie (10 szt)"
   if (packageSize > 1 && unit === 'szt') {
     const totalPieces = packageCount * packageSize;
     return `${packageCount} ${plural} (${totalPieces} szt)`;
   }
   
-  // Dla produktów wagowych/objętościowych
-  if (packageSize > 0 && amountStr) {
+  // Produkty wagowe/objętościowe gdzie gramy/ml mają sens (mięso, ryby, nabiał wagowy)
+  // np. "2 filety (400g)", "1 opakowanie (500g)"
+  if (unit === 'g' || unit === 'ml') {
     const totalPackageAmount = packageCount * packageSize;
-    const packageAmountStr = unit === 'g' && totalPackageAmount >= 1000 
-      ? `${(totalPackageAmount / 1000).toFixed(1).replace('.0', '')} kg`
-      : unit === 'ml' && totalPackageAmount >= 1000
-        ? `${(totalPackageAmount / 1000).toFixed(1).replace('.0', '')} l`
-        : `${totalPackageAmount} ${unit}`;
     
-    if (packageCount === 1) {
+    // Dla kg - wyświetl jako kg bez nawiasów
+    if (packageName === 'kg') {
+      if (totalPackageAmount >= 1000) {
+        return `${(totalPackageAmount / 1000).toFixed(1).replace('.0', '')} kg`;
+      }
+      return `${totalPackageAmount}g`;
+    }
+    
+    // Dla innych opakowań - pokaż gramy/ml tylko dla mięsa, ryb, sera
+    // gdzie waga jest istotna przy zakupach
+    const showWeight = totalPackageAmount >= 50; // Pokaż wagę tylko jeśli > 50g
+    
+    if (showWeight) {
+      let amountStr: string;
+      if (totalPackageAmount >= 1000 && unit === 'g') {
+        amountStr = `${(totalPackageAmount / 1000).toFixed(1).replace('.0', '')} kg`;
+      } else if (totalPackageAmount >= 1000 && unit === 'ml') {
+        amountStr = `${(totalPackageAmount / 1000).toFixed(1).replace('.0', '')} l`;
+      } else {
+        amountStr = `${totalPackageAmount}${unit}`;
+      }
       return `${packageCount} ${plural} (${amountStr})`;
     }
-    return `${packageCount} ${plural} (${packageCount} x ${packageSize}${unit} = ${packageAmountStr})`;
   }
   
+  // Domyślnie - samo opakowanie bez nawiasów
   return `${packageCount} ${plural}`;
 }
 
