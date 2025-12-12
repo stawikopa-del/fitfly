@@ -729,8 +729,8 @@ function extractIngredientsFromText(text: string): RawIngredient[] {
       const quantity = parseQuantity(text);
       results.push({
         name: normalized.charAt(0).toUpperCase() + normalized.slice(1),
-        amount: quantity?.amount || 100,
-        unit: quantity?.unit || 'g',
+        amount: quantity?.amount || 1,
+        unit: quantity?.unit || 'szt',
       });
       // Oznacz te słowa jako przetworzone, żeby nie dodawać ich osobno
       text = text.replace(new RegExp(compound, 'gi'), ' ');
@@ -772,10 +772,11 @@ function extractIngredientsFromText(text: string): RawIngredient[] {
         );
         
         if (!alreadyAdded) {
+          // Domyślna ilość: 1 szt jeśli brak informacji o ilości (nie 100g!)
           results.push({
             name: normalized,
-            amount: quantity?.amount || 100,
-            unit: quantity?.unit || 'g',
+            amount: quantity?.amount || 1,
+            unit: quantity?.unit || 'szt',
           });
         }
       }
