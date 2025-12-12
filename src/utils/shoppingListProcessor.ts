@@ -53,11 +53,10 @@ export const PACKAGE_CONFIGURATIONS: Record<string, PackageConfig> = {
   'krewetki': { sizes: [200, 400], unit: 'g', packageName: 'opakowanie', defaultSize: 200 },
   
   // === PIECZYWO ===
-  'chleb': { sizes: [1], unit: 'szt', packageName: 'bochenek' },
-  'bułka': { sizes: [1], unit: 'szt', packageName: 'sztuka' },
+  'chleb': { sizes: [500, 1000], unit: 'g', packageName: 'bochenek', defaultSize: 500 },
+  'bułka': { sizes: [1], unit: 'szt', packageName: 'sztuka', weightPerPiece: 60 },
   'toast': { sizes: [500], unit: 'g', packageName: 'opakowanie', defaultSize: 500 },
-  'tortilla': { sizes: [6, 8], unit: 'szt', packageName: 'opakowanie', defaultSize: 6 },
-  
+  'tortilla': { sizes: [6, 8], unit: 'szt', packageName: 'opakowanie', defaultSize: 6, weightPerPiece: 40 },
   // === ZBOŻA I MAKARONY ===
   'mąka': { sizes: [1000, 2000], unit: 'g', packageName: 'opakowanie', defaultSize: 1000 },
   'mąka pszenna': { sizes: [1000, 2000], unit: 'g', packageName: 'opakowanie', defaultSize: 1000 },
