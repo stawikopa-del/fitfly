@@ -542,14 +542,14 @@ export default function DietConfig() {
                             )}
                           </div>
                         </div>
-                        {meal.ingredients && meal.ingredients.length > 0 && (
+                        {meal.ingredients && Array.isArray(meal.ingredients) && meal.ingredients.length > 0 && (
                           <div className="mt-2 bg-muted/50 rounded-lg p-2">
                             <p className="text-[10px] font-medium text-muted-foreground mb-1">Składniki:</p>
                             <ul className="text-xs text-foreground/80 space-y-0.5">
                               {meal.ingredients.map((ing, ingIdx) => (
                                 <li key={ingIdx} className="flex items-start gap-1">
                                   <span className="text-primary">•</span>
-                                  <span>{ing}</span>
+                                  <span>{typeof ing === 'string' ? ing : JSON.stringify(ing)}</span>
                                 </li>
                               ))}
                             </ul>
