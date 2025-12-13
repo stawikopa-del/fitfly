@@ -525,14 +525,36 @@ export default function DietConfig() {
                   </h4>
                   <div className="space-y-2">
                     {meals.map((meal, idx) => (
-                      <div key={idx} className="flex justify-between items-start py-2 border-b border-border/30 last:border-0">
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{meal.name}</p>
-                          <p className="text-xs text-muted-foreground">{meal.description}</p>
+                      <div key={idx} className="py-3 border-b border-border/30 last:border-0">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{meal.name}</p>
+                            <p className="text-xs text-muted-foreground">{meal.description}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 ml-2">
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                              {meal.calories} kcal
+                            </span>
+                            {meal.protein && meal.carbs && meal.fat && (
+                              <span className="text-[10px] text-muted-foreground">
+                                B:{meal.protein}g W:{meal.carbs}g T:{meal.fat}g
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full ml-2">
-                          {meal.calories} kcal
-                        </span>
+                        {meal.ingredients && meal.ingredients.length > 0 && (
+                          <div className="mt-2 bg-muted/50 rounded-lg p-2">
+                            <p className="text-[10px] font-medium text-muted-foreground mb-1">Składniki:</p>
+                            <ul className="text-xs text-foreground/80 space-y-0.5">
+                              {meal.ingredients.map((ing, ingIdx) => (
+                                <li key={ingIdx} className="flex items-start gap-1">
+                                  <span className="text-primary">•</span>
+                                  <span>{ing}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
