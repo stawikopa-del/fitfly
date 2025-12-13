@@ -35,59 +35,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const initRef = useRef(false);
 
   useEffect(() => {
-    // Prevent double initialization
+    // Prevent double initialization in StrictMode
     if (initRef.current) return;
     initRef.current = true;
 
     let mounted = true;
+    let initialSessionChecked = false;
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         if (!mounted) return;
         
-        // Synchronous state updates only
+        // Skip if this is the initial SIGNED_IN event and we haven't checked session yet
+        // This prevents race condition between getSession and onAuthStateChange
+        if (event === 'INITIAL_SESSION') {
+          // This is the initial session from getSession, handle it
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          setLoading(false);
+          setIsInitialized(true);
+          initialSessionChecked = true;
+          return;
+        }
+        
+        // For all other events (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, etc.)
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
-        setLoading(false);
-        setIsInitialized(true);
+        
+        if (!initialSessionChecked) {
+          setLoading(false);
+          setIsInitialized(true);
+          initialSessionChecked = true;
+        }
       }
     );
 
-    // THEN check for existing session with retry
-    const initSession = async (retryCount = 0) => {
-      const maxRetries = 3;
+    // Check for existing session - this will trigger INITIAL_SESSION event
+    supabase.auth.getSession().then(({ data: { session: existingSession }, error }) => {
+      if (!mounted) return;
       
-      try {
-        const { data: { session: existingSession }, error } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
-        
-        if (error && retryCount < maxRetries) {
-          // Retry after delay
-          setTimeout(() => initSession(retryCount + 1), 1000 * (retryCount + 1));
-          return;
+      // If we haven't received INITIAL_SESSION yet, set state directly
+      if (!initialSessionChecked) {
+        if (error) {
+          console.error('Session init error:', error);
         }
-        
         setSession(existingSession);
         setUser(existingSession?.user ?? null);
-      } catch (error) {
-        console.error('Session init error:', error);
-        
-        // Retry on network errors
-        if (retryCount < maxRetries) {
-          setTimeout(() => initSession(retryCount + 1), 1000 * (retryCount + 1));
-          return;
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-          setIsInitialized(true);
-        }
+        setLoading(false);
+        setIsInitialized(true);
+        initialSessionChecked = true;
       }
-    };
-
-    initSession();
+    }).catch((error) => {
+      if (!mounted) return;
+      console.error('Session init error:', error);
+      if (!initialSessionChecked) {
+        setLoading(false);
+        setIsInitialized(true);
+        initialSessionChecked = true;
+      }
+    });
 
     return () => {
       mounted = false;
