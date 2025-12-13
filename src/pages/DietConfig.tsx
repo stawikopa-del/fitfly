@@ -82,7 +82,11 @@ const activityLevels = [
 interface MealItem {
   name: string;
   calories: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
   description: string;
+  ingredients?: string[];
 }
 
 interface GeneratedDietPlan {
