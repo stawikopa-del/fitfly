@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ArrowLeft, Search, Loader2, AlertCircle, Star, Flame, Beef, Wheat, Plus, Smartphone, Camera, X, ScanLine } from 'lucide-react';
+import { ArrowLeft, Search, Loader2, AlertCircle, Star, Flame, Beef, Wheat, Plus, Smartphone, Camera, X, ScanLine, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProductData {
   name: string;
@@ -200,6 +201,12 @@ export function BarcodeScanner({
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // Fallback photo capture state
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
   
   // Check if BarcodeDetector is supported
   const isBarcodeDetectorSupported = typeof window !== 'undefined' && 'BarcodeDetector' in window;
@@ -245,6 +252,7 @@ export function BarcodeScanner({
     setError(null);
     setManualBarcode('');
     setCustomServingSize('');
+    setCapturedPhoto(null);
   };
 
   // Camera functions
@@ -262,7 +270,7 @@ export function BarcodeScanner({
         await videoRef.current.play();
         setIsCameraActive(true);
         
-        // Start barcode detection
+        // Start barcode detection only if BarcodeDetector is supported
         if (isBarcodeDetectorSupported && window.BarcodeDetector) {
           const detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'] });
           
@@ -283,6 +291,7 @@ export function BarcodeScanner({
             }
           }, 250);
         }
+        // If BarcodeDetector is not supported, camera stays active for manual photo capture
       }
     } catch (err) {
       console.error('Camera error:', err);
@@ -291,6 +300,97 @@ export function BarcodeScanner({
       toast.error('Nie można uruchomić kamery');
     }
   }, [isBarcodeDetectorSupported]);
+
+  // Capture photo from video stream (fallback when BarcodeDetector not supported)
+  const capturePhoto = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) return;
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    
+    const photoData = canvas.toDataURL('image/jpeg', 0.8);
+    setCapturedPhoto(photoData);
+    stopCamera();
+    soundFeedback.buttonClick();
+  }, []);
+
+  // Analyze captured photo for barcode using AI
+  const analyzePhotoForBarcode = async (photoData: string) => {
+    setIsAnalyzingPhoto(true);
+    setError(null);
+    
+    try {
+      const base64Data = photoData.split(',')[1];
+      
+      const { data, error: fnError } = await supabase.functions.invoke('fitek-chat', {
+        body: {
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'image',
+                  image: base64Data,
+                  mimeType: 'image/jpeg'
+                },
+                {
+                  type: 'text',
+                  text: `Przeanalizuj to zdjęcie kodu kreskowego produktu. Znajdź numer kodu kreskowego (EAN/UPC) widoczny na zdjęciu i zwróć TYLKO sam numer, bez żadnych dodatkowych słów ani wyjaśnień. Jeśli nie możesz odczytać kodu, odpowiedz tylko: NIE_ZNALEZIONO`
+                }
+              ]
+            }
+          ],
+          systemPrompt: 'Jesteś ekspertem od odczytywania kodów kreskowych. Twoim jedynym zadaniem jest odczytanie numeru kodu kreskowego ze zdjęcia i zwrócenie go. Odpowiadaj tylko numerem kodu (np. 5900617001696) lub NIE_ZNALEZIONO jeśli nie możesz go odczytać.',
+          model: 'google/gemini-2.5-flash'
+        }
+      });
+
+      if (fnError) throw fnError;
+
+      const response = data?.response?.trim() || '';
+      
+      // Check if we got a valid barcode number
+      const barcodeMatch = response.match(/\d{8,14}/);
+      
+      if (barcodeMatch) {
+        const barcode = barcodeMatch[0];
+        setManualBarcode(barcode);
+        soundFeedback.success();
+        toast.success(`Odczytano kod: ${barcode}`);
+        handleBarcodeDetected(barcode);
+      } else {
+        setError('Nie udało się odczytać kodu kreskowego. Spróbuj zrobić wyraźniejsze zdjęcie lub wpisz kod ręcznie.');
+        soundFeedback.error();
+      }
+    } catch (err) {
+      console.error('Photo analysis error:', err);
+      setError('Błąd podczas analizy zdjęcia. Spróbuj ponownie lub wpisz kod ręcznie.');
+      soundFeedback.error();
+    } finally {
+      setIsAnalyzingPhoto(false);
+    }
+  };
+
+  // Handle file input for photo upload
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const photoData = e.target?.result as string;
+      setCapturedPhoto(photoData);
+      analyzePhotoForBarcode(photoData);
+    };
+    reader.readAsDataURL(file);
+  };
   
   const stopCamera = useCallback(() => {
     if (scanIntervalRef.current) {
@@ -377,6 +477,19 @@ export function BarcodeScanner({
       </div>
 
       <div className="p-4 space-y-4 pb-32">
+        {/* Hidden canvas for photo capture */}
+        <canvas ref={canvasRef} className="hidden" />
+        
+        {/* Hidden file input for photo upload */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handlePhotoUpload}
+          className="hidden"
+        />
+
         {/* Camera scanning view */}
         {isCameraActive && (
           <div className="relative bg-black rounded-3xl overflow-hidden aspect-[4/3]">
@@ -397,8 +510,10 @@ export function BarcodeScanner({
                 <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-primary rounded-bl-lg" />
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-primary rounded-br-lg" />
                 
-                {/* Scanning line animation */}
-                <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-scan-line" />
+                {/* Scanning line animation - only show if BarcodeDetector supported */}
+                {isBarcodeDetectorSupported && (
+                  <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-scan-line" />
+                )}
               </div>
             </div>
             
@@ -410,20 +525,77 @@ export function BarcodeScanner({
               <X className="w-5 h-5" />
             </button>
             
-            {/* Instructions */}
-            <div className="absolute bottom-4 left-0 right-0 text-center">
+            {/* Instructions and capture button */}
+            <div className="absolute bottom-4 left-0 right-0 text-center space-y-3">
               <p className="text-white text-sm font-medium bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 inline-block">
-                Skieruj aparat na kod kreskowy
+                {isBarcodeDetectorSupported 
+                  ? 'Skieruj aparat na kod kreskowy' 
+                  : 'Wyceluj w kod i zrób zdjęcie'}
               </p>
+              
+              {/* Manual capture button - show when BarcodeDetector not supported */}
+              {!isBarcodeDetectorSupported && (
+                <button
+                  onClick={capturePhoto}
+                  className="w-16 h-16 rounded-full bg-white flex items-center justify-center mx-auto shadow-lg hover:scale-105 transition-transform active:scale-95"
+                >
+                  <div className="w-14 h-14 rounded-full border-4 border-black/20" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Captured photo preview and analysis */}
+        {capturedPhoto && !product && (
+          <div className="bg-card rounded-3xl border-2 border-border/50 p-5 shadow-card-playful space-y-4">
+            <div className="relative rounded-2xl overflow-hidden">
+              <img 
+                src={capturedPhoto} 
+                alt="Zdjęcie kodu" 
+                className="w-full aspect-video object-cover"
+              />
+              {isAnalyzingPhoto && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <div className="text-center">
+                    <Loader2 className="w-10 h-10 animate-spin text-white mx-auto mb-2" />
+                    <p className="text-white text-sm font-medium">Analizuję zdjęcie AI...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCapturedPhoto(null);
+                  startCamera();
+                }}
+                disabled={isAnalyzingPhoto}
+                className="flex-1 rounded-xl font-bold"
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                Nowe zdjęcie
+              </Button>
+              {!isAnalyzingPhoto && !error && (
+                <Button
+                  onClick={() => analyzePhotoForBarcode(capturedPhoto)}
+                  className="flex-1 rounded-xl font-bold"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  Analizuj ponownie
+                </Button>
+              )}
             </div>
           </div>
         )}
 
         {/* Camera scan button - only show if camera is supported and not active */}
-        {!isCameraActive && !product && cameraSupported && (
+        {!isCameraActive && !product && !capturedPhoto && cameraSupported && (
           <button
             onClick={startCamera}
-            disabled={isScanning}
+            disabled={isScanning || isAnalyzingPhoto}
             className="w-full bg-gradient-to-br from-primary to-secondary rounded-3xl p-5 border-2 border-primary/30 shadow-card-playful hover:scale-[1.02] transition-transform active:scale-[0.98]"
           >
             <div className="flex items-center gap-4">
@@ -446,9 +618,29 @@ export function BarcodeScanner({
             </div>
           </button>
         )}
+        
+        {/* Alternative: Upload photo button when camera not supported */}
+        {!isCameraActive && !product && !capturedPhoto && !cameraSupported && (
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isAnalyzingPhoto}
+            className="w-full bg-gradient-to-br from-amber-500 to-orange-500 rounded-3xl p-5 border-2 border-amber-500/30 shadow-card-playful hover:scale-[1.02] transition-transform active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
+                <ImagePlus className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1 text-left">
+                <h3 className="font-bold text-white text-lg">Wgraj zdjęcie kodu</h3>
+                <p className="text-white/80 text-sm">AI odczyta kod ze zdjęcia</p>
+              </div>
+              <ScanLine className="w-6 h-6 text-white/80" />
+            </div>
+          </button>
+        )}
 
         {/* Manual barcode input */}
-        {!product && !isCameraActive && (
+        {!product && !isCameraActive && !capturedPhoto && (
           <div className="bg-card rounded-3xl border-2 border-border/50 p-5 shadow-card-playful">
             <p className="text-base font-bold text-foreground mb-3 flex items-center gap-2">
               <Search className="w-5 h-5 text-primary" />
