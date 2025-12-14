@@ -317,7 +317,7 @@ export default function Nutrition() {
       </div>
 
       {/* Makroskładniki */}
-      <div className="grid grid-cols-3 gap-3 relative z-10">
+      <div className="grid grid-cols-3 gap-3 pt-1 relative z-10">
         {[
           { icon: Beef, value: totals.protein, goal: dailyGoals.protein, label: 'Białko', color: 'text-destructive', unit: 'g' },
           { icon: Wheat, value: totals.carbs, goal: dailyGoals.carbs, label: 'Węgle', color: 'text-accent', unit: 'g' },
