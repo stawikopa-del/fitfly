@@ -53,6 +53,7 @@ const DietShoppingList = lazy(() => import("./pages/DietShoppingList"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const FavoriteRecipes = lazy(() => import("./pages/FavoriteRecipes"));
 const DayPlanner = lazy(() => import("./pages/DayPlanner"));
+const ProductsDatabase = lazy(() => import("./pages/ProductsDatabase"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -439,21 +440,21 @@ const AppRoutes = () => (
         }
       />
       <Route
-        path="/cookies"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <CookiesPolicy />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/planowanie"
         element={
           <ProtectedRoute>
             <AppLayout>
               <DayPlanner />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/baza-produktow"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProductsDatabase />
             </AppLayout>
           </ProtectedRoute>
         }
