@@ -37,6 +37,7 @@ export default function ProductsDatabase() {
   
   // AI i skaner
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [showPhotoDialog, setShowPhotoDialog] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResult, setAiResult] = useState<{ name: string; calories: number; protein: number; carbs: number; fat: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -497,7 +498,7 @@ export default function ProductsDatabase() {
             <button
               onClick={() => {
                 soundFeedback.buttonClick();
-                fileInputRef.current?.click();
+                setShowPhotoDialog(true);
               }}
               disabled={isAnalyzing}
               className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex flex-col items-center justify-center text-white hover:opacity-90 transition-opacity shrink-0 disabled:opacity-50"
@@ -670,6 +671,34 @@ export default function ProductsDatabase() {
                 <span className="text-sm font-medium">{mealTypeLabels[type]}</span>
               </Button>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog zdjęcia AI */}
+      <Dialog open={showPhotoDialog} onOpenChange={setShowPhotoDialog}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl flex items-center gap-2">
+              <Camera className="w-5 h-5 text-indigo-500" />
+              Zrób zdjęcie produktu
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-muted-foreground text-sm">
+              Zrób zdjęcie produktu, a AI przeanalizuje jego wartości odżywcze.
+            </p>
+            <Button
+              onClick={() => {
+                soundFeedback.buttonClick();
+                setShowPhotoDialog(false);
+                fileInputRef.current?.click();
+              }}
+              className="w-full rounded-2xl h-14 text-lg bg-gradient-to-br from-purple-500 to-indigo-600 hover:opacity-90"
+            >
+              <Camera className="w-5 h-5 mr-2" />
+              Otwórz aparat
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
