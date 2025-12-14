@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map, X, ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
+import { ArrowLeft, Plus, Clock, MapPin, Flag, Tag, Check, Trash2, GripVertical, Sparkles, Sun, CloudSun, Moon, Calendar, Star, Navigation, Map, X, ChevronLeft, ChevronRight, Repeat, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -90,6 +90,7 @@ export default function DayPlanner() {
   const [planPriority, setPlanPriority] = useState('normal');
   const [planNotes, setPlanNotes] = useState('');
   const [planRecurrence, setPlanRecurrence] = useState<string | null>(null);
+  const [showMoreDetails, setShowMoreDetails] = useState(false);
 
   // Drag state
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -186,6 +187,7 @@ export default function DayPlanner() {
     setPlanRecurrence(null);
     setEditingTimeOfDay(null);
     setEditingPlan(null);
+    setShowMoreDetails(false);
   };
 
   // Handle location selection from map picker
@@ -595,6 +597,7 @@ export default function DayPlanner() {
   // Separate form JSX to avoid re-render issues
   const formContent = (
     <div className="space-y-4 p-4">
+      {/* Nazwa planu - zawsze widoczna */}
       <div>
         <label className="text-sm font-medium text-foreground mb-1.5 block">Nazwa planu *</label>
         <Input
@@ -605,201 +608,227 @@ export default function DayPlanner() {
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-muted-foreground" />
-            Czas
-          </label>
-          <Input
-            type="time"
-            value={planTime}
-            onChange={(e) => setPlanTime(e.target.value)}
-            className="bg-background"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-            <Calendar className="w-4 h-4 text-muted-foreground" />
-            Data
-            {(() => {
-              const today = format(new Date(), 'yyyy-MM-dd');
-              const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
-              if (planDate === today) return <span className="text-xs text-secondary font-normal ml-1">(Dzisiaj)</span>;
-              if (planDate === tomorrow) return <span className="text-xs text-secondary font-normal ml-1">(Jutro)</span>;
-              return null;
-            })()}
-          </label>
-          <Input
-            type="date"
-            value={planDate}
-            onChange={(e) => setPlanDate(e.target.value)}
-            className="bg-background"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-          <MapPin className="w-4 h-4 text-muted-foreground" />
-          Miejsce
-        </label>
-        <Input
-          value={planLocation}
-          onChange={(e) => setPlanLocation(e.target.value)}
-          placeholder="np. Dom, Biuro"
-          className="bg-background"
-        />
-      </div>
-
-      {/* Map location buttons */}
-      <div className="space-y-2">
-        <Button
+      {/* Przycisk "Więcej szczegółów" - tylko dla trybu luźne i nowych planów */}
+      {mode === 'loose' && !editingPlan && (
+        <button
           type="button"
-          variant="outline"
-          onClick={() => {
-            // Close sheet first, then open map
-            setIsAddingPlan(false);
-            setTimeout(() => setShowMapPicker(true), 150);
-          }}
-          className="w-full justify-start gap-2 h-11"
+          onClick={() => setShowMoreDetails(!showMoreDetails)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/50 transition-colors text-sm font-medium text-muted-foreground"
         >
-          <Map className="w-4 h-4 text-primary" />
-          Wybierz lokalizację na mapie
-        </Button>
-        
-        {planCoords && (
-          <>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/10 rounded-lg p-2">
-              <MapPin className="w-3 h-3 text-secondary" />
-              <span className="truncate flex-1">{planLocation}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setPlanCoords(null);
-                  setPlanLocation('');
-                }}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <X className="w-3 h-3" />
-              </button>
+          {showMoreDetails ? (
+            <>
+              <ChevronUp className="w-4 h-4" />
+              Ukryj szczegóły
+            </>
+          ) : (
+            <>
+              <ChevronDown className="w-4 h-4" />
+              Więcej szczegółów
+            </>
+          )}
+        </button>
+      )}
+
+      {/* Szczegóły - widoczne zawsze dla template/edycji, lub po rozwinięciu dla loose */}
+      {(mode === 'template' || editingPlan || showMoreDetails) && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                Czas
+              </label>
+              <Input
+                type="time"
+                value={planTime}
+                onChange={(e) => setPlanTime(e.target.value)}
+                className="bg-background"
+              />
             </div>
-            
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                Data
+                {(() => {
+                  const today = format(new Date(), 'yyyy-MM-dd');
+                  const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+                  if (planDate === today) return <span className="text-xs text-secondary font-normal ml-1">(Dzisiaj)</span>;
+                  if (planDate === tomorrow) return <span className="text-xs text-secondary font-normal ml-1">(Jutro)</span>;
+                  return null;
+                })()}
+              </label>
+              <Input
+                type="date"
+                value={planDate}
+                onChange={(e) => setPlanDate(e.target.value)}
+                className="bg-background"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              Miejsce
+            </label>
+            <Input
+              value={planLocation}
+              onChange={(e) => setPlanLocation(e.target.value)}
+              placeholder="np. Dom, Biuro"
+              className="bg-background"
+            />
+          </div>
+
+          {/* Map location buttons */}
+          <div className="space-y-2">
             <Button
               type="button"
               variant="outline"
-              onClick={() => openNavigationToLocation()}
-              className="w-full justify-start gap-2 h-11 border-secondary text-secondary hover:bg-secondary/10"
+              onClick={() => {
+                // Close sheet first, then open map
+                setIsAddingPlan(false);
+                setTimeout(() => setShowMapPicker(true), 150);
+              }}
+              className="w-full justify-start gap-2 h-11"
             >
-              <Navigation className="w-4 h-4" />
-              Wyznacz trasę do tego miejsca
+              <Map className="w-4 h-4 text-primary" />
+              Wybierz lokalizację na mapie
             </Button>
-          </>
-        )}
-      </div>
-
-      <div>
-        <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-          <Tag className="w-4 h-4 text-muted-foreground" />
-          Kategoria
-        </label>
-        <div className="grid grid-cols-3 gap-2">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setPlanCategory(cat.id)}
-              className={cn(
-                'p-2 rounded-xl border text-center transition-all text-sm',
-                planCategory === cat.id
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border bg-background hover:border-primary/50'
-              )}
-            >
-              <span className="text-lg block mb-0.5">{cat.icon}</span>
-              <span className="text-xs">{cat.label}</span>
-            </button>
-          ))}
-        </div>
-        {planCategory === 'custom' && (
-          <Input
-            value={customCategory}
-            onChange={(e) => setCustomCategory(e.target.value)}
-            placeholder="Wpisz własną kategorię..."
-            className="mt-2 bg-background"
-          />
-        )}
-      </div>
-
-      <div>
-        <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-          <Flag className="w-4 h-4 text-muted-foreground" />
-          Priorytet
-        </label>
-        <div className="flex gap-2">
-          {PRIORITIES.map((pri) => (
-            <button
-              key={pri.id}
-              type="button"
-              onClick={() => setPlanPriority(pri.id)}
-              className={cn(
-                'flex-1 py-2 px-3 rounded-xl border text-sm font-medium transition-all',
-                planPriority === pri.id
-                  ? `border-2 ${pri.bg} ${pri.color}`
-                  : 'border-border bg-background hover:border-primary/50'
-              )}
-            >
-              {pri.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Recurrence - only for new plans */}
-      {!editingPlan && (
-        <div>
-          <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-            <Repeat className="w-4 h-4 text-muted-foreground" />
-            Powtarzanie
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {RECURRENCE_OPTIONS.map((opt) => (
-              <button
-                key={opt.id || 'none'}
-                type="button"
-                onClick={() => setPlanRecurrence(opt.id)}
-                className={cn(
-                  'p-2 rounded-xl border text-center transition-all text-sm',
-                  planRecurrence === opt.id
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-background hover:border-primary/50'
-                )}
-              >
-                <span className="text-lg block mb-0.5">{opt.icon}</span>
-                <span className="text-xs">{opt.label}</span>
-              </button>
-            ))}
+            
+            {planCoords && (
+              <>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/10 rounded-lg p-2">
+                  <MapPin className="w-3 h-3 text-secondary" />
+                  <span className="truncate flex-1">{planLocation}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlanCoords(null);
+                      setPlanLocation('');
+                    }}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => openNavigationToLocation()}
+                  className="w-full justify-start gap-2 h-11 border-secondary text-secondary hover:bg-secondary/10"
+                >
+                  <Navigation className="w-4 h-4" />
+                  Wyznacz trasę do tego miejsca
+                </Button>
+              </>
+            )}
           </div>
-          {planRecurrence && (
-            <p className="text-xs text-muted-foreground mt-2">
-              {planRecurrence === 'daily' && 'Plan zostanie utworzony na 30 kolejnych dni'}
-              {planRecurrence === 'weekly' && 'Plan zostanie utworzony na 12 tygodni'}
-              {planRecurrence === 'monthly' && 'Plan zostanie utworzony na 6 miesięcy'}
-            </p>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+              <Tag className="w-4 h-4 text-muted-foreground" />
+              Kategoria
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setPlanCategory(cat.id)}
+                  className={cn(
+                    'p-2 rounded-xl border text-center transition-all text-sm',
+                    planCategory === cat.id
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-background hover:border-primary/50'
+                  )}
+                >
+                  <span className="text-lg block mb-0.5">{cat.icon}</span>
+                  <span className="text-xs">{cat.label}</span>
+                </button>
+              ))}
+            </div>
+            {planCategory === 'custom' && (
+              <Input
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="Wpisz własną kategorię..."
+                className="mt-2 bg-background"
+              />
+            )}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+              <Flag className="w-4 h-4 text-muted-foreground" />
+              Priorytet
+            </label>
+            <div className="flex gap-2">
+              {PRIORITIES.map((pri) => (
+                <button
+                  key={pri.id}
+                  type="button"
+                  onClick={() => setPlanPriority(pri.id)}
+                  className={cn(
+                    'flex-1 py-2 px-3 rounded-xl border text-sm font-medium transition-all',
+                    planPriority === pri.id
+                      ? `border-2 ${pri.bg} ${pri.color}`
+                      : 'border-border bg-background hover:border-primary/50'
+                  )}
+                >
+                  {pri.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Recurrence - only for new plans */}
+          {!editingPlan && (
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                <Repeat className="w-4 h-4 text-muted-foreground" />
+                Powtarzanie
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {RECURRENCE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id || 'none'}
+                    type="button"
+                    onClick={() => setPlanRecurrence(opt.id)}
+                    className={cn(
+                      'p-2 rounded-xl border text-center transition-all text-sm',
+                      planRecurrence === opt.id
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-background hover:border-primary/50'
+                    )}
+                  >
+                    <span className="text-lg block mb-0.5">{opt.icon}</span>
+                    <span className="text-xs">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+              {planRecurrence && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  {planRecurrence === 'daily' && 'Plan zostanie utworzony na 30 kolejnych dni'}
+                  {planRecurrence === 'weekly' && 'Plan zostanie utworzony na 12 tygodni'}
+                  {planRecurrence === 'monthly' && 'Plan zostanie utworzony na 6 miesięcy'}
+                </p>
+              )}
+            </div>
           )}
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Notatki</label>
+            <Textarea
+              value={planNotes}
+              onChange={(e) => setPlanNotes(e.target.value)}
+              placeholder="Dodatkowe informacje..."
+              className="bg-background resize-none"
+              rows={2}
+            />
+          </div>
         </div>
       )}
-
-      <div>
-        <label className="text-sm font-medium text-foreground mb-1.5 block">Notatki</label>
-        <Textarea
-          value={planNotes}
-          onChange={(e) => setPlanNotes(e.target.value)}
-          placeholder="Dodatkowe informacje..."
-          className="bg-background resize-none"
-          rows={2}
-        />
-      </div>
 
       <Button onClick={handleSavePlan} className="w-full" size="lg">
         {editingPlan ? (
