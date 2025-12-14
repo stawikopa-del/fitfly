@@ -160,6 +160,11 @@ export default {
           "0%, 100%": { transform: "rotate(-2deg)" },
           "50%": { transform: "rotate(2deg)" },
         },
+        "scan-line": {
+          "0%": { top: "0%", opacity: "1" },
+          "50%": { opacity: "0.5" },
+          "100%": { top: "100%", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -178,6 +183,7 @@ export default {
         "pop": "pop 0.3s ease-out",
         "shake": "shake 0.5s ease-in-out",
         "sway": "sway 3s ease-in-out infinite",
+        "scan-line": "scan-line 2s ease-in-out infinite",
       },
       boxShadow: {
         "playful": "0 4px 0 hsl(var(--fitfly-blue-dark)), 0 6px 20px hsl(var(--fitfly-blue) / 0.3)",

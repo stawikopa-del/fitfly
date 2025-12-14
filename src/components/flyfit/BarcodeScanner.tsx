@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { ArrowLeft, Search, Loader2, AlertCircle, Star, Flame, Beef, Wheat, Plus, Smartphone } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { ArrowLeft, Search, Loader2, AlertCircle, Star, Flame, Beef, Wheat, Plus, Smartphone, Camera, X, ScanLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
 import { toast } from 'sonner';
+
 interface ProductData {
   name: string;
   brand?: string;
@@ -20,6 +21,7 @@ interface ProductData {
   score: number;
   description: string;
 }
+
 interface BarcodeScannerProps {
   onClose: () => void;
   onAddMeal?: (meal: {
@@ -29,6 +31,15 @@ interface BarcodeScannerProps {
     carbs: number;
     fat: number;
   }) => void;
+}
+
+// Deklaracja globalnego typu dla BarcodeDetector
+declare global {
+  interface Window {
+    BarcodeDetector?: new (options?: { formats: string[] }) => {
+      detect: (source: HTMLVideoElement | HTMLCanvasElement | ImageBitmap) => Promise<Array<{ rawValue: string; format: string }>>;
+    };
+  }
 }
 
 // Funkcja do oceny produktu w stylu FITKA
@@ -181,30 +192,149 @@ export function BarcodeScanner({
   const [error, setError] = useState<string | null>(null);
   const [manualBarcode, setManualBarcode] = useState('');
   const [customServingSize, setCustomServingSize] = useState<string>('');
+  
+  // Camera scanning state
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [cameraSupported, setCameraSupported] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Check if BarcodeDetector is supported
+  const isBarcodeDetectorSupported = typeof window !== 'undefined' && 'BarcodeDetector' in window;
+
   const handleClose = () => {
+    stopCamera();
     soundFeedback.navTap();
     onClose();
   };
+  
   const handleAddToMeal = () => {
     if (product && onAddMeal) {
+      // Calculate calories based on serving size
+      const parseServingSize = (serving?: string): number | null => {
+        if (!serving) return null;
+        const gMatch = serving.match(/(\d+(?:[.,]\d+)?)\s*g(?:r|ram)?/i);
+        if (gMatch) return parseFloat(gMatch[1].replace(',', '.'));
+        const mlMatch = serving.match(/(\d+(?:[.,]\d+)?)\s*ml/i);
+        if (mlMatch) return parseFloat(mlMatch[1].replace(',', '.'));
+        const numMatch = serving.match(/^(\d+(?:[.,]\d+)?)/);
+        if (numMatch) return parseFloat(numMatch[1].replace(',', '.'));
+        return null;
+      };
+      
+      const servingGrams = parseServingSize(product.serving_size) || (customServingSize ? parseFloat(customServingSize) : null);
+      const multiplier = servingGrams ? servingGrams / 100 : 1;
+      
       soundFeedback.success();
       onAddMeal({
         name: product.brand ? `${product.name} (${product.brand})` : product.name,
-        calories: product.calories,
-        protein: product.protein,
-        carbs: product.carbs,
-        fat: product.fat
+        calories: Math.round(product.calories * multiplier),
+        protein: Math.round(product.protein * multiplier),
+        carbs: Math.round(product.carbs * multiplier),
+        fat: Math.round(product.fat * multiplier)
       });
       toast.success('Dodano do dziennika posiłków!');
       onClose();
     }
   };
+  
   const resetScan = () => {
     setProduct(null);
     setError(null);
     setManualBarcode('');
     setCustomServingSize('');
   };
+
+  // Camera functions
+  const startCamera = useCallback(async () => {
+    try {
+      setIsScanning(true);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setIsCameraActive(true);
+        
+        // Start barcode detection
+        if (isBarcodeDetectorSupported && window.BarcodeDetector) {
+          const detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'] });
+          
+          scanIntervalRef.current = setInterval(async () => {
+            if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+              try {
+                const barcodes = await detector.detect(videoRef.current);
+                if (barcodes.length > 0) {
+                  const barcode = barcodes[0].rawValue;
+                  soundFeedback.success();
+                  stopCamera();
+                  setManualBarcode(barcode);
+                  handleBarcodeDetected(barcode);
+                }
+              } catch (err) {
+                // Silent fail - keep scanning
+              }
+            }
+          }, 250);
+        }
+      }
+    } catch (err) {
+      console.error('Camera error:', err);
+      setCameraSupported(false);
+      setIsScanning(false);
+      toast.error('Nie można uruchomić kamery');
+    }
+  }, [isBarcodeDetectorSupported]);
+  
+  const stopCamera = useCallback(() => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+    setIsScanning(false);
+  }, []);
+  
+  const handleBarcodeDetected = async (barcode: string) => {
+    setError(null);
+    setProduct(null);
+    setIsLoading(true);
+    
+    const productData = await fetchProductData(barcode);
+    setIsLoading(false);
+    
+    if (productData) {
+      setProduct(productData);
+      // Set custom serving size from product if available
+      if (productData.serving_size) {
+        const gMatch = productData.serving_size.match(/(\d+(?:[.,]\d+)?)\s*g/i);
+        if (gMatch) {
+          setCustomServingSize(gMatch[1].replace(',', '.'));
+        }
+      }
+      soundFeedback.success();
+    } else {
+      setError('Nie znaleziono produktu w bazie. Sprawdź kod i spróbuj ponownie.');
+      soundFeedback.error();
+    }
+  };
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
   const handleManualSearch = async () => {
     if (!manualBarcode.trim()) {
       toast.error('Wpisz kod kreskowy');
@@ -247,35 +377,108 @@ export function BarcodeScanner({
       </div>
 
       <div className="p-4 space-y-4 pb-32">
-        {/* Mobile app info */}
-        <div className="bg-primary/10 border-2 border-primary/30 rounded-3xl p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center">
-              <Smartphone className="w-5 h-5 text-primary" />
+        {/* Camera scanning view */}
+        {isCameraActive && (
+          <div className="relative bg-black rounded-3xl overflow-hidden aspect-[4/3]">
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              playsInline
+              muted
+            />
+            
+            {/* Scanning animation overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              {/* Scanning frame */}
+              <div className="relative w-64 h-40 border-2 border-primary rounded-2xl">
+                {/* Corner accents */}
+                <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-primary rounded-tl-lg" />
+                <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-primary rounded-tr-lg" />
+                <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-primary rounded-bl-lg" />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-primary rounded-br-lg" />
+                
+                {/* Scanning line animation */}
+                <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-scan-line" />
+              </div>
             </div>
-            <h3 className="font-bold text-foreground">Skanowanie aparatem</h3>
+            
+            {/* Close camera button */}
+            <button
+              onClick={stopCamera}
+              className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            {/* Instructions */}
+            <div className="absolute bottom-4 left-0 right-0 text-center">
+              <p className="text-white text-sm font-medium bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 inline-block">
+                Skieruj aparat na kod kreskowy
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Automatyczne skanowanie kodów kreskowych aparatem będzie dostępne w aplikacji mobilnej.
-          </p>
-        </div>
+        )}
+
+        {/* Camera scan button - only show if camera is supported and not active */}
+        {!isCameraActive && !product && cameraSupported && (
+          <button
+            onClick={startCamera}
+            disabled={isScanning}
+            className="w-full bg-gradient-to-br from-primary to-secondary rounded-3xl p-5 border-2 border-primary/30 shadow-card-playful hover:scale-[1.02] transition-transform active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
+                {isScanning ? (
+                  <Loader2 className="w-7 h-7 text-white animate-spin" />
+                ) : (
+                  <Camera className="w-7 h-7 text-white" />
+                )}
+              </div>
+              <div className="flex-1 text-left">
+                <h3 className="font-bold text-white text-lg">Skanuj aparatem</h3>
+                <p className="text-white/80 text-sm">
+                  {isBarcodeDetectorSupported 
+                    ? 'Automatyczne rozpoznawanie kodu' 
+                    : 'Zrób zdjęcie kodu kreskowego'}
+                </p>
+              </div>
+              <ScanLine className="w-6 h-6 text-white/80" />
+            </div>
+          </button>
+        )}
 
         {/* Manual barcode input */}
-        {!product && <div className="bg-card rounded-3xl border-2 border-border/50 p-5 shadow-card-playful">
+        {!product && !isCameraActive && (
+          <div className="bg-card rounded-3xl border-2 border-border/50 p-5 shadow-card-playful">
             <p className="text-base font-bold text-foreground mb-3 flex items-center gap-2">
               <Search className="w-5 h-5 text-primary" />
-              Wpisz kod kreskowy
+              Lub wpisz kod ręcznie
             </p>
             <div className="flex gap-2">
-              <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="np. 5900617001696" value={manualBarcode} onChange={e => setManualBarcode(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleManualSearch()} className="flex-1 rounded-xl text-base" disabled={isLoading} />
-              <Button onClick={handleManualSearch} disabled={isLoading || !manualBarcode.trim()} className="rounded-xl font-bold px-5">
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="np. 5900617001696"
+                value={manualBarcode}
+                onChange={e => setManualBarcode(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleManualSearch()}
+                className="flex-1 rounded-xl text-base"
+                disabled={isLoading}
+              />
+              <Button
+                onClick={handleManualSearch}
+                disabled={isLoading || !manualBarcode.trim()}
+                className="rounded-xl font-bold px-5"
+              >
                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-3">
               Znajdziesz go pod kodem kreskowym na opakowaniu produktu
             </p>
-          </div>}
+          </div>
+        )}
 
         {/* Loading state */}
         {isLoading && <div className="bg-card rounded-3xl border-2 border-border/50 p-8 shadow-card-playful">
@@ -361,43 +564,52 @@ export function BarcodeScanner({
                 return null;
               };
               
-              const servingGrams = parseServingSize(product.serving_size) || (customServingSize ? parseFloat(customServingSize) : null);
+              // Always use customServingSize if set, otherwise parse from product
+              const servingGrams = customServingSize 
+                ? parseFloat(customServingSize) 
+                : parseServingSize(product.serving_size);
               const multiplier = servingGrams ? servingGrams / 100 : null;
-              const servingLabel = product.serving_size || (customServingSize ? `${customServingSize}g` : null);
+              const servingLabel = customServingSize ? `${customServingSize}g` : product.serving_size;
               
               return (
                 <>
-                  {/* Custom serving input when no serving_size from API */}
-                  {!product.serving_size && (
-                    <div className="bg-muted/30 rounded-2xl border border-border/50 p-4">
-                      <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                        ⚖️ Wpisz wielkość porcji (g)
-                      </p>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          inputMode="numeric"
-                          placeholder="np. 50"
-                          value={customServingSize}
-                          onChange={(e) => setCustomServingSize(e.target.value)}
-                          className="flex-1 rounded-xl text-base"
-                        />
-                        <div className="flex gap-1">
-                          {[50, 100, 150].map((size) => (
-                            <Button
-                              key={size}
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCustomServingSize(size.toString())}
-                              className="rounded-xl text-xs px-2"
-                            >
-                              {size}g
-                            </Button>
-                          ))}
-                        </div>
+                  {/* Editable serving size input - ALWAYS visible */}
+                  <div className="bg-muted/30 rounded-2xl border border-border/50 p-4">
+                    <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                      ⚖️ Zmień wielkość porcji (g)
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        placeholder={product.serving_size ? `np. ${parseServingSize(product.serving_size) || 100}` : "np. 50"}
+                        value={customServingSize}
+                        onChange={(e) => setCustomServingSize(e.target.value)}
+                        className="flex-1 rounded-xl text-base"
+                      />
+                      <div className="flex gap-1">
+                        {[50, 100, 150].map((size) => (
+                          <Button
+                            key={size}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCustomServingSize(size.toString())}
+                            className={cn(
+                              "rounded-xl text-xs px-2",
+                              customServingSize === size.toString() && "border-primary bg-primary/10"
+                            )}
+                          >
+                            {size}g
+                          </Button>
+                        ))}
                       </div>
                     </div>
-                  )}
+                    {product.serving_size && !customServingSize && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Domyślna porcja: {product.serving_size}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Per serving - primary style */}
                   {multiplier && servingLabel && (
