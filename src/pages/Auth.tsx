@@ -823,7 +823,7 @@ export default function Auth() {
         <h1 className="text-5xl font-extrabold font-display mb-3">
           {mode === 'forgot' ? 'Reset hasła' : (
             <>
-              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">FITFLY</span>
+              <span style={{ color: '#85c530' }}>FITFLY</span>
               <span className="ml-2">🍎</span>
             </>
           )}
