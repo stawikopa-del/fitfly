@@ -194,6 +194,16 @@ export function BarcodeScanner({
   const [manualBarcode, setManualBarcode] = useState('');
   const [customServingSize, setCustomServingSize] = useState<string>('');
   
+  // Manual product entry state
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualProduct, setManualProduct] = useState({
+    name: '',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: ''
+  });
+  
   // Camera scanning state
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -253,6 +263,29 @@ export function BarcodeScanner({
     setManualBarcode('');
     setCustomServingSize('');
     setCapturedPhoto(null);
+    setShowManualEntry(false);
+    setManualProduct({ name: '', calories: '', protein: '', carbs: '', fat: '' });
+  };
+
+  // Handle adding manually entered product
+  const handleAddManualProduct = () => {
+    if (!manualProduct.name.trim() || !manualProduct.calories) {
+      toast.error('Podaj nazwę i kalorie produktu');
+      return;
+    }
+    
+    if (onAddMeal) {
+      soundFeedback.success();
+      onAddMeal({
+        name: manualProduct.name.trim(),
+        calories: parseInt(manualProduct.calories) || 0,
+        protein: parseInt(manualProduct.protein) || 0,
+        carbs: parseInt(manualProduct.carbs) || 0,
+        fat: parseInt(manualProduct.fat) || 0
+      });
+      toast.success('Dodano do dziennika posiłków!');
+      onClose();
+    }
   };
 
   // Camera functions
@@ -720,15 +753,123 @@ export function BarcodeScanner({
           </div>}
 
         {/* Error message */}
-        {error && <div className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-4 flex items-center gap-3">
-            <AlertCircle className="w-6 h-6 text-destructive flex-shrink-0" />
-            <div>
+        {error && !showManualEntry && (
+          <div className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <AlertCircle className="w-6 h-6 text-destructive flex-shrink-0" />
               <p className="text-sm font-bold text-destructive">{error}</p>
-              <Button variant="ghost" size="sm" onClick={resetScan} className="mt-2 text-destructive hover:text-destructive">
+            </div>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={resetScan} className="text-destructive hover:text-destructive">
                 Spróbuj ponownie
               </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowManualEntry(true)}
+                className="border-primary text-primary hover:bg-primary/10"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Dodaj ręcznie
+              </Button>
             </div>
-          </div>}
+          </div>
+        )}
+
+        {/* Manual product entry form */}
+        {showManualEntry && (
+          <div className="bg-card rounded-3xl border-2 border-primary/30 p-5 shadow-card-playful space-y-4 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold font-display text-foreground text-lg flex items-center gap-2">
+                ✏️ Dodaj produkt ręcznie
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowManualEntry(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">
+                  Nazwa produktu *
+                </label>
+                <Input
+                  placeholder="np. Baton proteinowy"
+                  value={manualProduct.name}
+                  onChange={(e) => setManualProduct(prev => ({ ...prev, name: e.target.value }))}
+                  className="rounded-xl"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">
+                    Kalorie (kcal) *
+                  </label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="np. 250"
+                    value={manualProduct.calories}
+                    onChange={(e) => setManualProduct(prev => ({ ...prev, calories: e.target.value }))}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">
+                    Białko (g)
+                  </label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="np. 20"
+                    value={manualProduct.protein}
+                    onChange={(e) => setManualProduct(prev => ({ ...prev, protein: e.target.value }))}
+                    className="rounded-xl"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">
+                    Węglowodany (g)
+                  </label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="np. 30"
+                    value={manualProduct.carbs}
+                    onChange={(e) => setManualProduct(prev => ({ ...prev, carbs: e.target.value }))}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">
+                    Tłuszcz (g)
+                  </label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="np. 10"
+                    value={manualProduct.fat}
+                    onChange={(e) => setManualProduct(prev => ({ ...prev, fat: e.target.value }))}
+                    className="rounded-xl"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <Button
+              onClick={handleAddManualProduct}
+              disabled={!manualProduct.name.trim() || !manualProduct.calories}
+              className="w-full rounded-xl h-12 font-bold"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Dodaj do posiłku
+            </Button>
+          </div>
+        )}
 
         {/* Product result */}
         {product && <div className="space-y-4 animate-fade-in">
