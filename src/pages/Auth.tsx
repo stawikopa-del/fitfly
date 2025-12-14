@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
-import { Mail, Lock, User, Sparkles, ArrowLeft, ArrowRight, Check, Target, Activity, Scale, Ruler, Calendar, Eye, EyeOff, Fingerprint } from 'lucide-react';
+import { Mail, Lock, User, ArrowLeft, ArrowRight, Check, Target, Activity, Scale, Ruler, Calendar, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -820,9 +820,8 @@ export default function Auth() {
       </div>
 
       <div className="text-center mb-8">
-        <h1 className="text-5xl font-extrabold font-display bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-3 flex items-center justify-center gap-3">
-          {mode === 'forgot' ? 'Reset hasła' : 'FITFLY'}
-          <Sparkles className="w-8 h-8 text-fitfly-yellow" />
+        <h1 className="text-5xl font-extrabold font-display bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-3">
+          {mode === 'forgot' ? 'Reset hasła' : 'FITFLY 🍎'}
         </h1>
         <p className="text-lg text-muted-foreground font-semibold">
           {mode === 'forgot' ? 'Wyślemy Ci link do zmiany hasła' : 'Witaj ponownie, przyjacielu!'}
