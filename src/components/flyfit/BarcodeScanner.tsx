@@ -259,16 +259,69 @@ export function BarcodeScanner({
   const startCamera = useCallback(async () => {
     try {
       setIsScanning(true);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
+      setError(null);
+      
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('getUserMedia not supported');
+        setCameraSupported(false);
+        setIsScanning(false);
+        toast.error('Twoja przeglądarka nie obsługuje kamery. Spróbuj wgrać zdjęcie.');
+        return;
+      }
+      
+      // Request camera permission with mobile-optimized constraints
+      let stream: MediaStream;
+      try {
+        // First try with environment camera (back camera on mobile)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280, min: 640 }, 
+            height: { ideal: 720, min: 480 }
+          },
+          audio: false
+        });
+      } catch (envError) {
+        console.log('Environment camera failed, trying default:', envError);
+        // Fallback to any available camera
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+        } catch (fallbackError) {
+          throw fallbackError;
+        }
+      }
       
       streamRef.current = stream;
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        
+        // Wait for video to be ready with timeout
+        await new Promise<void>((resolve, reject) => {
+          const video = videoRef.current!;
+          const timeout = setTimeout(() => {
+            reject(new Error('Video load timeout'));
+          }, 10000);
+          
+          video.onloadedmetadata = () => {
+            clearTimeout(timeout);
+            video.play()
+              .then(() => resolve())
+              .catch(reject);
+          };
+          
+          video.onerror = () => {
+            clearTimeout(timeout);
+            reject(new Error('Video error'));
+          };
+        });
+        
         setIsCameraActive(true);
+        setIsScanning(false);
         
         // Start barcode detection only if BarcodeDetector is supported
         if (isBarcodeDetectorSupported && window.BarcodeDetector) {
@@ -293,11 +346,27 @@ export function BarcodeScanner({
         }
         // If BarcodeDetector is not supported, camera stays active for manual photo capture
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Camera error:', err);
-      setCameraSupported(false);
       setIsScanning(false);
-      toast.error('Nie można uruchomić kamery');
+      
+      // Handle specific permission errors
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        toast.error('Brak uprawnień do kamery. Sprawdź ustawienia przeglądarki.');
+        setError('Musisz zezwolić na dostęp do kamery w ustawieniach przeglądarki.');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        toast.error('Nie znaleziono kamery');
+        setCameraSupported(false);
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        toast.error('Kamera jest używana przez inną aplikację');
+        setError('Zamknij inne aplikacje używające kamery i spróbuj ponownie.');
+      } else if (err.name === 'OverconstrainedError') {
+        toast.error('Kamera nie spełnia wymagań');
+        setCameraSupported(false);
+      } else {
+        toast.error('Nie można uruchomić kamery. Spróbuj wgrać zdjęcie.');
+        setCameraSupported(false);
+      }
     }
   }, [isBarcodeDetectorSupported]);
 
