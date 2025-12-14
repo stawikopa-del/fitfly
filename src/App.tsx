@@ -440,6 +440,16 @@ const AppRoutes = () => (
         }
       />
       <Route
+        path="/cookies"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <CookiesPolicy />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/planowanie"
         element={
           <ProtectedRoute>
