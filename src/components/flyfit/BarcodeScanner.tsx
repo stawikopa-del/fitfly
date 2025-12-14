@@ -660,16 +660,16 @@ export function BarcodeScanner({
           </div>
         )}
 
-        {/* Camera scan button - only show if camera is supported and not active */}
-        {!isCameraActive && !product && !capturedPhoto && cameraSupported && (
+        {/* Camera scan button - uses native camera input for mobile compatibility */}
+        {!isCameraActive && !product && !capturedPhoto && (
           <button
-            onClick={startCamera}
+            onClick={() => fileInputRef.current?.click()}
             disabled={isScanning || isAnalyzingPhoto}
             className="w-full bg-gradient-to-br from-primary to-secondary rounded-3xl p-5 border-2 border-primary/30 shadow-card-playful hover:scale-[1.02] transition-transform active:scale-[0.98]"
           >
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
-                {isScanning ? (
+                {isAnalyzingPhoto ? (
                   <Loader2 className="w-7 h-7 text-white animate-spin" />
                 ) : (
                   <Camera className="w-7 h-7 text-white" />
@@ -677,31 +677,7 @@ export function BarcodeScanner({
               </div>
               <div className="flex-1 text-left">
                 <h3 className="font-bold text-white text-lg">Skanuj aparatem</h3>
-                <p className="text-white/80 text-sm">
-                  {isBarcodeDetectorSupported 
-                    ? 'Automatyczne rozpoznawanie kodu' 
-                    : 'Zrób zdjęcie kodu kreskowego'}
-                </p>
-              </div>
-              <ScanLine className="w-6 h-6 text-white/80" />
-            </div>
-          </button>
-        )}
-        
-        {/* Alternative: Upload photo button when camera not supported */}
-        {!isCameraActive && !product && !capturedPhoto && !cameraSupported && (
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isAnalyzingPhoto}
-            className="w-full bg-gradient-to-br from-amber-500 to-orange-500 rounded-3xl p-5 border-2 border-amber-500/30 shadow-card-playful hover:scale-[1.02] transition-transform active:scale-[0.98]"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
-                <ImagePlus className="w-7 h-7 text-white" />
-              </div>
-              <div className="flex-1 text-left">
-                <h3 className="font-bold text-white text-lg">Wgraj zdjęcie kodu</h3>
-                <p className="text-white/80 text-sm">AI odczyta kod ze zdjęcia</p>
+                <p className="text-white/80 text-sm">Zrób zdjęcie kodu kreskowego</p>
               </div>
               <ScanLine className="w-6 h-6 text-white/80" />
             </div>
