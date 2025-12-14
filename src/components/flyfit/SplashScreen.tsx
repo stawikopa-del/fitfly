@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import fitekLoading from '@/assets/fitek-loading.png';
+import fitekSplash from '@/assets/fitek-splash.png';
 import { getRandomLoadingMessage } from '@/data/loadingMessages';
 
 // Losowe gradienty tła
@@ -83,14 +83,11 @@ export function SplashScreen({ onComplete, minDuration = 2500 }: SplashScreenPro
         'relative mb-8 transition-all duration-700',
         isExiting ? 'scale-110 opacity-0' : 'scale-100 opacity-100'
       )}>
-        {/* Świetliste tło za FITKIEM */}
-        <div className="absolute inset-0 -m-4 rounded-full bg-gradient-to-br from-primary/30 via-secondary/20 to-primary/10 blur-2xl animate-pulse" />
-        
-        <div className="relative w-48 h-48 animate-float">
+        <div className="w-48 h-48 animate-float">
           <img
-            src={fitekLoading}
+            src={fitekSplash}
             alt="FITEK"
-            className="w-full h-full object-contain drop-shadow-2xl"
+            className="w-full h-full object-contain"
           />
         </div>
         
