@@ -469,18 +469,25 @@ export function BarcodeScanner({
     
     if (productData) {
       setProduct(productData);
-      // Set custom serving size from product if available
-      if (productData.serving_size) {
-        const gMatch = productData.serving_size.match(/(\d+(?:[.,]\d+)?)\s*g/i);
-        if (gMatch) {
-          setCustomServingSize(gMatch[1].replace(',', '.'));
-        }
-      }
+      // Set custom serving size from product if available - prioritize detected serving
+      setCustomServingSize(extractServingGrams(productData.serving_size) || '100');
       soundFeedback.success();
     } else {
       setError('Nie znaleziono produktu w bazie. Sprawdź kod i spróbuj ponownie.');
       soundFeedback.error();
     }
+  };
+  
+  // Helper function to extract grams from serving size string
+  const extractServingGrams = (serving?: string): string | null => {
+    if (!serving) return null;
+    const gMatch = serving.match(/(\d+(?:[.,]\d+)?)\s*g/i);
+    if (gMatch) return gMatch[1].replace(',', '.');
+    const mlMatch = serving.match(/(\d+(?:[.,]\d+)?)\s*ml/i);
+    if (mlMatch) return mlMatch[1].replace(',', '.');
+    const numMatch = serving.match(/^(\d+(?:[.,]\d+)?)/);
+    if (numMatch) return numMatch[1].replace(',', '.');
+    return null;
   };
   
   // Cleanup on unmount
@@ -502,6 +509,8 @@ export function BarcodeScanner({
     setIsLoading(false);
     if (productData) {
       setProduct(productData);
+      // Set custom serving size from product if available
+      setCustomServingSize(extractServingGrams(productData.serving_size) || '100');
       soundFeedback.success();
     } else {
       setError('Nie znaleziono produktu w bazie. Sprawdź kod i spróbuj ponownie.');
@@ -737,37 +746,50 @@ export function BarcodeScanner({
               </div>
             </div>
 
-            {/* Score - FITEK style */}
-            <div className={cn(
-              "rounded-3xl border-2 p-5 shadow-card-playful animate-scale-in",
-              "transition-all duration-500 ease-out",
-              product.score >= 8 ? "bg-green-500/10 border-green-500/30" :
-              product.score >= 6 ? "bg-yellow-500/10 border-yellow-500/30" :
-              product.score >= 4 ? "bg-orange-500/10 border-orange-500/30" :
-              "bg-red-500/10 border-red-500/30"
-            )}>
-              <div className="flex items-start gap-4">
+            {/* Score - FITEK style with calories per serving */}
+            {(() => {
+              const servingGrams = customServingSize ? parseFloat(customServingSize) : 100;
+              const multiplier = servingGrams / 100;
+              const caloriesPerServing = Math.round(product.calories * multiplier);
+              
+              return (
                 <div className={cn(
-                  "w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0",
-                  getScoreColor(product.score)
+                  "rounded-3xl border-2 p-5 shadow-card-playful animate-scale-in",
+                  "transition-all duration-500 ease-out",
+                  product.score >= 8 ? "bg-green-500/10 border-green-500/30" :
+                  product.score >= 6 ? "bg-yellow-500/10 border-yellow-500/30" :
+                  product.score >= 4 ? "bg-orange-500/10 border-orange-500/30" :
+                  "bg-red-500/10 border-red-500/30"
                 )}>
-                  <div className="text-center">
-                    <span className="text-3xl font-extrabold font-display block leading-none">{product.score}</span>
+                  <div className="flex items-start gap-4">
+                    <div className={cn(
+                      "w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0",
+                      getScoreColor(product.score)
+                    )}>
+                      <div className="text-center">
+                        <span className="text-3xl font-extrabold font-display block leading-none">{product.score}</span>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+                        <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+                          FITEK mówi: 
+                          <span className="text-lg">
+                            {product.score >= 8 ? "🤩" : product.score >= 6 ? "😊" : product.score >= 4 ? "🤔" : "😬"}
+                          </span>
+                        </h3>
+                        <span className="text-sm font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                          {caloriesPerServing} kcal / {servingGrams}g
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed break-words hyphens-auto whitespace-normal" style={{ wordBreak: 'break-word' }}>
+                        {product.description}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex-1 min-w-0 overflow-hidden">
-                  <h3 className="font-extrabold font-display text-foreground mb-1.5 flex items-center gap-2 flex-wrap">
-                    FITEK mówi: 
-                    <span className="text-lg">
-                      {product.score >= 8 ? "🤩" : product.score >= 6 ? "😊" : product.score >= 4 ? "🤔" : "😬"}
-                    </span>
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed break-words hyphens-auto whitespace-normal" style={{ wordBreak: 'break-word' }}>
-                    {product.description}
-                  </p>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Macros per serving */}
             {(() => {
