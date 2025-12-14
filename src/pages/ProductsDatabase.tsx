@@ -553,44 +553,6 @@ export default function ProductsDatabase() {
             className="hidden"
           />
           
-          {/* Widok skanowania AI - styl jak w AddMealDialog */}
-          {showPhotoDialog && !aiResult && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground text-center">
-                Zrób zdjęcie posiłku, a AI oszacuje kalorie
-              </p>
-              
-              <button
-                onClick={() => {
-                  soundFeedback.buttonClick();
-                  fileInputRef.current?.click();
-                }}
-                disabled={isAnalyzing}
-                className="w-full h-32 rounded-2xl bg-gradient-to-br from-accent/20 to-yellow-400/20 border-2 border-dashed border-accent/50 hover:border-accent flex flex-col items-center justify-center gap-2 transition-colors"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="w-8 h-8 animate-spin text-accent" />
-                    <span className="text-sm text-muted-foreground">Analizuję zdjęcie...</span>
-                  </>
-                ) : (
-                  <>
-                    <Camera className="w-8 h-8 text-accent" />
-                    <span className="text-sm font-medium text-foreground">Zrób zdjęcie posiłku</span>
-                    <span className="text-xs text-muted-foreground">lub wybierz z galerii</span>
-                  </>
-                )}
-              </button>
-              
-              <Button
-                variant="ghost"
-                onClick={() => setShowPhotoDialog(false)}
-                className="w-full text-muted-foreground"
-              >
-                Anuluj
-              </Button>
-            </div>
-          )}
           
           {/* Wynik AI - styl jak w AddMealDialog */}
           {aiResult && (
@@ -764,6 +726,43 @@ export default function ProductsDatabase() {
                 <span className="text-sm font-medium">{mealTypeLabels[type]}</span>
               </Button>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog zdjęcia AI - styl jak w AddMealDialog */}
+      <Dialog open={showPhotoDialog} onOpenChange={setShowPhotoDialog}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">Zrób zdjęcie posiłku 📸</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-muted-foreground text-center">
+              Zrób zdjęcie posiłku, a AI oszacuje kalorie
+            </p>
+            
+            <button
+              onClick={() => {
+                soundFeedback.buttonClick();
+                setShowPhotoDialog(false);
+                fileInputRef.current?.click();
+              }}
+              disabled={isAnalyzing}
+              className="w-full h-32 rounded-2xl bg-gradient-to-br from-accent/20 to-yellow-400/20 border-2 border-dashed border-accent/50 hover:border-accent flex flex-col items-center justify-center gap-2 transition-colors"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="w-8 h-8 animate-spin text-accent" />
+                  <span className="text-sm text-muted-foreground">Analizuję zdjęcie...</span>
+                </>
+              ) : (
+                <>
+                  <Camera className="w-8 h-8 text-accent" />
+                  <span className="text-sm font-medium text-foreground">Zrób zdjęcie posiłku</span>
+                  <span className="text-xs text-muted-foreground">lub wybierz z galerii</span>
+                </>
+              )}
+            </button>
           </div>
         </DialogContent>
       </Dialog>
