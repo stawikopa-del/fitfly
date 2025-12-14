@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Search, Scale, X, Package, ChevronRight, Check, Flame, ArrowLeft, Plus } from 'lucide-react';
+import { useState, useMemo, useRef } from 'react';
+import { Search, Scale, X, Package, ChevronRight, Check, Flame, ArrowLeft, Plus, Camera, ScanBarcode, Loader2, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { BarcodeScanner } from '@/components/flyfit/BarcodeScanner';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -33,6 +34,12 @@ export default function ProductsDatabase() {
   const [servingGrams, setServingGrams] = useState('');
   const [showMealTypeDialog, setShowMealTypeDialog] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  
+  // AI i skaner
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiResult, setAiResult] = useState<{ name: string; calories: number; protein: number; carbs: number; fat: number } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Filtrowanie produktów
   const filteredProducts = useMemo(() => {
@@ -77,6 +84,108 @@ export default function ProductsDatabase() {
   const handleQuickServing = (grams: number) => {
     soundFeedback.buttonClick();
     setServingGrams(grams.toString());
+  };
+
+  // Analiza zdjęcia AI
+  const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsAnalyzing(true);
+    soundFeedback.buttonClick();
+
+    try {
+      // Konwersja do base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        
+        try {
+          const { data, error } = await supabase.functions.invoke('scan-meal', {
+            body: { imageBase64: base64 }
+          });
+
+          if (error) throw error;
+
+          if (data?.meal) {
+            setAiResult({
+              name: data.meal.name || 'Posiłek',
+              calories: data.meal.calories || 0,
+              protein: data.meal.protein || 0,
+              carbs: data.meal.carbs || 0,
+              fat: data.meal.fat || 0,
+            });
+            soundFeedback.success();
+            toast({
+              title: "Zeskanowano! 📸",
+              description: `${data.meal.name}: ~${data.meal.calories} kcal`,
+            });
+          }
+        } catch (err) {
+          console.error('AI scan error:', err);
+          soundFeedback.error();
+          toast({
+            title: "Błąd analizy",
+            description: "Nie udało się przeanalizować zdjęcia",
+            variant: "destructive"
+          });
+        } finally {
+          setIsAnalyzing(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('File read error:', err);
+      setIsAnalyzing(false);
+    }
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Dodaj AI wynik do posiłku
+  const handleAddAiResult = async (mealType: MealType) => {
+    if (!aiResult || !user) return;
+    
+    setIsAdding(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { error } = await supabase.from('meals').insert({
+        user_id: user.id,
+        name: aiResult.name,
+        type: mealType,
+        calories: aiResult.calories,
+        protein: aiResult.protein,
+        carbs: aiResult.carbs,
+        fat: aiResult.fat,
+        meal_date: today,
+        time: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
+      });
+
+      if (error) throw error;
+
+      soundFeedback.success();
+      toast({
+        title: "Dodano! 🍽️",
+        description: `${aiResult.name} zapisany jako ${mealTypeLabels[mealType].toLowerCase()}`,
+      });
+      
+      setShowMealTypeDialog(false);
+      setAiResult(null);
+    } catch (error) {
+      console.error('Error adding meal:', error);
+      soundFeedback.error();
+      toast({
+        title: "Błąd",
+        description: "Nie udało się dodać posiłku",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   const handleAddToMeal = async (mealType: MealType) => {
@@ -323,6 +432,25 @@ export default function ProductsDatabase() {
     );
   }
 
+  // Widok skanera kodów kreskowych
+  if (showBarcodeScanner) {
+    return (
+      <BarcodeScanner
+        onClose={() => setShowBarcodeScanner(false)}
+        onAddMeal={(meal) => {
+          setShowBarcodeScanner(false);
+          setAiResult({
+            name: meal.name,
+            calories: meal.calories,
+            protein: meal.protein,
+            carbs: meal.carbs,
+            fat: meal.fat,
+          });
+        }}
+      />
+    );
+  }
+
   // Widok główny - lista produktów
   return (
     <div className="min-h-screen bg-background">
@@ -344,22 +472,106 @@ export default function ProductsDatabase() {
           </div>
         </div>
 
-        {/* Wyszukiwarka */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            placeholder="Szukaj produktu, np. Snickers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 pr-12 rounded-2xl h-14 border-2 text-base"
-          />
-          {searchQuery && (
+        {/* Wyszukiwarka z przyciskami AI i skanera */}
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                placeholder="Szukaj produktu..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 pr-12 rounded-2xl h-14 border-2 text-base"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            
+            {/* Przycisk AI - zdjęcie */}
             <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
+              onClick={() => {
+                soundFeedback.buttonClick();
+                fileInputRef.current?.click();
+              }}
+              disabled={isAnalyzing}
+              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex flex-col items-center justify-center text-white hover:opacity-90 transition-opacity shrink-0 disabled:opacity-50"
             >
-              <X className="w-4 h-4" />
+              {isAnalyzing ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <Camera className="w-5 h-5" />
+                  <span className="text-[8px] font-bold mt-0.5">AI</span>
+                </>
+              )}
             </button>
+            
+            {/* Przycisk skanera kodu kreskowego */}
+            <button
+              onClick={() => {
+                soundFeedback.buttonClick();
+                setShowBarcodeScanner(true);
+              }}
+              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 flex flex-col items-center justify-center text-white hover:opacity-90 transition-opacity shrink-0"
+            >
+              <ScanBarcode className="w-5 h-5" />
+              <span className="text-[8px] font-bold mt-0.5">SKAN</span>
+            </button>
+          </div>
+          
+          {/* Ukryty input dla zdjęcia */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handlePhotoCapture}
+            className="hidden"
+          />
+          
+          {/* Wynik AI */}
+          {aiResult && (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border-2 border-indigo-400/30">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5 text-indigo-500" />
+                <span className="font-semibold text-foreground">Wynik analizy AI</span>
+              </div>
+              <p className="font-bold text-lg text-foreground mb-2">{aiResult.name}</p>
+              <div className="flex gap-4 text-sm mb-3">
+                <span className="text-foreground font-medium">{aiResult.calories} kcal</span>
+                <span className="text-destructive">B: {aiResult.protein}g</span>
+                <span className="text-accent">W: {aiResult.carbs}g</span>
+                <span className="text-primary">T: {aiResult.fat}g</span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    soundFeedback.buttonClick();
+                    setShowMealTypeDialog(true);
+                  }}
+                  size="sm"
+                  className="flex-1 rounded-xl bg-secondary hover:bg-secondary/90"
+                  disabled={!user}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Dodaj do posiłku
+                </Button>
+                <Button
+                  onClick={() => setAiResult(null)}
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </div>
 
@@ -433,6 +645,34 @@ export default function ProductsDatabase() {
           {filteredProducts.length} produktów w bazie
         </p>
       </div>
+
+      {/* Dialog wyboru typu posiłku dla AI */}
+      <Dialog open={showMealTypeDialog && !!aiResult} onOpenChange={(open) => !open && setShowMealTypeDialog(false)}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">Dodaj do posiłku</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            {(Object.keys(mealTypeLabels) as MealType[]).map((type) => (
+              <Button
+                key={type}
+                variant="outline"
+                className="h-16 rounded-2xl flex flex-col gap-1"
+                onClick={() => handleAddAiResult(type)}
+                disabled={isAdding}
+              >
+                <span className="text-lg">
+                  {type === 'breakfast' && '🌅'}
+                  {type === 'lunch' && '🍽️'}
+                  {type === 'dinner' && '🌙'}
+                  {type === 'snack' && '🍪'}
+                </span>
+                <span className="text-sm font-medium">{mealTypeLabels[type]}</span>
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
