@@ -23,7 +23,7 @@ const inneSubRoutes = [
 ];
 
 const dietaSubRoutes = [
-  '/odzywianie', '/przepisy', '/konfiguracja-diety', '/szybki-posilek'
+  '/odzywianie', '/przepisy', '/konfiguracja-diety', '/szybki-posilek', '/baza-produktow'
 ];
 
 const treningiSubRoutes = [
