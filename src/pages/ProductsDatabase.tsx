@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { Search, Scale, X, Package, ChevronRight, Check, Flame, ArrowLeft, Plus, Camera, ScanBarcode, Loader2, Sparkles } from 'lucide-react';
+import { Search, Scale, X, Package, ChevronRight, Check, Flame, ArrowLeft, Plus, Camera, ScanBarcode, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +39,16 @@ export default function ProductsDatabase() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [showPhotoDialog, setShowPhotoDialog] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiResult, setAiResult] = useState<{ name: string; calories: number; protein: number; carbs: number; fat: number } | null>(null);
+  const [aiResult, setAiResult] = useState<{ 
+    name: string; 
+    calories: number; 
+    protein: number; 
+    carbs: number; 
+    fat: number;
+    confidence?: 'low' | 'medium' | 'high';
+    ingredients?: string[];
+    portion_estimate?: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Filtrowanie produktów
@@ -93,13 +102,14 @@ export default function ProductsDatabase() {
     if (!file) return;
 
     setIsAnalyzing(true);
+    setShowPhotoDialog(false);
     soundFeedback.buttonClick();
 
     try {
       // Konwersja do base64
       const reader = new FileReader();
       reader.onload = async () => {
-        const base64 = (reader.result as string).split(',')[1];
+        const base64 = reader.result as string;
         
         try {
           const { data, error } = await supabase.functions.invoke('scan-meal', {
@@ -107,27 +117,34 @@ export default function ProductsDatabase() {
           });
 
           if (error) throw error;
+          if (data?.error) throw new Error(data.error);
 
-          if (data?.meal) {
+          // scan-meal zwraca bezpośrednio obiekt (nie zagnieżdżony w .meal)
+          if (data?.name) {
             setAiResult({
-              name: data.meal.name || 'Posiłek',
-              calories: data.meal.calories || 0,
-              protein: data.meal.protein || 0,
-              carbs: data.meal.carbs || 0,
-              fat: data.meal.fat || 0,
+              name: data.name || 'Posiłek',
+              calories: data.calories || 0,
+              protein: data.protein || 0,
+              carbs: data.carbs || 0,
+              fat: data.fat || 0,
+              confidence: data.confidence,
+              ingredients: data.ingredients,
+              portion_estimate: data.portion_estimate,
             });
             soundFeedback.success();
             toast({
               title: "Zeskanowano! 📸",
-              description: `${data.meal.name}: ~${data.meal.calories} kcal`,
+              description: `${data.name}: ~${data.calories} kcal`,
             });
+          } else {
+            throw new Error('Brak danych o posiłku');
           }
         } catch (err) {
           console.error('AI scan error:', err);
           soundFeedback.error();
           toast({
             title: "Błąd analizy",
-            description: "Nie udało się przeanalizować zdjęcia",
+            description: err instanceof Error ? err.message : "Nie udało się przeanalizować zdjęcia",
             variant: "destructive"
           });
         } finally {
@@ -536,41 +553,78 @@ export default function ProductsDatabase() {
             className="hidden"
           />
           
-          {/* Wynik AI */}
+          {/* Wynik AI - styl jak w AddMealDialog */}
           {aiResult && (
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border-2 border-indigo-400/30">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-indigo-500" />
-                <span className="font-semibold text-foreground">Wynik analizy AI</span>
+            <div className="bg-secondary/10 rounded-2xl p-4 space-y-3 border-2 border-secondary/30 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-foreground">{aiResult.name}</h4>
+                <div className="flex items-center gap-2">
+                  {aiResult.confidence && (
+                    <span className={cn(
+                      "text-xs font-medium",
+                      aiResult.confidence === 'high' ? "text-secondary" :
+                      aiResult.confidence === 'medium' ? "text-accent" : "text-destructive"
+                    )}>
+                      {aiResult.confidence === 'high' ? 'Wysoka pewność' :
+                       aiResult.confidence === 'medium' ? 'Średnia pewność' : 'Niska pewność'}
+                    </span>
+                  )}
+                  <Button
+                    onClick={() => setAiResult(null)}
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0 rounded-lg"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
-              <p className="font-bold text-lg text-foreground mb-2">{aiResult.name}</p>
-              <div className="flex gap-4 text-sm mb-3">
-                <span className="text-foreground font-medium">{aiResult.calories} kcal</span>
-                <span className="text-destructive">B: {aiResult.protein}g</span>
-                <span className="text-accent">W: {aiResult.carbs}g</span>
-                <span className="text-primary">T: {aiResult.fat}g</span>
+              
+              {aiResult.ingredients && aiResult.ingredients.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Składniki: {aiResult.ingredients.join(', ')}
+                </p>
+              )}
+              
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="bg-card rounded-xl p-2">
+                  <p className="text-lg font-bold text-foreground">{Math.round(aiResult.calories)}</p>
+                  <p className="text-[10px] text-muted-foreground">kcal</p>
+                </div>
+                <div className="bg-card rounded-xl p-2">
+                  <p className="text-lg font-bold text-destructive">{Math.round(aiResult.protein)}g</p>
+                  <p className="text-[10px] text-muted-foreground">białko</p>
+                </div>
+                <div className="bg-card rounded-xl p-2">
+                  <p className="text-lg font-bold text-accent">{Math.round(aiResult.carbs)}g</p>
+                  <p className="text-[10px] text-muted-foreground">węgle</p>
+                </div>
+                <div className="bg-card rounded-xl p-2">
+                  <p className="text-lg font-bold text-primary">{Math.round(aiResult.fat)}g</p>
+                  <p className="text-[10px] text-muted-foreground">tłuszcz</p>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => {
-                    soundFeedback.buttonClick();
-                    setShowMealTypeDialog(true);
-                  }}
-                  size="sm"
-                  className="flex-1 rounded-xl bg-secondary hover:bg-secondary/90"
-                  disabled={!user}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Dodaj do posiłku
-                </Button>
-                <Button
-                  onClick={() => setAiResult(null)}
-                  size="sm"
-                  variant="outline"
-                  className="rounded-xl"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+
+              <Button 
+                onClick={() => {
+                  soundFeedback.buttonClick();
+                  setShowMealTypeDialog(true);
+                }}
+                className="w-full rounded-2xl h-11 bg-secondary hover:bg-secondary/90"
+                disabled={!user}
+              >
+                <Check className="w-4 h-4 mr-2" />
+                Dodaj ten posiłek
+              </Button>
+            </div>
+          )}
+          
+          {/* Loading state for AI analysis */}
+          {isAnalyzing && (
+            <div className="bg-secondary/10 rounded-2xl p-6 border-2 border-secondary/30 animate-fade-in">
+              <div className="flex flex-col items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-secondary mb-2" />
+                <p className="text-sm text-muted-foreground font-medium">Analizuję zdjęcie...</p>
               </div>
             </div>
           )}
