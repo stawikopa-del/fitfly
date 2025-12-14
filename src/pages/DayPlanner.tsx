@@ -874,8 +874,8 @@ export default function DayPlanner() {
       if (!open) resetForm();
     }}>
           <SheetTrigger asChild>
-            <button className="fixed bottom-24 right-4 w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform z-50">
-              <Plus className="w-6 h-6 my-[100px]" />
+            <button className="fixed bottom-28 right-4 w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform z-50">
+              <Plus className="w-6 h-6" />
             </button>
           </SheetTrigger>
           <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto">
