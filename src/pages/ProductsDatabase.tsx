@@ -553,6 +553,45 @@ export default function ProductsDatabase() {
             className="hidden"
           />
           
+          {/* Widok skanowania AI - styl jak w AddMealDialog */}
+          {showPhotoDialog && !aiResult && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground text-center">
+                Zrób zdjęcie posiłku, a AI oszacuje kalorie
+              </p>
+              
+              <button
+                onClick={() => {
+                  soundFeedback.buttonClick();
+                  fileInputRef.current?.click();
+                }}
+                disabled={isAnalyzing}
+                className="w-full h-32 rounded-2xl bg-gradient-to-br from-accent/20 to-yellow-400/20 border-2 border-dashed border-accent/50 hover:border-accent flex flex-col items-center justify-center gap-2 transition-colors"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="w-8 h-8 animate-spin text-accent" />
+                    <span className="text-sm text-muted-foreground">Analizuję zdjęcie...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-8 h-8 text-accent" />
+                    <span className="text-sm font-medium text-foreground">Zrób zdjęcie posiłku</span>
+                    <span className="text-xs text-muted-foreground">lub wybierz z galerii</span>
+                  </>
+                )}
+              </button>
+              
+              <Button
+                variant="ghost"
+                onClick={() => setShowPhotoDialog(false)}
+                className="w-full text-muted-foreground"
+              >
+                Anuluj
+              </Button>
+            </div>
+          )}
+          
           {/* Wynik AI - styl jak w AddMealDialog */}
           {aiResult && (
             <div className="bg-secondary/10 rounded-2xl p-4 space-y-3 border-2 border-secondary/30 animate-fade-in">
@@ -729,33 +768,6 @@ export default function ProductsDatabase() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog zdjęcia AI */}
-      <Dialog open={showPhotoDialog} onOpenChange={setShowPhotoDialog}>
-        <DialogContent className="max-w-sm rounded-3xl">
-          <DialogHeader>
-            <DialogTitle className="font-display text-xl flex items-center gap-2">
-              <Camera className="w-5 h-5 text-indigo-500" />
-              Zrób zdjęcie produktu
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <p className="text-muted-foreground text-sm">
-              Zrób zdjęcie produktu, a AI przeanalizuje jego wartości odżywcze.
-            </p>
-            <Button
-              onClick={() => {
-                soundFeedback.buttonClick();
-                setShowPhotoDialog(false);
-                fileInputRef.current?.click();
-              }}
-              className="w-full rounded-2xl h-14 text-lg bg-gradient-to-br from-purple-500 to-indigo-600 hover:opacity-90"
-            >
-              <Camera className="w-5 h-5 mr-2" />
-              Otwórz aparat
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
