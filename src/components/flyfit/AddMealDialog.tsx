@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, PenLine, Loader2, Check, Camera, UtensilsCrossed, ArrowLeft, X, ChefHat } from 'lucide-react';
+import { Sparkles, PenLine, Loader2, Check, Camera, UtensilsCrossed, ArrowLeft, X, ChefHat, Database, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Meal } from '@/types/flyfit';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { soundFeedback } from '@/utils/soundFeedback';
+import { ProductDatabaseSearch } from './ProductDatabaseSearch';
 import { z } from 'zod';
 
 // Zod schema for manual meal validation
@@ -37,7 +38,7 @@ const manualMealSchema = z.object({
 });
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'snack2' | 'snack3';
-type MethodType = 'select' | 'diet' | 'scan' | 'describe' | 'manual';
+type MethodType = 'select' | 'diet' | 'scan' | 'describe' | 'manual' | 'database';
 
 interface AddMealDialogProps {
   open: boolean;
@@ -446,9 +447,35 @@ export function AddMealDialog({ open, onOpenChange, mealType, mealLabel, onAddMe
         {/* Method Selection */}
         {method === 'select' && (
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground text-center mb-4">
-              Jak chcesz dodać posiłek?
-            </p>
+            {/* BAZA PRODUKTÓW - wyróżniony panel na górze */}
+            <button
+              onClick={() => {
+                soundFeedback.buttonClick();
+                setMethod('database');
+              }}
+              className="w-full p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 border-2 border-indigo-400/50 hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-500/10 transition-all flex items-center gap-4 text-left group"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+                <Database className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h3 className="font-bold text-foreground text-lg">Baza produktów</h3>
+                  <span className="text-[10px] bg-indigo-500 text-white px-2 py-0.5 rounded-full font-medium">NOWE</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Wyszukaj produkt, wpisz wagę i dodaj do posiłku</p>
+              </div>
+              <Search className="w-5 h-5 text-indigo-400 group-hover:text-indigo-500 transition-colors" />
+            </button>
+
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border/50"></div>
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-background px-3 text-xs text-muted-foreground">lub wybierz inną metodę</span>
+              </div>
+            </div>
             
             {/* 1. Posiłek z diety */}
             <button
@@ -518,6 +545,29 @@ export function AddMealDialog({ open, onOpenChange, mealType, mealLabel, onAddMe
               </div>
             </button>
           </div>
+        )}
+
+        {/* Product Database View */}
+        {method === 'database' && (
+          <ProductDatabaseSearch
+            onBack={() => setMethod('select')}
+            onAddProduct={(product) => {
+              onAddMeal({
+                type: mealType,
+                name: product.name,
+                calories: product.calories,
+                protein: product.protein,
+                carbs: product.carbs,
+                fat: product.fat,
+                time: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
+              });
+              handleClose();
+              toast({
+                title: "Produkt dodany! 🍽️",
+                description: `${product.name} zapisany`,
+              });
+            }}
+          />
         )}
 
         {/* Diet Meal View */}
