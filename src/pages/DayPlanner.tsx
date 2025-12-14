@@ -632,7 +632,7 @@ export default function DayPlanner() {
       {/* Szczegóły - widoczne zawsze dla template/edycji, lub po rozwinięciu dla loose */}
       <div 
         className={cn(
-          "grid transition-all duration-300 ease-out",
+          "grid transition-all duration-500 ease-out",
           (mode === 'template' || editingPlan || showMoreDetails) 
             ? "grid-rows-[1fr] opacity-100" 
             : "grid-rows-[0fr] opacity-0"
