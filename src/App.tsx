@@ -35,7 +35,7 @@ const CalendarPage = lazy(() => import("./pages/Calendar"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const CookiesPolicy = lazy(() => import("./pages/CookiesPolicy"));
+
 const Achievements = lazy(() => import("./pages/Achievements"));
 const Goals = lazy(() => import("./pages/Goals"));
 const Friends = lazy(() => import("./pages/Friends"));
@@ -435,16 +435,6 @@ const AppRoutes = () => (
           <ProtectedRoute>
             <AppLayout>
               <PrivacyPolicy />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/cookies"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <CookiesPolicy />
             </AppLayout>
           </ProtectedRoute>
         }
