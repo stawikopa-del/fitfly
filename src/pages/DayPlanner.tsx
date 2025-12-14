@@ -630,8 +630,16 @@ export default function DayPlanner() {
       )}
 
       {/* Szczegóły - widoczne zawsze dla template/edycji, lub po rozwinięciu dla loose */}
-      {(mode === 'template' || editingPlan || showMoreDetails) && (
-        <div className="space-y-4">
+      <div 
+        className={cn(
+          "grid transition-all duration-300 ease-out",
+          (mode === 'template' || editingPlan || showMoreDetails) 
+            ? "grid-rows-[1fr] opacity-100" 
+            : "grid-rows-[0fr] opacity-0"
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="space-y-4 pt-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
@@ -827,8 +835,9 @@ export default function DayPlanner() {
               rows={2}
             />
           </div>
+          </div>
         </div>
-      )}
+      </div>
 
       <Button onClick={handleSavePlan} className="w-full" size="lg">
         {editingPlan ? (
