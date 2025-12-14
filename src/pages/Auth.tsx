@@ -820,8 +820,13 @@ export default function Auth() {
       </div>
 
       <div className="text-center mb-8">
-        <h1 className="text-5xl font-extrabold font-display bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-3">
-          {mode === 'forgot' ? 'Reset hasła' : 'FITFLY 🍎'}
+        <h1 className="text-5xl font-extrabold font-display mb-3">
+          {mode === 'forgot' ? 'Reset hasła' : (
+            <>
+              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">FITFLY</span>
+              <span className="ml-2">🍎</span>
+            </>
+          )}
         </h1>
         <p className="text-lg text-muted-foreground font-semibold">
           {mode === 'forgot' ? 'Wyślemy Ci link do zmiany hasła' : 'Witaj ponownie, przyjacielu!'}
