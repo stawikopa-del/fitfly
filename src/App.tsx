@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/flyfit/AppLayout";
-import { CookieConsent } from "@/components/flyfit/CookieConsent";
+
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -513,7 +513,6 @@ const App = () => {
             <AuthProvider>
               <WorkoutProvider>
                 <AppRoutes />
-                <CookieConsent />
               </WorkoutProvider>
             </AuthProvider>
           </BrowserRouter>
