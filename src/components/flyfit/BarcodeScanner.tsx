@@ -396,44 +396,29 @@ export function BarcodeScanner({
     setError(null);
     
     try {
-      const base64Data = photoData.split(',')[1];
-      
-      const { data, error: fnError } = await supabase.functions.invoke('fitek-chat', {
-        body: {
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'image',
-                  image: base64Data,
-                  mimeType: 'image/jpeg'
-                },
-                {
-                  type: 'text',
-                  text: `Przeanalizuj to zdjęcie kodu kreskowego produktu. Znajdź numer kodu kreskowego (EAN/UPC) widoczny na zdjęciu i zwróć TYLKO sam numer, bez żadnych dodatkowych słów ani wyjaśnień. Jeśli nie możesz odczytać kodu, odpowiedz tylko: NIE_ZNALEZIONO`
-                }
-              ]
-            }
-          ],
-          systemPrompt: 'Jesteś ekspertem od odczytywania kodów kreskowych. Twoim jedynym zadaniem jest odczytanie numeru kodu kreskowego ze zdjęcia i zwrócenie go. Odpowiadaj tylko numerem kodu (np. 5900617001696) lub NIE_ZNALEZIONO jeśli nie możesz go odczytać.',
-          model: 'google/gemini-2.5-flash'
-        }
+      // Call dedicated barcode analysis edge function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-barcode`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageBase64: photoData
+        })
       });
 
-      if (fnError) throw fnError;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Błąd analizy');
+      }
 
-      const response = data?.response?.trim() || '';
+      const data = await response.json();
       
-      // Check if we got a valid barcode number
-      const barcodeMatch = response.match(/\d{8,14}/);
-      
-      if (barcodeMatch) {
-        const barcode = barcodeMatch[0];
-        setManualBarcode(barcode);
+      if (data.barcode) {
+        setManualBarcode(data.barcode);
         soundFeedback.success();
-        toast.success(`Odczytano kod: ${barcode}`);
-        handleBarcodeDetected(barcode);
+        toast.success(`Odczytano kod: ${data.barcode}`);
+        handleBarcodeDetected(data.barcode);
       } else {
         setError('Nie udało się odczytać kodu kreskowego. Spróbuj zrobić wyraźniejsze zdjęcie lub wpisz kod ręcznie.');
         soundFeedback.error();
