@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X, ScanBarcode, ChevronRight, Salad, ChefHat, Zap, Apple, Croissant } from 'lucide-react';
+import { Plus, Coffee, UtensilsCrossed, Moon, Cookie, Flame, Beef, Wheat, Sparkles, X, ScanBarcode, ChevronRight, Salad, ChefHat, Zap, Apple, Croissant, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -390,6 +390,29 @@ export default function Nutrition() {
               <span>❤️</span>
             </h3>
             <p className="text-sm text-muted-foreground">30 gotowych przepisów z trybem gotowania</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+        </div>
+      </button>
+
+      {/* Baza produktów */}
+      <button
+        onClick={() => {
+          soundFeedback.buttonClick();
+          navigate('/baza-produktow');
+        }}
+        className="w-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 rounded-3xl p-5 border-2 border-indigo-500/30 shadow-card-playful hover:-translate-y-1 transition-all duration-300 relative z-10 group"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+            <Package className="w-7 h-7 text-white" />
+          </div>
+          <div className="text-left flex-1">
+            <h3 className="font-extrabold font-display text-foreground flex items-center gap-2">
+              Baza produktów
+              <span className="text-[10px] bg-indigo-500 text-white px-2 py-0.5 rounded-full font-medium">NOWE</span>
+            </h3>
+            <p className="text-sm text-muted-foreground">120+ produktów z wartościami odżywczymi</p>
           </div>
           <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
         </div>
