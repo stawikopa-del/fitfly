@@ -249,7 +249,7 @@ export default function Home() {
       </section>
 
       {/* Statystyki w gridzie - 2x2 */}
-      <section className="grid grid-cols-2 gap-4 relative z-10">
+      <section className="grid grid-cols-2 gap-4 pt-1 relative z-10">
         <div className="animate-float" style={{
         animationDelay: '0s'
       }}>
@@ -293,7 +293,7 @@ export default function Home() {
           <span className="text-xl">🚀</span>
         </h2>
         
-        <div className="space-y-3">
+        <div className="space-y-3 pt-1">
           <div className="animate-float" style={{
           animationDelay: '1.2s'
         }}>

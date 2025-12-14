@@ -291,7 +291,7 @@ export default function More() {
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide px-1">
           Menu główne
         </h2>
-        <div className="grid gap-4">
+        <div className="grid gap-4 pt-1">
           {menuItems.map(({ to, icon: Icon, label, emoji, description }) => (
             <NavLink
               key={to}
@@ -378,7 +378,7 @@ export default function More() {
         </div>
 
         {/* Korzyści w gridzie */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 pt-1">
           <div className="animate-float bg-card rounded-2xl p-4 border border-border/50 shadow-card-playful" style={{ animationDelay: '0.1s' }}>
             <div className="text-2xl mb-2">🤖</div>
             <h4 className="font-bold text-foreground text-sm">AI Przepisy</h4>

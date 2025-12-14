@@ -117,9 +117,9 @@ export function WorkoutHub() {
 
   // Browse screen
   return (
-    <div className="space-y-6 pb-6">
+    <div className="space-y-6 pb-6 pt-1">
       {/* Header Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3 pt-1">
         <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl p-4 border border-primary/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-card-playful">
           <Flame className="w-5 h-5 text-primary mb-1" />
           <p className="text-2xl font-bold text-foreground">{workoutPrograms.length}</p>
@@ -162,7 +162,7 @@ export function WorkoutHub() {
             <TrendingUp className="w-5 h-5 text-primary" />
             <h2 className="font-bold text-lg">Polecane dla Ciebie</h2>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-3 pt-1">
             {recommendedWorkouts.map((workout) => (
               <div key={workout.id} className="transition-all duration-300 hover:-translate-y-1">
                 <WorkoutProgramCard
@@ -183,7 +183,7 @@ export function WorkoutHub() {
             <Zap className="w-5 h-5 text-amber-500" />
             <h2 className="font-bold text-lg">Szybkie treningi (do 7 min)</h2>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-3 overflow-x-auto pb-2 pt-1 scrollbar-hide">
             {quickWorkouts.map((workout) => (
               <div key={workout.id} className="min-w-[200px] transition-all duration-300 hover:-translate-y-1">
                 <WorkoutProgramCard
@@ -202,7 +202,7 @@ export function WorkoutHub() {
         <h2 className="font-bold text-lg mb-3">
           {selectedCategory === 'all' ? 'Wszystkie treningi' : categoryNames[selectedCategory]}
         </h2>
-        <div className="space-y-3">
+        <div className="space-y-3 pt-1">
           {filteredWorkouts.map((workout) => (
             <div key={workout.id} className="transition-all duration-300 hover:-translate-y-1">
               <WorkoutProgramCard
