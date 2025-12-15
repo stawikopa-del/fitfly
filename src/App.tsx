@@ -9,7 +9,6 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/flyfit/SplashScreen";
-import { useTheme } from "@/hooks/useTheme";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { WorkoutProvider } from "@/contexts/WorkoutContext";
 
@@ -488,9 +487,6 @@ const AppRoutes = () => (
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
-  
-  // Initialize theme on app load
-  useTheme();
 
   // Check if this is the first visit in this session
   useEffect(() => {
