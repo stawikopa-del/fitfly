@@ -32,8 +32,14 @@ export function useFriends() {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
   const [sentRequests, setSentRequests] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false); // No initial loading delay
-  const operationInProgress = useRef(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Separate operation guards for different action types
+  const sendRequestInProgressRef = useRef<Set<string>>(new Set()); // Track per-receiver
+  const acceptInProgressRef = useRef<Set<string>>(new Set()); // Track per-request
+  const rejectInProgressRef = useRef<Set<string>>(new Set()); // Track per-request
+  const removeInProgressRef = useRef<Set<string>>(new Set()); // Track per-friendship
+  const fetchInProgressRef = useRef(false);
   const mountedRef = useRef(true);
 
   const fetchFriends = useCallback(async () => {
@@ -41,6 +47,10 @@ export function useFriends() {
       setFriends([]);
       return;
     }
+
+    // Prevent concurrent fetches
+    if (fetchInProgressRef.current) return;
+    fetchInProgressRef.current = true;
 
     try {
       const { data: friendships, error } = await supabase
@@ -63,7 +73,6 @@ export function useFriends() {
         f.sender_id === user.id ? f.receiver_id : f.sender_id
       );
 
-      // Fetch profiles using RPC function for secure friend access
       const profilesPromises = friendIds.map(id => 
         supabase.rpc('get_friend_profile', { friend_user_id: id })
       );
@@ -73,7 +82,6 @@ export function useFriends() {
         .filter(r => !r.error && r.data?.length > 0)
         .map(r => r.data[0]);
 
-      // Get today's date safely
       let today: string;
       try {
         today = new Date().toISOString().split('T')[0];
@@ -117,6 +125,8 @@ export function useFriends() {
     } catch (error) {
       handleApiError(error, 'useFriends.fetchFriends', { fallbackMessage: 'Nie udało się pobrać listy znajomych' });
       if (mountedRef.current) setFriends([]);
+    } finally {
+      fetchInProgressRef.current = false;
     }
   }, [user]);
 
@@ -144,7 +154,6 @@ export function useFriends() {
       } else {
         const senderIds = requests.map(r => r.sender_id);
         
-        // Use RPC function for profile access
         const profilesPromises = senderIds.map(id => 
           supabase.rpc('get_friend_profile', { friend_user_id: id })
         );
@@ -205,9 +214,12 @@ export function useFriends() {
   }, [user]);
 
   const sendFriendRequest = useCallback(async (receiverId: string) => {
-    if (!user || operationInProgress.current) return false;
+    if (!user) return false;
+    
+    // Prevent concurrent requests to same receiver
+    if (sendRequestInProgressRef.current.has(receiverId)) return false;
+    sendRequestInProgressRef.current.add(receiverId);
 
-    operationInProgress.current = true;
     try {
       const { error } = await supabase
         .from('friendships')
@@ -235,14 +247,15 @@ export function useFriends() {
       handleApiError(error, 'useFriends.sendFriendRequest', { fallbackMessage: 'Nie udało się wysłać zaproszenia' });
       return false;
     } finally {
-      operationInProgress.current = false;
+      sendRequestInProgressRef.current.delete(receiverId);
     }
   }, [user]);
 
   const acceptRequest = useCallback(async (requestId: string) => {
-    if (operationInProgress.current) return false;
+    // Prevent concurrent accepts for same request
+    if (acceptInProgressRef.current.has(requestId)) return false;
+    acceptInProgressRef.current.add(requestId);
 
-    operationInProgress.current = true;
     try {
       const { error } = await supabase
         .from('friendships')
@@ -255,20 +268,23 @@ export function useFriends() {
       }
 
       toast.success('Zaproszenie zaakceptowane!');
-      await Promise.all([fetchFriends(), fetchPendingRequests()]);
+      if (mountedRef.current) {
+        await Promise.all([fetchFriends(), fetchPendingRequests()]);
+      }
       return true;
     } catch (error) {
       handleApiError(error, 'useFriends.acceptRequest', { fallbackMessage: 'Nie udało się zaakceptować zaproszenia' });
       return false;
     } finally {
-      operationInProgress.current = false;
+      acceptInProgressRef.current.delete(requestId);
     }
   }, [fetchFriends, fetchPendingRequests]);
 
   const rejectRequest = useCallback(async (requestId: string) => {
-    if (operationInProgress.current) return false;
+    // Prevent concurrent rejects for same request
+    if (rejectInProgressRef.current.has(requestId)) return false;
+    rejectInProgressRef.current.add(requestId);
 
-    operationInProgress.current = true;
     try {
       const { error } = await supabase
         .from('friendships')
@@ -281,20 +297,21 @@ export function useFriends() {
       }
 
       toast.success('Zaproszenie odrzucone');
-      await fetchPendingRequests();
+      if (mountedRef.current) await fetchPendingRequests();
       return true;
     } catch (error) {
       handleApiError(error, 'useFriends.rejectRequest', { fallbackMessage: 'Nie udało się odrzucić zaproszenia' });
       return false;
     } finally {
-      operationInProgress.current = false;
+      rejectInProgressRef.current.delete(requestId);
     }
   }, [fetchPendingRequests]);
 
   const removeFriend = useCallback(async (friendshipId: string) => {
-    if (operationInProgress.current) return false;
+    // Prevent concurrent removes for same friendship
+    if (removeInProgressRef.current.has(friendshipId)) return false;
+    removeInProgressRef.current.add(friendshipId);
 
-    operationInProgress.current = true;
     try {
       const { error } = await supabase
         .from('friendships')
@@ -315,7 +332,7 @@ export function useFriends() {
       handleApiError(error, 'useFriends.removeFriend', { fallbackMessage: 'Nie udało się usunąć znajomego' });
       return false;
     } finally {
-      operationInProgress.current = false;
+      removeInProgressRef.current.delete(friendshipId);
     }
   }, []);
 
