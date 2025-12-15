@@ -374,6 +374,40 @@
     box-shadow: 0 12px 40px -10px hsl(var(--fitfly-blue) / 0.3);
   }
 
+  /* Stat card - spójny styl dla kart statystyk */
+  .stat-card {
+    @apply rounded-2xl bg-card border border-border/50 p-4;
+    @apply transition-all duration-200 hover:shadow-soft-lg;
+  }
+
+  /* Action tile - spójny styl dla kafelków akcji */
+  .action-tile {
+    @apply rounded-2xl bg-card border-2 border-border/30 p-4;
+    @apply transition-all duration-200 hover:-translate-y-1 hover:shadow-card-playful;
+    @apply cursor-pointer active:scale-[0.98];
+  }
+
+  /* List item - spójny styl dla elementów listy */
+  .list-item {
+    @apply rounded-xl bg-card/50 border border-border/30 p-3;
+    @apply transition-all duration-150 hover:bg-muted/50;
+  }
+
+  .list-item-interactive {
+    @apply rounded-xl bg-card/50 border border-border/30 p-3;
+    @apply transition-all duration-150 hover:bg-muted/50 cursor-pointer;
+    @apply active:scale-[0.99];
+  }
+
+  /* Section header - spójny styl dla nagłówków sekcji */
+  .section-header {
+    @apply text-lg font-bold font-display text-foreground mb-3;
+  }
+
+  .section-subheader {
+    @apply text-sm font-medium text-muted-foreground mb-2;
+  }
+
   /* Floating animation class for elements */
   .floating {
     animation: float 3s ease-in-out infinite;
@@ -403,6 +437,42 @@
 
   .glow-accent {
     box-shadow: 0 0 20px hsl(var(--accent) / 0.4);
+  }
+
+  /* Icon button wrapper - spójny styl dla przycisków ikon */
+  .icon-btn {
+    @apply flex items-center justify-center rounded-xl;
+    @apply transition-all duration-200 hover:bg-muted active:scale-95;
+  }
+
+  .icon-btn-sm {
+    @apply w-8 h-8;
+  }
+
+  .icon-btn-md {
+    @apply w-10 h-10;
+  }
+
+  .icon-btn-lg {
+    @apply w-12 h-12;
+  }
+
+  /* Progress bar - spójny styl */
+  .progress-bar {
+    @apply h-2 w-full rounded-full bg-muted overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+  }
+
+  /* Divider - spójna linia oddzielająca */
+  .divider {
+    @apply h-px w-full bg-border/50 my-4;
+  }
+
+  .divider-vertical {
+    @apply w-px h-full bg-border/50 mx-2;
   }
 }
 
