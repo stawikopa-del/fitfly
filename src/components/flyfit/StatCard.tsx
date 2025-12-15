@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, memo } from 'react';
 import { cn } from '@/lib/utils';
 
 interface StatCardProps {
@@ -31,16 +31,16 @@ const colorClasses = {
     icon: 'bg-fitfly-purple text-white shadow-md',
     border: 'border-fitfly-purple/20',
   },
-};
+} as const;
 
-export function StatCard({ icon, label, value, subValue, color, onClick }: StatCardProps) {
+export const StatCard = memo(function StatCard({ icon, label, value, subValue, color, onClick }: StatCardProps) {
   return (
     <button
       onClick={onClick}
       disabled={!onClick}
       className={cn(
         'bg-card rounded-3xl p-5 border-2 text-left w-full',
-        'shadow-card-playful transition-all duration-300',
+        'shadow-card-playful transition-all duration-300 will-change-transform',
         'hover:-translate-y-1 hover:shadow-card-playful-hover active:translate-y-0 active:scale-95',
         colorClasses[color].border
       )}
@@ -58,4 +58,4 @@ export function StatCard({ icon, label, value, subValue, color, onClick }: StatC
       )}
     </button>
   );
-}
+});

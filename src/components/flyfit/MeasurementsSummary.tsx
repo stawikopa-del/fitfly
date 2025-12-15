@@ -2,11 +2,10 @@ import { Scale, Smile, Zap, Brain, Moon, TrendingUp, TrendingDown, Minus, Plus }
 import { cn } from '@/lib/utils';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import { AddMeasurementDialog } from './AddMeasurementDialog';
-import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { memo, useMemo, useCallback } from 'react';
 
-const moodEmojis = ['😢', '😕', '😐', '🙂', '😄'];
-const energyEmojis = ['😴', '🥱', '😌', '💪', '⚡'];
+const moodEmojis = ['😢', '😕', '😐', '🙂', '😄'] as const;
+const energyEmojis = ['😴', '🥱', '😌', '💪', '⚡'] as const;
 
 interface MeasurementBadgeProps {
   icon: React.ReactNode;
@@ -17,7 +16,7 @@ interface MeasurementBadgeProps {
   trend?: 'up' | 'down' | 'neutral';
 }
 
-function MeasurementBadge({ icon, label, value, emoji, color, trend }: MeasurementBadgeProps) {
+const MeasurementBadge = memo(function MeasurementBadge({ icon, label, value, emoji, color, trend }: MeasurementBadgeProps) {
   if (value === null) return null;
   
   return (
@@ -37,13 +36,13 @@ function MeasurementBadge({ icon, label, value, emoji, color, trend }: Measureme
       </div>
     </div>
   );
-}
+});
 
-export function MeasurementsSummary() {
+export const MeasurementsSummary = memo(function MeasurementsSummary() {
   const { todayMeasurement, measurements, loading, getLatestWeight } = useMeasurements();
 
   // Calculate weight trend
-  const getWeightTrend = (): 'up' | 'down' | 'neutral' | undefined => {
+  const weightTrend = useMemo((): 'up' | 'down' | 'neutral' | undefined => {
     if (measurements.length < 2) return undefined;
     const current = measurements[0]?.weight;
     const previous = measurements[1]?.weight;
@@ -51,10 +50,17 @@ export function MeasurementsSummary() {
     if (current > previous) return 'up';
     if (current < previous) return 'down';
     return 'neutral';
-  };
+  }, [measurements]);
 
-  const latestWeight = getLatestWeight();
-  const weightTrend = getWeightTrend();
+  const latestWeight = useMemo(() => getLatestWeight(), [getLatestWeight]);
+
+  const hasAnyMeasurement = useMemo(() => todayMeasurement && (
+    todayMeasurement.weight !== null ||
+    todayMeasurement.mood !== null ||
+    todayMeasurement.energy !== null ||
+    todayMeasurement.stress !== null ||
+    todayMeasurement.sleep_quality !== null
+  ), [todayMeasurement]);
 
   if (loading) {
     return (
@@ -63,14 +69,6 @@ export function MeasurementsSummary() {
       </div>
     );
   }
-
-  const hasAnyMeasurement = todayMeasurement && (
-    todayMeasurement.weight !== null ||
-    todayMeasurement.mood !== null ||
-    todayMeasurement.energy !== null ||
-    todayMeasurement.stress !== null ||
-    todayMeasurement.sleep_quality !== null
-  );
 
   return (
     <div className="bg-card border border-border/50 rounded-3xl p-4 shadow-card-playful">
@@ -89,7 +87,7 @@ export function MeasurementsSummary() {
         />
       </div>
 
-      {hasAnyMeasurement ? (
+      {hasAnyMeasurement && todayMeasurement ? (
         <div className="flex flex-wrap gap-2">
           {todayMeasurement.weight !== null && (
             <MeasurementBadge
@@ -164,4 +162,4 @@ export function MeasurementsSummary() {
       )}
     </div>
   );
-}
+});

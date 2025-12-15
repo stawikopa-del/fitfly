@@ -1,6 +1,7 @@
 import { Progress } from '@/components/ui/progress';
 import { getXPProgress } from '@/types/gamification';
 import { Star, Zap } from 'lucide-react';
+import { memo, useMemo } from 'react';
 
 interface LevelProgressProps {
   level: number;
@@ -8,8 +9,8 @@ interface LevelProgressProps {
   compact?: boolean;
 }
 
-export function LevelProgress({ level, totalXP, compact = false }: LevelProgressProps) {
-  const progress = getXPProgress(totalXP, level);
+export const LevelProgress = memo(function LevelProgress({ level, totalXP, compact = false }: LevelProgressProps) {
+  const progress = useMemo(() => getXPProgress(totalXP, level), [totalXP, level]);
 
   if (compact) {
     return (
@@ -47,7 +48,7 @@ export function LevelProgress({ level, totalXP, compact = false }: LevelProgress
       <div className="space-y-1">
         <div className="relative h-3 w-full overflow-hidden rounded-full bg-muted/30 border border-border/50">
           <div 
-            className="h-full bg-gradient-to-r from-fitfly-green to-fitfly-green/80 transition-all rounded-full"
+            className="h-full bg-gradient-to-r from-fitfly-green to-fitfly-green/80 transition-all rounded-full will-change-[width]"
             style={{ width: `${progress.percentage}%` }}
           />
         </div>
@@ -58,4 +59,4 @@ export function LevelProgress({ level, totalXP, compact = false }: LevelProgress
       </div>
     </div>
   );
-}
+});

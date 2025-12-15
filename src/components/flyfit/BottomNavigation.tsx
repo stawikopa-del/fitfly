@@ -2,8 +2,10 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, Utensils, Menu, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { soundFeedback } from '@/utils/soundFeedback';
+import { memo, useCallback, useMemo } from 'react';
+import { prefetchRoute } from '@/lib/prefetch';
 
-const navItems = [
+const navItems: Array<{ to: string; icon: typeof Home; label: string; isCenter?: boolean }> = [
   { to: '/', icon: Home, label: 'Główna' },
   { to: '/treningi', icon: Dumbbell, label: 'Treningi' },
   { to: '/czat', icon: MessageCircle, label: 'Chaty', isCenter: true },
@@ -12,51 +14,41 @@ const navItems = [
 ];
 
 // Sub-routes that belong to each main category
-const homeSubRoutes = [
-  '/', '/kalendarz', '/planowanie'
-];
+const homeSubRoutes = ['/', '/kalendarz', '/planowanie'];
+const inneSubRoutes = ['/inne', '/profil', '/postepy', '/wyzwania', '/ustawienia', '/o-nas', '/pomoc', '/informacje', '/prywatnosc', '/osiagniecia', '/cele', '/znajomi', '/lista-zakupow', '/zaproszenie'];
+const dietaSubRoutes = ['/odzywianie', '/przepisy', '/konfiguracja-diety', '/szybki-posilek', '/baza-produktow'];
+const treningiSubRoutes = ['/treningi', '/trening'];
+const chatySubRoutes = ['/czat', '/wiadomosci', '/chat'];
 
-const inneSubRoutes = [
-  '/inne', '/profil', '/postepy', '/wyzwania', '/ustawienia', '/o-nas', '/pomoc', 
-  '/informacje', '/prywatnosc', '/osiagniecia', '/cele', '/znajomi', '/lista-zakupow',
-  '/zaproszenie'
-];
+const routeGroups: Record<string, readonly string[]> = {
+  '/': homeSubRoutes,
+  '/inne': inneSubRoutes,
+  '/odzywianie': dietaSubRoutes,
+  '/treningi': treningiSubRoutes,
+  '/czat': chatySubRoutes,
+};
 
-const dietaSubRoutes = [
-  '/odzywianie', '/przepisy', '/konfiguracja-diety', '/szybki-posilek', '/baza-produktow'
-];
-
-const treningiSubRoutes = [
-  '/treningi', '/trening'
-];
-
-const chatySubRoutes = [
-  '/czat', '/wiadomosci', '/chat'
-];
-
-export function BottomNavigation() {
+export const BottomNavigation = memo(function BottomNavigation() {
   const location = useLocation();
 
-  const isRouteActive = (to: string) => {
+  const isRouteActive = useCallback((to: string) => {
     const pathname = location.pathname;
+    const routes = routeGroups[to];
     
-    if (to === '/') {
-      return homeSubRoutes.some(route => pathname === route || (route !== '/' && pathname.startsWith(route + '/')));
-    }
-    if (to === '/inne') {
-      return inneSubRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
-    }
-    if (to === '/odzywianie') {
-      return dietaSubRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
-    }
-    if (to === '/treningi') {
-      return treningiSubRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
-    }
-    if (to === '/czat') {
-      return chatySubRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
-    }
-    return pathname === to;
-  };
+    if (!routes) return pathname === to;
+    
+    return routes.some(route => 
+      pathname === route || (route !== '/' && pathname.startsWith(route + '/'))
+    );
+  }, [location.pathname]);
+
+  const handleNavClick = useCallback(() => {
+    soundFeedback.navTap();
+  }, []);
+
+  const handleMouseEnter = useCallback((to: string) => {
+    prefetchRoute(to);
+  }, []);
 
   return (
     <nav className="fixed bottom-4 left-4 right-4 z-50 safe-area-pb">
@@ -65,17 +57,17 @@ export function BottomNavigation() {
           {navItems.map(({ to, icon: Icon, label, isCenter }) => {
             const isActive = isRouteActive(to);
             
-            // Center Chaty button
             if (isCenter) {
               return (
                 <NavLink
                   key={to}
                   to={to}
-                  onClick={() => soundFeedback.navTap()}
+                  onClick={handleNavClick}
+                  onMouseEnter={() => handleMouseEnter(to)}
                   className="relative flex flex-col items-center -mt-6"
                 >
                   <div className={cn(
-                    'w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300',
+                    'w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 will-change-transform',
                     'bg-fitfly-cream border-2 border-fitfly-blue/20',
                     'shadow-[0_0_20px_rgba(59,130,246,0.3)]',
                     'hover:scale-105 hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]',
@@ -96,16 +88,16 @@ export function BottomNavigation() {
               );
             }
 
-            // Regular nav items
             return (
               <NavLink
                 key={to}
                 to={to}
-                onClick={() => soundFeedback.navTap()}
+                onClick={handleNavClick}
+                onMouseEnter={() => handleMouseEnter(to)}
                 className="relative flex flex-col items-center w-16"
               >
                 <div className={cn(
-                  'relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300',
+                  'relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 will-change-transform',
                   isActive 
                     ? 'bg-primary shadow-playful -translate-y-1' 
                     : 'hover:bg-muted'
@@ -133,4 +125,4 @@ export function BottomNavigation() {
       </div>
     </nav>
   );
-}
+});
