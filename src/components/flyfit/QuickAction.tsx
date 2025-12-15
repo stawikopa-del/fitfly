@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, memo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -41,16 +41,15 @@ const colorClasses = {
     icon: 'bg-card/80 backdrop-blur-sm border border-border/40 shadow-sm',
     hover: 'hover:from-pink-500/20 hover:via-pink-400/15',
   },
-};
+} as const;
 
-export function QuickAction({ icon, title, description, color, onClick }: QuickActionProps) {
-  
+export const QuickAction = memo(function QuickAction({ icon, title, description, color, onClick }: QuickActionProps) {
   return (
     <button
       onClick={onClick}
       className={cn(
         'w-full flex items-center gap-4 p-4 rounded-3xl border-2',
-        'transition-all duration-300',
+        'transition-all duration-300 will-change-transform',
         'hover:-translate-y-1 hover:shadow-card-playful active:translate-y-0 active:scale-[0.98]',
         colorClasses[color].bg,
         colorClasses[color].border,
@@ -72,4 +71,4 @@ export function QuickAction({ icon, title, description, color, onClick }: QuickA
       </div>
     </button>
   );
-}
+});

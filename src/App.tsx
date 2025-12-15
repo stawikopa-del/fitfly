@@ -6,7 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/flyfit/AppLayout";
 
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense, useCallback } from "react";
+import { prefetchCriticalRoutes } from "@/lib/prefetch";
 import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/flyfit/SplashScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -80,7 +81,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 5 * 60 * 1000,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
+      refetchOnWindowFocus: false, // Reduce unnecessary refetches
+      refetchOnReconnect: 'always',
     },
   },
 });
@@ -494,6 +498,8 @@ const App = () => {
       const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
       if (hasSeenSplash) {
         setShowSplash(false);
+        // Prefetch critical routes when returning user
+        prefetchCriticalRoutes();
       }
     } catch {
       // sessionStorage might not be available
@@ -501,14 +507,16 @@ const App = () => {
     }
   }, []);
 
-  const handleSplashComplete = () => {
+  const handleSplashComplete = useCallback(() => {
     try {
       sessionStorage.setItem('hasSeenSplash', 'true');
     } catch {
       // Ignore storage errors
     }
     setShowSplash(false);
-  };
+    // Prefetch critical routes after splash
+    prefetchCriticalRoutes();
+  }, []);
 
   return (
     <ErrorBoundary>

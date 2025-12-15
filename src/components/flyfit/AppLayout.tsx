@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, memo, useMemo } from 'react';
 import { BottomNavigation } from './BottomNavigation';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
@@ -8,9 +8,9 @@ export interface AppLayoutProps {
   hideNav?: boolean;
 }
 
-export function AppLayout({ children, hideNav = false }: AppLayoutProps) {
+export const AppLayout = memo(function AppLayout({ children, hideNav = false }: AppLayoutProps) {
   const { isWorkoutActive } = useWorkout();
-  const shouldHideNav = hideNav || isWorkoutActive;
+  const shouldHideNav = useMemo(() => hideNav || isWorkoutActive, [hideNav, isWorkoutActive]);
   
   // Enable scroll position restoration
   useScrollRestoration();
@@ -26,4 +26,4 @@ export function AppLayout({ children, hideNav = false }: AppLayoutProps) {
       {!shouldHideNav && <BottomNavigation />}
     </div>
   );
-}
+});

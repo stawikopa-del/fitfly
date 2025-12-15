@@ -1,6 +1,7 @@
 import { Droplets, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { memo, useCallback } from 'react';
 import fitekWoda from '@/assets/fitek/fitek-woda.png';
 
 interface WaterTrackerProps {
@@ -9,10 +10,14 @@ interface WaterTrackerProps {
   onAdd: (amount: number) => void;
 }
 
-export function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
+export const WaterTracker = memo(function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
   const percentage = Math.min((current / goal) * 100, 100);
   const glasses = Math.floor(current / 250);
   const isComplete = current >= goal;
+
+  const handleAdd250 = useCallback(() => onAdd(250), [onAdd]);
+  const handleAdd500 = useCallback(() => onAdd(500), [onAdd]);
+  const handleRemove250 = useCallback(() => onAdd(-250), [onAdd]);
 
   return (
     <div className={cn(
@@ -29,6 +34,8 @@ export function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
             <img 
               src={fitekWoda} 
               alt="FITEK pije wodę" 
+              loading="lazy"
+              decoding="async"
               className={cn(
                 'w-12 h-12 object-contain',
                 isComplete && 'animate-bounce-soft'
@@ -52,7 +59,7 @@ export function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
       {/* Progress bar - more playful */}
       <div className="relative h-5 bg-muted rounded-full overflow-hidden mb-4 border border-border/50">
         <div 
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary via-primary to-fitfly-blue-light rounded-full transition-all duration-500"
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary via-primary to-fitfly-blue-light rounded-full transition-all duration-500 will-change-[width]"
           style={{ width: `${percentage}%` }}
         />
         {/* Bubbles decoration */}
@@ -73,7 +80,7 @@ export function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
         <Button 
           variant="outline" 
           size="icon"
-          onClick={() => onAdd(-250)}
+          onClick={handleRemove250}
           disabled={current <= 0}
           className="rounded-2xl w-12 h-12 border-2"
         >
@@ -82,7 +89,7 @@ export function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
         
         <div className="flex gap-3">
           <Button 
-            onClick={() => onAdd(250)}
+            onClick={handleAdd250}
             className="rounded-2xl h-12 px-5 hover:-translate-y-0.5 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4 mr-1" />
@@ -90,7 +97,7 @@ export function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
           </Button>
           <Button 
             variant="secondary"
-            onClick={() => onAdd(500)}
+            onClick={handleAdd500}
             className="rounded-2xl h-12 px-5 hover:-translate-y-0.5 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4 mr-1" />
@@ -104,4 +111,4 @@ export function WaterTracker({ current, goal, onAdd }: WaterTrackerProps) {
       </p>
     </div>
   );
-}
+});
