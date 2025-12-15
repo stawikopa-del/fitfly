@@ -6,6 +6,7 @@ import { StatCard } from '@/components/flyfit/StatCard';
 import { WaterTracker } from '@/components/flyfit/WaterTracker';
 import { QuickAction } from '@/components/flyfit/QuickAction';
 import { MeasurementsSummary } from '@/components/flyfit/MeasurementsSummary';
+import { GratitudeJournal } from '@/components/flyfit/GratitudeJournal';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useGamification } from '@/hooks/useGamification';
 import { useHabitsAndChallenges } from '@/hooks/useHabitsAndChallenges';
@@ -275,17 +276,24 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Dziennik wdzięczności */}
+      <section className="relative z-10 animate-float" style={{
+        animationDelay: '0.95s'
+      }}>
+        <GratitudeJournal />
+      </section>
+
       {/* Dzisiejsze pomiary */}
       <section className="relative z-10 animate-float" style={{
-      animationDelay: '0.95s'
-    }}>
+        animationDelay: '1s'
+      }}>
         <MeasurementsSummary />
       </section>
 
       {/* Tracker wody */}
       <section className="relative z-10 animate-float" style={{
-      animationDelay: '1s'
-    }}>
+        animationDelay: '1.05s'
+      }}>
         <WaterTracker current={progress?.water || 0} goal={progress?.waterGoal || 2000} onAdd={addWater} />
       </section>
 
@@ -298,20 +306,20 @@ export default function Home() {
         
         <div className="space-y-3 pt-1">
           <div className="animate-float" style={{
-          animationDelay: '1.2s'
-        }}>
+            animationDelay: '1.2s'
+          }}>
             <QuickAction icon={<img src={fitekReceWGore} alt="FITEK" className="w-8 h-8 object-contain" />} title="Szybki trening" description="10 minut ćwiczeń na start dnia" color="green" onClick={() => navigate('/treningi')} />
           </div>
           
           <div className="animate-float" style={{
-          animationDelay: '1.4s'
-        }}>
+            animationDelay: '1.35s'
+          }}>
             <QuickAction icon={<img src={activeChallenge ? fitekPuchar : fitekPiatka} alt="FITEK" className="w-8 h-8 object-contain" />} title={activeChallenge ? activeChallenge.title : 'Wyzwanie dnia'} description={activeChallenge ? `${activeChallenge.current}/${activeChallenge.target} ${activeChallenge.unit} - ${Math.round(activeChallenge.current / activeChallenge.target * 100)}% ukończone` : 'Rozpocznij nowe wyzwanie!'} color="orange" onClick={() => navigate('/wyzwania')} />
           </div>
 
           <div className="animate-float" style={{
-          animationDelay: '1.6s'
-        }}>
+            animationDelay: '1.5s'
+          }}>
             <QuickAction icon={<img src={fitekCel} alt="FITEK" className="w-8 h-8 object-contain" />} title="Planowanie dnia" description="Zaplanuj zadania i przypomnienia" color="pink" onClick={() => navigate('/planowanie')} />
           </div>
         </div>
