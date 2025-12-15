@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, LineChart, Line } from 'recharts';
 import { PageHeader } from '@/components/flyfit/PageHeader';
 import { AddMeasurementDialog } from '@/components/flyfit/AddMeasurementDialog';
+import { ProgressSkeleton } from '@/components/flyfit/SkeletonLoaders';
 import fitekWykresy from '@/assets/fitek/fitek-wykresy.png';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -27,7 +28,7 @@ export default function Progress() {
   const { user } = useAuth();
   const { measurements, getWeightHistory, getAverages, loading: measurementsLoading } = useMeasurements();
   const [weeklyData, setWeeklyData] = useState<DailyData[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState<'water' | 'steps' | 'activeMinutes'>('water');
 
   useEffect(() => {
@@ -132,7 +133,15 @@ export default function Progress() {
   const currentMetric = metricConfig[selectedMetric];
   const CurrentIcon = currentMetric.icon;
 
-  // No loading spinner - content shows immediately
+  // Show skeleton while loading
+  if (loading || measurementsLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <PageHeader title="Twoje postępy" emoji="📊" icon={<TrendingUp className="w-5 h-5 text-primary" />} />
+        <ProgressSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
