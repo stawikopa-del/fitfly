@@ -6,7 +6,11 @@ import { toast } from 'sonner';
 export function useSharing() {
   const { user } = useAuth();
   const [isSharing, setIsSharing] = useState(false);
-  const operationInProgress = useRef(false);
+  
+  // Separate guards for different operation types
+  const recipeShareInProgressRef = useRef<Set<string>>(new Set()); // Track per-recipe
+  const publicLinkInProgressRef = useRef<Set<string>>(new Set()); // Track per-recipe
+  const challengeShareInProgressRef = useRef<Set<string>>(new Set()); // Track per-challenge
 
   const generateShareToken = useCallback(() => {
     try {
@@ -20,9 +24,13 @@ export function useSharing() {
   }, []);
 
   const shareRecipeWithFriend = useCallback(async (recipeId: string, friendId: string) => {
-    if (!user || operationInProgress.current) return false;
+    if (!user) return false;
+    
+    const key = `${recipeId}-${friendId}`;
+    // Prevent concurrent shares of same recipe to same friend
+    if (recipeShareInProgressRef.current.has(key)) return false;
+    recipeShareInProgressRef.current.add(key);
 
-    operationInProgress.current = true;
     setIsSharing(true);
     try {
       const { error } = await supabase
@@ -43,15 +51,18 @@ export function useSharing() {
       toast.error('Nie udało się udostępnić przepisu');
       return false;
     } finally {
-      operationInProgress.current = false;
+      recipeShareInProgressRef.current.delete(key);
       setIsSharing(false);
     }
   }, [user]);
 
   const createPublicRecipeLink = useCallback(async (recipeId: string) => {
-    if (!user || operationInProgress.current) return null;
+    if (!user) return null;
+    
+    // Prevent concurrent public link creation for same recipe
+    if (publicLinkInProgressRef.current.has(recipeId)) return null;
+    publicLinkInProgressRef.current.add(recipeId);
 
-    operationInProgress.current = true;
     setIsSharing(true);
     try {
       const token = generateShareToken();
@@ -87,7 +98,7 @@ export function useSharing() {
       toast.error('Nie udało się utworzyć linku');
       return null;
     } finally {
-      operationInProgress.current = false;
+      publicLinkInProgressRef.current.delete(recipeId);
       setIsSharing(false);
     }
   }, [user, generateShareToken]);
@@ -113,9 +124,13 @@ export function useSharing() {
   }, []);
 
   const shareChallengeWithFriend = useCallback(async (challengeId: string, friendId: string) => {
-    if (!user || operationInProgress.current) return false;
+    if (!user) return false;
 
-    operationInProgress.current = true;
+    const key = `${challengeId}-${friendId}`;
+    // Prevent concurrent shares of same challenge to same friend
+    if (challengeShareInProgressRef.current.has(key)) return false;
+    challengeShareInProgressRef.current.add(key);
+
     setIsSharing(true);
     try {
       const { error } = await supabase
@@ -135,7 +150,7 @@ export function useSharing() {
       toast.error('Nie udało się udostępnić wyzwania');
       return false;
     } finally {
-      operationInProgress.current = false;
+      challengeShareInProgressRef.current.delete(key);
       setIsSharing(false);
     }
   }, [user]);
