@@ -11,6 +11,7 @@ import { useGamification } from '@/hooks/useGamification';
 import { useHabitsAndChallenges } from '@/hooks/useHabitsAndChallenges';
 import { useAuth } from '@/hooks/useAuth';
 import { LevelProgress } from '@/components/flyfit/LevelProgress';
+import { HomeSkeleton } from '@/components/flyfit/SkeletonLoaders';
 import { supabase } from '@/integrations/supabase/client';
 import fitflyLogoFull from '@/assets/fitfly-logo-full.png';
 import fitekReceWGore from '@/assets/fitek/fitek-rece-w-gore.png';
@@ -74,63 +75,58 @@ export default function Home() {
   const [todayCalories, setTodayCalories] = useState<number>(0);
   const [caloriesGoal, setCaloriesGoal] = useState<number>(2000);
   const [todayPlans, setTodayPlans] = useState<Array<{id: string; name: string; time: string | null; location: string | null; category: string; is_completed: boolean}>>([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
   // Fetch user profile for personalized greeting and calories
   useEffect(() => {
-    if (!user) return;
-    const fetchProfile = async () => {
-      try {
-        const {
-          data,
-          error
-        } = await supabase.from('profiles').select('display_name, daily_calories').eq('user_id', user.id).maybeSingle();
-        if (!error && data) {
-          setDisplayName(data.display_name || '');
-          setCaloriesGoal(data.daily_calories || 2000);
-        }
-      } catch (err) {
-        console.error('Error fetching profile:', err);
-      }
-    };
-
-    // Fetch today's meals for calories
-    const fetchTodayMeals = async () => {
+    if (!user) {
+      setDataLoading(false);
+      return;
+    }
+    
+    let mounted = true;
+    
+    const fetchAllData = async () => {
       try {
         const today = new Date().toISOString().split('T')[0];
-        const {
-          data,
-          error
-        } = await supabase.from('meals').select('calories').eq('user_id', user.id).eq('meal_date', today);
-        if (!error && data) {
-          const total = data.reduce((sum, meal) => sum + (meal.calories || 0), 0);
+        
+        // Fetch all data in parallel
+        const [profileRes, mealsRes, plansRes] = await Promise.all([
+          supabase.from('profiles').select('display_name, daily_calories').eq('user_id', user.id).maybeSingle(),
+          supabase.from('meals').select('calories').eq('user_id', user.id).eq('meal_date', today),
+          supabase.from('day_plans')
+            .select('id, name, time, location, category, is_completed')
+            .eq('user_id', user.id)
+            .eq('plan_date', today)
+            .order('time', { ascending: true, nullsFirst: false })
+            .limit(4)
+        ]);
+        
+        if (!mounted) return;
+        
+        if (profileRes.data) {
+          setDisplayName(profileRes.data.display_name || '');
+          setCaloriesGoal(profileRes.data.daily_calories || 2000);
+        }
+        
+        if (mealsRes.data) {
+          const total = mealsRes.data.reduce((sum, meal) => sum + (meal.calories || 0), 0);
           setTodayCalories(total);
         }
-      } catch (err) {
-        console.error('Error fetching meals:', err);
-      }
-    };
-    // Fetch today's plans
-    const fetchTodayPlans = async () => {
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        const { data, error } = await supabase
-          .from('day_plans')
-          .select('id, name, time, location, category, is_completed')
-          .eq('user_id', user.id)
-          .eq('plan_date', today)
-          .order('time', { ascending: true, nullsFirst: false })
-          .limit(4);
-        if (!error && data) {
-          setTodayPlans(data);
+        
+        if (plansRes.data) {
+          setTodayPlans(plansRes.data);
         }
       } catch (err) {
-        console.error('Error fetching plans:', err);
+        console.error('Error fetching home data:', err);
+      } finally {
+        if (mounted) setDataLoading(false);
       }
     };
 
-    fetchProfile();
-    fetchTodayMeals();
-    fetchTodayPlans();
+    fetchAllData();
+    
+    return () => { mounted = false; };
   }, [user]);
 
   // Get greeting info
@@ -148,9 +144,16 @@ export default function Home() {
   }, [habits, todayLogs]);
   const totalActiveHabits = habits.length;
 
-  // No loading spinner - show content immediately
   const loginStreak = gamification?.daily_login_streak || 0;
   const streakMessage = getStreakMessage(loginStreak);
+  
+  // Show skeleton while loading critical data
+  const isLoading = dataLoading || progressLoading || gamificationLoading;
+  
+  if (isLoading) {
+    return <HomeSkeleton />;
+  }
+  
   return <div className="px-4 py-6 space-y-6">
       {/* Brand Banner */}
       

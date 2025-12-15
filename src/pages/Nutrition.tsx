@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Meal } from '@/types/flyfit';
 import { AddMealDialog } from '@/components/flyfit/AddMealDialog';
 import { BarcodeScanner } from '@/components/flyfit/BarcodeScanner';
+import { NutritionSkeleton } from '@/components/flyfit/SkeletonLoaders';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -53,7 +54,8 @@ const defaultMealSchedule: MealScheduleItem[] = [
 export default function Nutrition() {
   const navigate = useNavigate();
   const [meals, setMeals] = useState<Meal[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(true);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -91,6 +93,8 @@ export default function Nutrition() {
         }
       } catch (e) {
         console.error('Error loading meal settings:', e);
+      } finally {
+        setSettingsLoading(false);
       }
     };
     
@@ -268,6 +272,10 @@ export default function Nutrition() {
         }}
       />
     );
+  }
+  // Show skeleton while loading
+  if (loading || settingsLoading) {
+    return <NutritionSkeleton />;
   }
 
   return (
