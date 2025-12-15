@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Calendar as CalendarIcon, Plus, X, Clock, Dumbbell, Utensils, Target, Sparkles, ArrowLeft, CalendarDays, LayoutGrid, ChevronLeft, ChevronRight, Pencil, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,10 +65,16 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [dayPlans, setDayPlans] = useState<DayPlan[]>([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // No initial loading delay
+  const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  
+  // Guards to prevent race conditions
+  const addInProgressRef = useRef(false);
+  const editInProgressRef = useRef(false);
+  const deleteInProgressRef = useRef<Set<string>>(new Set());
+  const mountedRef = useRef(true);
   const [editForm, setEditForm] = useState({
     title: '',
     time: '',
@@ -144,44 +150,50 @@ export default function CalendarPage() {
   });
 
   const handleAddEvent = async () => {
-    if (!newEvent.title.trim() || !user) return;
+    if (!newEvent.title.trim() || !user || addInProgressRef.current) return;
     if (newEvent.type === 'other' && !newEvent.customType.trim()) {
       toast.error('Wpisz własny typ wydarzenia');
       return;
     }
 
+    addInProgressRef.current = true;
     setIsLoading(true);
 
-    const finalType = newEvent.type === 'other' && newEvent.customType.trim() 
-      ? newEvent.customType.trim() 
-      : newEvent.type;
+    try {
+      const finalType = newEvent.type === 'other' && newEvent.customType.trim() 
+        ? newEvent.customType.trim() 
+        : newEvent.type;
 
-    const eventData = {
-      user_id: user.id,
-      title: newEvent.title,
-      event_date: format(selectedDate, 'yyyy-MM-dd'),
-      event_time: newEvent.time,
-      type: finalType,
-    };
+      const eventData = {
+        user_id: user.id,
+        title: newEvent.title,
+        event_date: format(selectedDate, 'yyyy-MM-dd'),
+        event_time: newEvent.time,
+        type: finalType,
+      };
 
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .insert(eventData)
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .insert(eventData)
+        .select()
+        .single();
 
-    setIsLoading(false);
+      if (error) {
+        console.error('Error adding event:', error);
+        toast.error('Nie udało się dodać planu');
+        return;
+      }
 
-    if (error) {
-      console.error('Error adding event:', error);
-      toast.error('Nie udało się dodać planu');
-      return;
+      if (mountedRef.current) {
+        setEvents(prev => [...prev, { ...data, type: data.type }]);
+        setNewEvent({ title: '', time: '12:00', type: 'workout', customType: '' });
+        setIsAddingEvent(false);
+      }
+      toast.success('Plan dodany!');
+    } finally {
+      addInProgressRef.current = false;
+      if (mountedRef.current) setIsLoading(false);
     }
-
-    setEvents([...events, { ...data, type: data.type }]);
-    setNewEvent({ title: '', time: '12:00', type: 'workout', customType: '' });
-    setIsAddingEvent(false);
-    toast.success('Plan dodany!');
   };
 
   const handleEditEvent = (event: CalendarEvent) => {
@@ -196,42 +208,48 @@ export default function CalendarPage() {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingEventId || !editForm.title.trim()) return;
+    if (!editingEventId || !editForm.title.trim() || editInProgressRef.current) return;
     if (editForm.type === 'other' && !editForm.customType.trim()) {
       toast.error('Wpisz własny typ wydarzenia');
       return;
     }
 
+    editInProgressRef.current = true;
     setIsLoading(true);
 
-    const finalType = editForm.type === 'other' && editForm.customType.trim()
-      ? editForm.customType.trim()
-      : editForm.type;
+    try {
+      const finalType = editForm.type === 'other' && editForm.customType.trim()
+        ? editForm.customType.trim()
+        : editForm.type;
 
-    const { error } = await supabase
-      .from('calendar_events')
-      .update({
-        title: editForm.title,
-        event_time: editForm.time,
-        type: finalType,
-      })
-      .eq('id', editingEventId);
+      const { error } = await supabase
+        .from('calendar_events')
+        .update({
+          title: editForm.title,
+          event_time: editForm.time,
+          type: finalType,
+        })
+        .eq('id', editingEventId);
 
-    setIsLoading(false);
+      if (error) {
+        console.error('Error updating event:', error);
+        toast.error('Nie udało się zaktualizować planu');
+        return;
+      }
 
-    if (error) {
-      console.error('Error updating event:', error);
-      toast.error('Nie udało się zaktualizować planu');
-      return;
+      if (mountedRef.current) {
+        setEvents(prev => prev.map(e => 
+          e.id === editingEventId 
+            ? { ...e, title: editForm.title, event_time: editForm.time, type: finalType }
+            : e
+        ));
+        setEditingEventId(null);
+      }
+      toast.success('Plan zaktualizowany!');
+    } finally {
+      editInProgressRef.current = false;
+      if (mountedRef.current) setIsLoading(false);
     }
-
-    setEvents(events.map(e => 
-      e.id === editingEventId 
-        ? { ...e, title: editForm.title, event_time: editForm.time, type: finalType }
-        : e
-    ));
-    setEditingEventId(null);
-    toast.success('Plan zaktualizowany!');
   };
 
   const handleCancelEdit = () => {
@@ -240,18 +258,31 @@ export default function CalendarPage() {
   };
 
   const handleDeleteEvent = async (id: string) => {
-    const { error } = await supabase
-      .from('calendar_events')
-      .delete()
-      .eq('id', id);
+    if (deleteInProgressRef.current.has(id)) return;
+    deleteInProgressRef.current.add(id);
 
-    if (error) {
-      console.error('Error deleting event:', error);
-      toast.error('Nie udało się usunąć planu');
-      return;
+    try {
+      const { error } = await supabase
+        .from('calendar_events')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting event:', error);
+        toast.error('Nie udało się usunąć planu');
+        return;
+      }
+
+      if (mountedRef.current) {
+        setEvents(prev => prev.filter((e) => e.id !== id));
+      }
+      toast.success('Plan usunięty');
+    } finally {
+      deleteInProgressRef.current.delete(id);
     }
+  };
 
-    setEvents(events.filter((e) => e.id !== id));
+  const datesWithEvents = events.map((e) => parseISO(e.event_date));
     toast.success('Plan usunięty');
   };
 
