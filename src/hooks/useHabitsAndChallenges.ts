@@ -322,59 +322,62 @@ export function useHabitsAndChallenges() {
       
       if (!habit) return;
     
-    if (!habit) return;
-    
-    if (existingLog) {
-      // Toggle completion
-      const newCompleted = !existingLog.is_completed;
-      
-      const { error } = await supabase
-        .from('habit_logs')
-        .update({ 
-          is_completed: newCompleted,
-          completed_value: newCompleted ? habit.target_value : 0
-        })
-        .eq('id', existingLog.id);
-      
-      if (error) {
-        console.error('Error updating habit log:', error);
-        return;
-      }
-      
-      // Update streak and award XP
-      if (newCompleted) {
+      if (existingLog) {
+        // Toggle completion
+        const newCompleted = !existingLog.is_completed;
+        
+        const { error } = await supabase
+          .from('habit_logs')
+          .update({ 
+            is_completed: newCompleted,
+            completed_value: newCompleted ? habit.target_value : 0
+          })
+          .eq('id', existingLog.id);
+        
+        if (error) {
+          console.error('Error updating habit log:', error);
+          return;
+        }
+        
+        // Update streak and award XP
+        if (newCompleted) {
+          await updateStreak(habitId, true);
+          onHabitCompleted();
+        }
+      } else {
+        // Create new log
+        const { error } = await supabase
+          .from('habit_logs')
+          .insert({
+            habit_id: habitId,
+            user_id: user.id,
+            log_date: today,
+            is_completed: true,
+            completed_value: habit.target_value,
+          });
+        
+        if (error) {
+          console.error('Error creating habit log:', error);
+          return;
+        }
+        
         await updateStreak(habitId, true);
         onHabitCompleted();
-      }
-    } else {
-      // Create new log
-      const { error } = await supabase
-        .from('habit_logs')
-        .insert({
-          habit_id: habitId,
-          user_id: user.id,
-          log_date: today,
-          is_completed: true,
-          completed_value: habit.target_value,
-        });
-      
-      if (error) {
-        console.error('Error creating habit log:', error);
-        return;
+        
+        // Check for habit streak badges
+        const newStreak = habit.streak_current + 1;
+        if (newStreak === 7) awardBadge('konsekwentny');
+        if (newStreak === 30) awardBadge('niezniszczalny');
+        if (habit.total_completions + 1 >= 100) awardBadge('mistrz_nawykow');
       }
       
-      await updateStreak(habitId, true);
-      onHabitCompleted();
-      
-      // Check for habit streak badges
-      const newStreak = habit.streak_current + 1;
-      if (newStreak === 7) awardBadge('konsekwentny');
-      if (newStreak === 30) awardBadge('niezniszczalny');
-      if (habit.total_completions + 1 >= 100) awardBadge('mistrz_nawykow');
+      if (mountedRef.current) {
+        fetchTodayLogs();
+        fetchHabits();
+      }
+    } finally {
+      toggleOperationRef.current.delete(habitId);
     }
-    
-    fetchTodayLogs();
-    fetchHabits();
   };
 
   const updateStreak = async (habitId: string, completed: boolean) => {
