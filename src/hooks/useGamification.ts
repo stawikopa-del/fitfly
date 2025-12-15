@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
@@ -12,17 +12,21 @@ import {
 } from '@/types/gamification';
 import { triggerLevelUpConfetti, triggerBadgeConfetti } from '@/utils/confetti';
 import { handleApiError } from '@/lib/errorHandler';
+import { AsyncQueue } from '@/lib/asyncQueue';
 
 export function useGamification() {
   const { user, isInitialized } = useAuth();
   const [gamification, setGamification] = useState<UserGamification | null>(null);
   const [badges, setBadges] = useState<UserBadge[]>([]);
-  const [loading, setLoading] = useState(false); // No initial loading delay
+  const [loading, setLoading] = useState(false);
   
-  const operationInProgressRef = useRef(false);
-  const pendingXPRef = useRef<Array<{ amount: number; source: string; description?: string }>>([]);
   const fetchedRef = useRef(false);
   const mountedRef = useRef(true);
+  const userIdRef = useRef<string | null>(null);
+  
+  // Separate queues for XP and badge operations
+  const xpQueue = useMemo(() => new AsyncQueue(), []);
+  const badgeQueue = useMemo(() => new AsyncQueue(), []);
 
   const fetchGamification = useCallback(async () => {
     if (!user) {
@@ -30,16 +34,15 @@ export function useGamification() {
       return;
     }
 
-    // Prevent duplicate fetches
-    if (fetchedRef.current) {
+    if (fetchedRef.current && userIdRef.current === user.id) {
       setLoading(false);
       return;
     }
 
     try {
+      userIdRef.current = user.id;
       fetchedRef.current = true;
       
-      // Fetch gamification data
       const { data: gamData, error: gamError } = await supabase
         .from('user_gamification')
         .select('*')
@@ -55,7 +58,6 @@ export function useGamification() {
       }
 
       if (!gamData) {
-        // Create initial gamification record
         try {
           const { data: newData, error: insertError } = await supabase
             .from('user_gamification')
@@ -84,7 +86,6 @@ export function useGamification() {
       } else {
         setGamification(gamData);
         
-        // Check and update daily login streak
         try {
           const today = new Date().toISOString().split('T')[0];
           if (gamData.last_login_date !== today) {
@@ -118,7 +119,6 @@ export function useGamification() {
         }
       }
 
-      // Fetch badges
       try {
         const { data: badgeData } = await supabase
           .from('user_badges')
@@ -145,137 +145,158 @@ export function useGamification() {
     mountedRef.current = true;
     
     if (isInitialized && user) {
-      fetchedRef.current = false;
+      if (userIdRef.current !== user.id) {
+        fetchedRef.current = false;
+      }
       fetchGamification();
     } else if (isInitialized && !user) {
       setGamification(null);
       setBadges([]);
       setLoading(false);
       fetchedRef.current = false;
+      userIdRef.current = null;
     }
 
     return () => {
       mountedRef.current = false;
+      xpQueue.abort();
+      badgeQueue.abort();
     };
-  }, [isInitialized, user, fetchGamification]);
+  }, [isInitialized, user, fetchGamification, xpQueue, badgeQueue]);
 
   const addXP = useCallback(async (amount: number, source: string, description?: string) => {
-    if (!user || !gamification || !mountedRef.current) return;
+    if (!user || !mountedRef.current) return;
     
-    if (operationInProgressRef.current) {
-      pendingXPRef.current.push({ amount, source, description });
-      return;
-    }
+    // Get current gamification state
+    const currentGamification = gamification;
+    if (!currentGamification) return;
 
-    operationInProgressRef.current = true;
+    // Queue the XP operation
+    return xpQueue.enqueue(async () => {
+      if (!mountedRef.current) return;
 
-    try {
-      await supabase
-        .from('xp_transactions')
-        .insert({
-          user_id: user.id,
-          amount,
-          source,
-          description
+      try {
+        await supabase
+          .from('xp_transactions')
+          .insert({
+            user_id: user.id,
+            amount,
+            source,
+            description
+          });
+
+        // Fetch fresh gamification data for accurate calculation
+        const { data: freshData } = await supabase
+          .from('user_gamification')
+          .select('total_xp, current_level')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!freshData || !mountedRef.current) return;
+
+        const newTotalXP = freshData.total_xp + amount;
+        const newLevel = getLevelFromXP(newTotalXP);
+        const leveledUp = newLevel > freshData.current_level;
+
+        const { data: updatedData, error } = await supabase
+          .from('user_gamification')
+          .update({
+            total_xp: newTotalXP,
+            current_level: newLevel,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .select()
+          .single();
+
+        if (error) {
+          handleApiError(error, 'useGamification.addXP', { fallbackMessage: 'Nie udało się dodać XP' });
+          return;
+        }
+
+        if (updatedData && mountedRef.current) {
+          setGamification(updatedData);
+        }
+
+        toast.success(`+${amount} XP`, {
+          description: description || source,
+          duration: 2000
         });
 
-      const newTotalXP = gamification.total_xp + amount;
-      const newLevel = getLevelFromXP(newTotalXP);
-      const leveledUp = newLevel > gamification.current_level;
-
-      const { data: updatedData, error } = await supabase
-        .from('user_gamification')
-        .update({
-          total_xp: newTotalXP,
-          current_level: newLevel,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) {
-        handleApiError(error, 'useGamification.addXP', { fallbackMessage: 'Nie udało się dodać XP' });
-        return;
-      }
-
-      if (updatedData && mountedRef.current) {
-        setGamification(updatedData);
-      }
-
-      toast.success(`+${amount} XP`, {
-        description: description || source,
-        duration: 2000
-      });
-
-      if (leveledUp) {
-        try {
-          triggerLevelUpConfetti();
-        } catch {
-          // Confetti might fail in some environments
+        if (leveledUp) {
+          try {
+            triggerLevelUpConfetti();
+          } catch {
+            // Confetti might fail
+          }
+          toast.success(`🎉 Nowy poziom: ${newLevel}!`, {
+            description: 'Gratulacje!',
+            duration: 4000
+          });
         }
-        toast.success(`🎉 Nowy poziom: ${newLevel}!`, {
-          description: 'Gratulacje!',
-          duration: 4000
-        });
+      } catch (error) {
+        handleApiError(error, 'useGamification.addXP', { silent: true });
       }
-
-    } catch (error) {
-      handleApiError(error, 'useGamification.addXP', { silent: true });
-    } finally {
-      operationInProgressRef.current = false;
-
-      if (pendingXPRef.current.length > 0 && mountedRef.current) {
-        const pending = pendingXPRef.current.shift();
-        if (pending) {
-          addXP(pending.amount, pending.source, pending.description);
-        }
-      }
-    }
-  }, [user, gamification]);
+    });
+  }, [user, gamification, xpQueue]);
 
   const awardBadge = useCallback(async (badgeType: BadgeType) => {
     if (!user || !mountedRef.current) return;
     
+    // Check if badge already exists (from current state)
     if (badges.some(b => b.badge_type === badgeType)) return;
 
-    try {
-      const { data, error } = await supabase
+    // Queue the badge operation
+    return badgeQueue.enqueue(async () => {
+      if (!mountedRef.current) return;
+
+      // Double-check badge doesn't exist in DB
+      const { data: existingBadge } = await supabase
         .from('user_badges')
-        .insert({
-          user_id: user.id,
-          badge_type: badgeType
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('badge_type', badgeType)
+        .maybeSingle();
 
-      if (error) {
-        if (error.code === '23505') return;
-        handleApiError(error, 'useGamification.awardBadge', { silent: true });
-        return;
-      }
+      if (existingBadge) return; // Already has badge
 
-      if (mountedRef.current) {
-        setBadges(prev => [...prev, data]);
-      }
+      try {
+        const { data, error } = await supabase
+          .from('user_badges')
+          .insert({
+            user_id: user.id,
+            badge_type: badgeType
+          })
+          .select()
+          .single();
 
-      const badge = BADGE_DEFINITIONS.find(b => b.type === badgeType);
-      if (badge) {
-        try {
-          triggerBadgeConfetti();
-        } catch {
-          // Confetti might fail
+        if (error) {
+          if (error.code === '23505') return; // Duplicate key
+          handleApiError(error, 'useGamification.awardBadge', { silent: true });
+          return;
         }
-        toast.success(`🏆 Nowa odznaka: ${badge.name}!`, {
-          description: badge.description,
-          duration: 5000
-        });
-      }
 
-    } catch (error) {
-      handleApiError(error, 'useGamification.awardBadge', { silent: true });
-    }
-  }, [user, badges]);
+        if (mountedRef.current) {
+          setBadges(prev => [...prev, data]);
+        }
+
+        const badge = BADGE_DEFINITIONS.find(b => b.type === badgeType);
+        if (badge) {
+          try {
+            triggerBadgeConfetti();
+          } catch {
+            // Confetti might fail
+          }
+          toast.success(`🏆 Nowa odznaka: ${badge.name}!`, {
+            description: badge.description,
+            duration: 5000
+          });
+        }
+      } catch (error) {
+        handleApiError(error, 'useGamification.awardBadge', { silent: true });
+      }
+    });
+  }, [user, badges, badgeQueue]);
 
   const onWorkoutCompleted = useCallback(async () => {
     await addXP(XP_REWARDS.workout_completed, 'workout', 'Ukończony trening');

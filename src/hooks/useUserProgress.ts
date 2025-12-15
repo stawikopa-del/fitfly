@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { DailyProgress, MascotState, MascotEmotion } from '@/types/flyfit';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { toast } from 'sonner';
 import { handleApiError } from '@/lib/errorHandler';
+import { createDebouncedAsync } from '@/lib/asyncQueue';
 
 const defaultProgress: DailyProgress = {
   steps: 0,
@@ -36,22 +36,77 @@ export function useUserProgress() {
     emotion: 'neutral',
     message: 'Cześć! Gotowy/a na świetny dzień?',
   });
-  const [loading, setLoading] = useState(false); // No initial loading delay
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingUpdateRef = useRef<{ water?: number; steps?: number; activeMinutes?: number } | null>(null);
   const mountedRef = useRef(true);
-  const saveInProgressRef = useRef(false);
+  const latestProgressRef = useRef<{ water: number; steps: number; activeMinutes: number } | null>(null);
+  const userIdRef = useRef<string | null>(null);
 
   // Get today's date safely
   const getToday = useCallback(() => {
     try {
       return new Date().toISOString().split('T')[0];
     } catch {
-      return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format
+      return new Date().toLocaleDateString('en-CA');
     }
   }, []);
+
+  // Core save function
+  const saveToDb = useCallback(async (updates: { water: number; steps: number; activeMinutes: number }) => {
+    const userId = userIdRef.current;
+    if (!userId || !mountedRef.current) return;
+
+    const today = getToday();
+
+    try {
+      const { data: existing } = await supabase
+        .from('daily_progress')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('progress_date', today)
+        .maybeSingle();
+
+      if (!mountedRef.current) return;
+
+      if (existing) {
+        await supabase
+          .from('daily_progress')
+          .update({
+            water: updates.water,
+            steps: updates.steps,
+            active_minutes: updates.activeMinutes,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('daily_progress')
+          .insert({
+            user_id: userId,
+            progress_date: today,
+            water: updates.water,
+            steps: updates.steps,
+            active_minutes: updates.activeMinutes,
+          });
+      }
+    } catch (err) {
+      handleApiError(err, 'saveProgress', { fallbackMessage: 'Nie udało się zapisać postępu' });
+    }
+  }, [getToday]);
+
+  // Create debounced save - memoized to prevent recreation
+  const debouncedSave = useMemo(() => {
+    return createDebouncedAsync(saveToDb, 500);
+  }, [saveToDb]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Flush any pending saves before unmount
+      debouncedSave.flush();
+    };
+  }, [debouncedSave]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -60,9 +115,11 @@ export function useUserProgress() {
     if (!user) {
       setProgress(defaultProgress);
       setLoading(false);
+      userIdRef.current = null;
       return;
     }
 
+    userIdRef.current = user.id;
     const today = getToday();
 
     const fetchData = async () => {
@@ -89,15 +146,22 @@ export function useUserProgress() {
         const profile = profileResult.data;
         const dailyData = dailyResult.data;
 
-        setProgress(prev => ({
-          ...prev,
+        const newProgress = {
+          ...defaultProgress,
           waterGoal: profile?.daily_water || 2000,
           caloriesGoal: profile?.daily_calories || 2000,
           stepsGoal: profile?.daily_steps_goal || 10000,
           water: dailyData?.water || 0,
           steps: dailyData?.steps || 0,
           activeMinutes: dailyData?.active_minutes || 0,
-        }));
+        };
+
+        setProgress(newProgress);
+        latestProgressRef.current = {
+          water: newProgress.water,
+          steps: newProgress.steps,
+          activeMinutes: newProgress.activeMinutes,
+        };
 
       } catch (err) {
         handleApiError(err, 'fetchUserProgress', { fallbackMessage: 'Nie udało się pobrać danych' });
@@ -111,71 +175,11 @@ export function useUserProgress() {
 
     return () => { 
       mountedRef.current = false;
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      debouncedSave.cancel();
     };
-  }, [user, isInitialized, getToday]);
-
-  const saveProgressToDb = useCallback(async (updates: { water?: number; steps?: number; activeMinutes?: number }) => {
-    if (!user || saveInProgressRef.current) return;
-
-    saveInProgressRef.current = true;
-    const today = getToday();
-
-    try {
-      const { data: existing } = await supabase
-        .from('daily_progress')
-        .select('id, water, steps, active_minutes')
-        .eq('user_id', user.id)
-        .eq('progress_date', today)
-        .maybeSingle();
-
-      if (existing) {
-        await supabase
-          .from('daily_progress')
-          .update({
-            water: updates.water ?? existing.water,
-            steps: updates.steps ?? existing.steps,
-            active_minutes: updates.activeMinutes ?? existing.active_minutes,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existing.id);
-      } else {
-        await supabase
-          .from('daily_progress')
-          .insert({
-            user_id: user.id,
-            progress_date: today,
-            water: updates.water || 0,
-            steps: updates.steps || 0,
-            active_minutes: updates.activeMinutes || 0,
-          });
-      }
-    } catch (err) {
-      handleApiError(err, 'saveProgress', { fallbackMessage: 'Nie udało się zapisać postępu' });
-    } finally {
-      saveInProgressRef.current = false;
-    }
-  }, [user, getToday]);
-
-  const debouncedSave = useCallback((updates: { water?: number; steps?: number; activeMinutes?: number }) => {
-    pendingUpdateRef.current = { ...pendingUpdateRef.current, ...updates };
-    
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    saveTimeoutRef.current = setTimeout(() => {
-      if (pendingUpdateRef.current && mountedRef.current) {
-        saveProgressToDb(pendingUpdateRef.current);
-        pendingUpdateRef.current = null;
-      }
-    }, 500);
-  }, [saveProgressToDb]);
+  }, [user, isInitialized, getToday, debouncedSave]);
 
   const getMascotEmotion = useCallback((newProgress: DailyProgress): MascotEmotion => {
-    // Safe division to prevent NaN
     const waterProgress = newProgress.waterGoal > 0 ? newProgress.water / newProgress.waterGoal : 0;
     const stepsProgress = newProgress.stepsGoal > 0 ? newProgress.steps / newProgress.stepsGoal : 0;
     const activeProgress = newProgress.activeMinutesGoal > 0 ? newProgress.activeMinutes / newProgress.activeMinutesGoal : 0;
@@ -195,16 +199,21 @@ export function useUserProgress() {
     setMascotState({ emotion, message: randomMessage });
   }, []);
 
+  const scheduleDbSave = useCallback((newProgress: { water: number; steps: number; activeMinutes: number }) => {
+    latestProgressRef.current = newProgress;
+    debouncedSave.call(newProgress);
+  }, [debouncedSave]);
+
   const addWater = useCallback((amount: number = 250) => {
     setProgress(prev => {
       const newWater = Math.min(Math.max(0, prev.water + amount), prev.waterGoal + 500);
       const newProgress = { ...prev, water: newWater };
       const emotion = getMascotEmotion(newProgress);
       updateMascotState(emotion);
-      debouncedSave({ water: newWater, steps: prev.steps, activeMinutes: prev.activeMinutes });
+      scheduleDbSave({ water: newWater, steps: prev.steps, activeMinutes: prev.activeMinutes });
       return newProgress;
     });
-  }, [getMascotEmotion, updateMascotState, debouncedSave]);
+  }, [getMascotEmotion, updateMascotState, scheduleDbSave]);
 
   const addSteps = useCallback((steps: number) => {
     setProgress(prev => {
@@ -212,10 +221,10 @@ export function useUserProgress() {
       const newProgress = { ...prev, steps: newSteps };
       const emotion = getMascotEmotion(newProgress);
       updateMascotState(emotion);
-      debouncedSave({ water: prev.water, steps: newSteps, activeMinutes: prev.activeMinutes });
+      scheduleDbSave({ water: prev.water, steps: newSteps, activeMinutes: prev.activeMinutes });
       return newProgress;
     });
-  }, [getMascotEmotion, updateMascotState, debouncedSave]);
+  }, [getMascotEmotion, updateMascotState, scheduleDbSave]);
 
   const addActiveMinutes = useCallback((minutes: number) => {
     setProgress(prev => {
@@ -223,10 +232,10 @@ export function useUserProgress() {
       const newProgress = { ...prev, activeMinutes: newActiveMinutes };
       const emotion = getMascotEmotion(newProgress);
       updateMascotState(emotion);
-      debouncedSave({ water: prev.water, steps: prev.steps, activeMinutes: newActiveMinutes });
+      scheduleDbSave({ water: prev.water, steps: prev.steps, activeMinutes: newActiveMinutes });
       return newProgress;
     });
-  }, [getMascotEmotion, updateMascotState, debouncedSave]);
+  }, [getMascotEmotion, updateMascotState, scheduleDbSave]);
 
   const addCalories = useCallback((calories: number) => {
     setProgress(prev => ({ ...prev, calories: Math.max(0, prev.calories + calories) }));
