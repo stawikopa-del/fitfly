@@ -186,17 +186,39 @@ export default {
         "scan-line": "scan-line 2s ease-in-out infinite",
       },
       boxShadow: {
+        // Playful shadows dla buttonów
         "playful": "0 4px 0 hsl(var(--fitfly-blue-dark)), 0 6px 20px hsl(var(--fitfly-blue) / 0.3)",
         "playful-sm": "0 2px 0 hsl(var(--fitfly-blue-dark)), 0 4px 10px hsl(var(--fitfly-blue) / 0.2)",
         "playful-lg": "0 6px 0 hsl(var(--fitfly-blue-dark)), 0 10px 30px hsl(var(--fitfly-blue) / 0.4)",
         "playful-green": "0 4px 0 hsl(var(--fitfly-green-dark)), 0 6px 20px hsl(var(--fitfly-green) / 0.3)",
         "playful-green-lg": "0 6px 0 hsl(var(--fitfly-green-dark)), 0 10px 30px hsl(var(--fitfly-green) / 0.4)",
         "playful-orange": "0 4px 0 hsl(var(--fitfly-orange) / 0.8), 0 6px 20px hsl(var(--fitfly-orange) / 0.3)",
-        "card-playful": "0 8px 30px -10px hsl(var(--fitfly-blue) / 0.2)",
-        "card-playful-hover": "0 12px 40px -10px hsl(var(--fitfly-blue) / 0.3)",
+        
+        // Card shadows
+        "card-playful": "0 8px 30px -10px hsl(var(--fitfly-blue) / 0.15)",
+        "card-playful-hover": "0 16px 40px -10px hsl(var(--fitfly-blue) / 0.25)",
+        "card-elevated": "0 12px 40px -15px hsl(var(--foreground) / 0.15)",
+        "card-elevated-hover": "0 20px 50px -15px hsl(var(--foreground) / 0.2)",
+        
+        // Glow effects
         "glow-blue": "0 0 20px hsl(var(--fitfly-blue) / 0.4)",
         "glow-green": "0 0 20px hsl(var(--fitfly-green) / 0.4)",
         "glow-orange": "0 0 20px hsl(var(--fitfly-orange) / 0.4)",
+        "glow-primary": "0 0 25px hsl(var(--primary) / 0.35)",
+        
+        // Subtle shadows
+        "soft": "0 2px 8px hsl(var(--foreground) / 0.06)",
+        "soft-lg": "0 4px 16px hsl(var(--foreground) / 0.08)",
+      },
+      
+      // Spacing tokens dla spójności
+      spacing: {
+        "4.5": "1.125rem",
+        "5.5": "1.375rem",
+        "13": "3.25rem",
+        "15": "3.75rem",
+        "18": "4.5rem",
+        "22": "5.5rem",
       },
     },
   },
