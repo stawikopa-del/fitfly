@@ -3,6 +3,7 @@ import { DailyProgress, MascotState, MascotEmotion } from '@/types/flyfit';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { handleApiError } from '@/lib/errorHandler';
 
 const defaultProgress: DailyProgress = {
   steps: 0,
@@ -99,7 +100,7 @@ export function useUserProgress() {
         }));
 
       } catch (err) {
-        console.error('Failed to fetch user progress:', err);
+        handleApiError(err, 'fetchUserProgress', { fallbackMessage: 'Nie udało się pobrać danych' });
         if (mountedRef.current) setError('Nie udało się pobrać danych');
       } finally {
         if (mountedRef.current) setLoading(false);
@@ -152,10 +153,7 @@ export function useUserProgress() {
           });
       }
     } catch (err) {
-      console.error('Failed to save progress:', err);
-      if (mountedRef.current) {
-        toast.error('Nie udało się zapisać postępu');
-      }
+      handleApiError(err, 'saveProgress', { fallbackMessage: 'Nie udało się zapisać postępu' });
     } finally {
       saveInProgressRef.current = false;
     }

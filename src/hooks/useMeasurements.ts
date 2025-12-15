@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { format, subDays } from 'date-fns';
+import { handleApiError } from '@/lib/errorHandler';
 
 export interface Measurement {
   id: string;
@@ -65,7 +66,7 @@ export function useMeasurements() {
         setTodayMeasurement(todayData || null);
       }
     } catch (error) {
-      console.error('Error fetching measurements:', error);
+      handleApiError(error, 'fetchMeasurements', { fallbackMessage: 'Nie udało się pobrać pomiarów' });
     } finally {
       if (mountedRef.current) {
         setLoading(false);
@@ -121,8 +122,7 @@ export function useMeasurements() {
       await fetchMeasurements();
       return true;
     } catch (error) {
-      console.error('Error saving measurement:', error);
-      toast.error('Nie udało się zapisać pomiarów');
+      handleApiError(error, 'saveMeasurement', { fallbackMessage: 'Nie udało się zapisać pomiarów' });
       return false;
     } finally {
       if (mountedRef.current) {
