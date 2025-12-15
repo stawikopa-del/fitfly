@@ -283,10 +283,6 @@ export default function CalendarPage() {
   };
 
   const datesWithEvents = events.map((e) => parseISO(e.event_date));
-    toast.success('Plan usunięty');
-  };
-
-  const datesWithEvents = events.map((e) => parseISO(e.event_date));
 
   return (
     <div className="min-h-screen pb-24">
