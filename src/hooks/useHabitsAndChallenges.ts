@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useGamification } from './useGamification';
+import { handleApiError } from '@/lib/errorHandler';
 
 export interface Habit {
   id: string;
@@ -201,14 +202,14 @@ export function useHabitsAndChallenges() {
         .order('created_at', { ascending: true });
       
       if (fetchError) {
-        console.error('Error fetching habits:', fetchError);
+        handleApiError(fetchError, 'fetchHabits', { fallbackMessage: 'Nie udało się pobrać nawyków' });
         setError('Nie udało się pobrać nawyków');
         return;
       }
       
       setHabits(data || []);
     } catch (err) {
-      console.error('Error fetching habits:', err);
+      handleApiError(err, 'fetchHabits', { fallbackMessage: 'Nie udało się pobrać nawyków' });
       setError('Nie udało się pobrać nawyków');
     }
   }, [user]);
@@ -226,13 +227,13 @@ export function useHabitsAndChallenges() {
         .eq('log_date', today);
       
       if (fetchError) {
-        console.error('Error fetching today logs:', fetchError);
+        handleApiError(fetchError, 'fetchTodayLogs', { silent: true }); // Silent - not critical
         return;
       }
       
       setTodayLogs(data || []);
     } catch (err) {
-      console.error('Error fetching today logs:', err);
+      handleApiError(err, 'fetchTodayLogs', { silent: true });
     }
   }, [user]);
 
@@ -247,14 +248,14 @@ export function useHabitsAndChallenges() {
         .order('created_at', { ascending: false });
       
       if (fetchError) {
-        console.error('Error fetching challenges:', fetchError);
+        handleApiError(fetchError, 'fetchChallenges', { fallbackMessage: 'Nie udało się pobrać wyzwań' });
         setError('Nie udało się pobrać wyzwań');
         return;
       }
       
       setChallenges(data || []);
     } catch (err) {
-      console.error('Error fetching challenges:', err);
+      handleApiError(err, 'fetchChallenges', { fallbackMessage: 'Nie udało się pobrać wyzwań' });
       setError('Nie udało się pobrać wyzwań');
     }
   }, [user]);

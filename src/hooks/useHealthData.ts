@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { handleApiError } from '@/lib/errorHandler';
 
 interface HealthData {
   steps: number;
@@ -44,7 +45,10 @@ export function useHealthData() {
       }));
       return true;
     } catch (error) {
-      console.error('Error requesting health permissions:', error);
+      handleApiError(error, 'requestHealthPermissions', { 
+        fallbackMessage: 'Nie udało się uzyskać dostępu do danych zdrowotnych',
+        silent: true // Don't spam user on web
+      });
       setHealthData(prev => ({
         ...prev,
         isLoading: false,
@@ -62,7 +66,7 @@ export function useHealthData() {
     try {
       return 0;
     } catch (error) {
-      console.error('Error fetching steps:', error);
+      handleApiError(error, 'fetchSteps', { silent: true });
       return 0;
     }
   }, [isNativePlatform]);
