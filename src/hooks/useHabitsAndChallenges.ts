@@ -184,11 +184,14 @@ export function useHabitsAndChallenges() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [todayLogs, setTodayLogs] = useState<HabitLog[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
-  const [loading, setLoading] = useState(false); // No initial loading delay
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Prevent concurrent operations
-  const operationInProgressRef = useRef(false);
+  // Separate refs for different operation types to prevent blocking unrelated operations
+  const habitOperationRef = useRef(false);
+  const challengeOperationRef = useRef(false);
+  const toggleOperationRef = useRef<Set<string>>(new Set()); // Track per-habit toggles
+  const mountedRef = useRef(true);
 
   const fetchHabits = useCallback(async () => {
     if (!user) return;
@@ -261,9 +264,9 @@ export function useHabitsAndChallenges() {
   }, [user]);
 
   const addHabit = async (habit: Partial<Habit>) => {
-    if (!user || operationInProgressRef.current) return null;
+    if (!user || habitOperationRef.current) return null;
     
-    operationInProgressRef.current = true;
+    habitOperationRef.current = true;
     
     try {
       const { data, error: insertError } = await supabase
@@ -294,23 +297,30 @@ export function useHabitsAndChallenges() {
       }
       
       toast.success('Nawyk dodany! 🎯');
-      fetchHabits();
+      if (mountedRef.current) fetchHabits();
       return data;
     } catch (err) {
       console.error('Error adding habit:', err);
       toast.error('Nie udało się dodać nawyku');
       return null;
     } finally {
-      operationInProgressRef.current = false;
+      habitOperationRef.current = false;
     }
   };
 
   const toggleHabitCompletion = async (habitId: string) => {
     if (!user) return;
     
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const existingLog = todayLogs.find(log => log.habit_id === habitId);
-    const habit = habits.find(h => h.id === habitId);
+    // Prevent concurrent toggles for the same habit
+    if (toggleOperationRef.current.has(habitId)) return;
+    toggleOperationRef.current.add(habitId);
+    
+    try {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const existingLog = todayLogs.find(log => log.habit_id === habitId);
+      const habit = habits.find(h => h.id === habitId);
+      
+      if (!habit) return;
     
     if (!habit) return;
     

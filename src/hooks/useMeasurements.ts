@@ -36,13 +36,20 @@ export function useMeasurements() {
   const [todayMeasurement, setTodayMeasurement] = useState<Measurement | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
   const mountedRef = useRef(true);
+  const saveInProgressRef = useRef(false);
+  const fetchInProgressRef = useRef(false);
 
   const fetchMeasurements = useCallback(async (days: number = 30) => {
     if (!user?.id) {
       setLoading(false);
       return;
     }
+
+    // Prevent concurrent fetches
+    if (fetchInProgressRef.current) return;
+    fetchInProgressRef.current = true;
 
     try {
       const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
@@ -57,7 +64,6 @@ export function useMeasurements() {
       if (error) throw error;
 
       if (mountedRef.current) {
-        // Type assertion since we know the structure matches
         const typedData = (data || []) as unknown as Measurement[];
         setMeasurements(typedData);
         
@@ -68,6 +74,7 @@ export function useMeasurements() {
     } catch (error) {
       handleApiError(error, 'fetchMeasurements', { fallbackMessage: 'Nie udało się pobrać pomiarów' });
     } finally {
+      fetchInProgressRef.current = false;
       if (mountedRef.current) {
         setLoading(false);
       }
@@ -80,6 +87,13 @@ export function useMeasurements() {
       return false;
     }
 
+    // Prevent concurrent saves
+    if (saveInProgressRef.current) {
+      toast.error('Zapisywanie w toku, poczekaj chwilę');
+      return false;
+    }
+
+    saveInProgressRef.current = true;
     setSaving(true);
     const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -92,8 +106,9 @@ export function useMeasurements() {
         .eq('measurement_date', today)
         .maybeSingle();
 
+      if (!mountedRef.current) return false;
+
       if (existing) {
-        // Update existing
         const { error } = await supabase
           .from('user_measurements')
           .update({
@@ -105,7 +120,6 @@ export function useMeasurements() {
         if (error) throw error;
         toast.success('Pomiary zaktualizowane! 📊');
       } else {
-        // Insert new
         const { error } = await supabase
           .from('user_measurements')
           .insert({
@@ -125,6 +139,7 @@ export function useMeasurements() {
       handleApiError(error, 'saveMeasurement', { fallbackMessage: 'Nie udało się zapisać pomiarów' });
       return false;
     } finally {
+      saveInProgressRef.current = false;
       if (mountedRef.current) {
         setSaving(false);
       }
