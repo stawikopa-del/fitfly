@@ -11,6 +11,7 @@ import {
   BADGE_DEFINITIONS
 } from '@/types/gamification';
 import { triggerLevelUpConfetti, triggerBadgeConfetti } from '@/utils/confetti';
+import { handleApiError } from '@/lib/errorHandler';
 
 export function useGamification() {
   const { user, isInitialized } = useAuth();
@@ -48,7 +49,7 @@ export function useGamification() {
       if (!mountedRef.current) return;
       
       if (gamError) {
-        console.error('Error fetching gamification:', gamError);
+        handleApiError(gamError, 'useGamification.fetchGamification', { silent: true });
         setLoading(false);
         return;
       }
@@ -73,12 +74,12 @@ export function useGamification() {
           if (!mountedRef.current) return;
 
           if (insertError && insertError.code !== '23505') {
-            console.error('Error creating gamification:', insertError);
+            handleApiError(insertError, 'useGamification.createRecord', { silent: true });
           } else if (newData) {
             setGamification(newData);
           }
         } catch (err) {
-          console.error('Error creating gamification record:', err);
+          handleApiError(err, 'useGamification.createRecord', { silent: true });
         }
       } else {
         setGamification(gamData);
@@ -113,7 +114,7 @@ export function useGamification() {
             }
           }
         } catch (err) {
-          console.error('Error updating login streak:', err);
+          handleApiError(err, 'useGamification.updateLoginStreak', { silent: true });
         }
       }
 
@@ -128,11 +129,11 @@ export function useGamification() {
           setBadges(badgeData || []);
         }
       } catch (err) {
-        console.error('Error fetching badges:', err);
+        handleApiError(err, 'useGamification.fetchBadges', { silent: true });
       }
 
     } catch (error) {
-      console.error('Error fetching gamification:', error);
+      handleApiError(error, 'useGamification.fetchGamification', { silent: true });
     } finally {
       if (mountedRef.current) {
         setLoading(false);
@@ -194,7 +195,7 @@ export function useGamification() {
         .single();
 
       if (error) {
-        console.error('Error updating XP:', error);
+        handleApiError(error, 'useGamification.addXP', { fallbackMessage: 'Nie udało się dodać XP' });
         return;
       }
 
@@ -220,7 +221,7 @@ export function useGamification() {
       }
 
     } catch (error) {
-      console.error('Error adding XP:', error);
+      handleApiError(error, 'useGamification.addXP', { silent: true });
     } finally {
       operationInProgressRef.current = false;
 
@@ -250,7 +251,7 @@ export function useGamification() {
 
       if (error) {
         if (error.code === '23505') return;
-        console.error('Error awarding badge:', error);
+        handleApiError(error, 'useGamification.awardBadge', { silent: true });
         return;
       }
 
@@ -272,7 +273,7 @@ export function useGamification() {
       }
 
     } catch (error) {
-      console.error('Error awarding badge:', error);
+      handleApiError(error, 'useGamification.awardBadge', { silent: true });
     }
   }, [user, badges]);
 

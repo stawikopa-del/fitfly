@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { handleApiError } from '@/lib/errorHandler';
 
 export interface MessageReaction {
   odgerId: string;
@@ -53,7 +54,7 @@ async function fetchChatPreviewsData(userId: string): Promise<ChatPreview[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching messages:', error);
+    handleApiError(error, 'useDirectMessages.fetchChatPreviews', { silent: true });
     return [];
   }
 
@@ -136,7 +137,7 @@ async function fetchMessagesData(userId: string, friendId: string): Promise<Dire
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching messages:', error);
+    handleApiError(error, 'useDirectMessages.fetchMessages', { silent: true });
     return [];
   }
 
@@ -173,7 +174,7 @@ async function fetchMessagesData(userId: string, friendId: string): Promise<Dire
         .eq('sender_id', friendId)
         .is('read_at', null);
     } catch (err) {
-      console.error('Error marking messages as read:', err);
+      // Silent - background operation
     }
   })();
 
@@ -282,7 +283,7 @@ export function useDirectMessages(friendId?: string) {
         .insert(insertData);
 
       if (error) {
-        console.error('Error sending message:', error);
+        handleApiError(error, 'useDirectMessages.sendMessage', { fallbackMessage: 'Nie udało się wysłać wiadomości' });
         return false;
       }
       
@@ -290,7 +291,7 @@ export function useDirectMessages(friendId?: string) {
       queryClient.invalidateQueries({ queryKey: ['directMessages', user.id, friendId] });
       return true;
     } catch (error) {
-      console.error('Error sending message:', error);
+      handleApiError(error, 'useDirectMessages.sendMessage', { fallbackMessage: 'Nie udało się wysłać wiadomości' });
       return false;
     } finally {
       setIsSending(false);
@@ -323,7 +324,7 @@ export function useDirectMessages(friendId?: string) {
         .eq('sender_id', user.id);
 
       if (error) {
-        console.error('Error deleting message:', error);
+        handleApiError(error, 'useDirectMessages.deleteMessage', { fallbackMessage: 'Nie udało się usunąć wiadomości' });
         return false;
       }
 
@@ -334,7 +335,7 @@ export function useDirectMessages(friendId?: string) {
       );
       return true;
     } catch (error) {
-      console.error('Error deleting message:', error);
+      handleApiError(error, 'useDirectMessages.deleteMessage', { fallbackMessage: 'Nie udało się usunąć wiadomości' });
       return false;
     }
   }, [user, friendId, queryClient]);
@@ -350,7 +351,7 @@ export function useDirectMessages(friendId?: string) {
         .maybeSingle();
 
       if (fetchError || !msgData) {
-        console.error('Error fetching message:', fetchError);
+        handleApiError(fetchError, 'useDirectMessages.toggleReaction', { silent: true });
         return false;
       }
 
@@ -380,7 +381,7 @@ export function useDirectMessages(friendId?: string) {
         .eq('id', messageId);
 
       if (error) {
-        console.error('Error updating reaction:', error);
+        handleApiError(error, 'useDirectMessages.toggleReaction', { silent: true });
         return false;
       }
 
@@ -393,7 +394,7 @@ export function useDirectMessages(friendId?: string) {
 
       return true;
     } catch (error) {
-      console.error('Error toggling reaction:', error);
+      handleApiError(error, 'useDirectMessages.toggleReaction', { silent: true });
       return false;
     }
   }, [user, friendId, queryClient]);
