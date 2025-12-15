@@ -196,32 +196,72 @@ export default function ProfileSetup() {
     );
   }
 
+  const stepInfo = [
+    { icon: '👋', title: 'Poznajmy się!', desc: 'Powiedz nam jak masz na imię i wybierz płeć' },
+    { icon: '🎯', title: 'Twój cel', desc: 'Wybierz co chcesz osiągnąć z FITKIEM' },
+    { icon: '📊', title: 'Dane ciała', desc: 'Podaj podstawowe informacje o sobie' },
+    { icon: '🎉', title: 'Gotowe!', desc: 'Oto Twój spersonalizowany plan' },
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6">
-      {/* Progress indicator */}
-      <div className="flex items-center gap-2 mb-6">
-        {[1, 2, 3, 4].map((s) => (
-          <div key={s} className="flex items-center">
-            <div className={cn(
-              'w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all',
-              step >= s
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-muted text-muted-foreground'
-            )}>
-              {step > s ? <Check className="w-4 h-4" /> : s}
-            </div>
-            {s < 4 && (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6 bg-background">
+      {/* Welcome header for step 1 */}
+      {step === 1 && (
+        <div className="text-center mb-4 animate-fade-in">
+          <h1 className="text-2xl font-display font-bold text-foreground mb-1">
+            Witaj w FITFLY! 🍎
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Uzupełnij profil w 4 prostych krokach
+          </p>
+        </div>
+      )}
+
+      {/* Step indicator with labels */}
+      <div className="w-full max-w-sm mb-6">
+        {/* Progress bar */}
+        <div className="relative h-2 bg-muted rounded-full mb-3 overflow-hidden">
+          <div 
+            className="absolute left-0 top-0 h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
+            style={{ width: `${((step - 1) / 3) * 100}%` }}
+          />
+        </div>
+        
+        {/* Step circles with icons */}
+        <div className="flex justify-between">
+          {stepInfo.map((info, idx) => (
+            <div key={idx} className="flex flex-col items-center">
               <div className={cn(
-                'w-6 h-1 rounded-full mx-1 transition-all',
-                step > s ? 'bg-primary' : 'bg-muted'
-              )} />
-            )}
-          </div>
-        ))}
+                'w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all duration-300 border-2',
+                step > idx + 1
+                  ? 'bg-primary border-primary text-primary-foreground' 
+                  : step === idx + 1
+                    ? 'bg-primary/20 border-primary text-foreground scale-110'
+                    : 'bg-muted/50 border-muted text-muted-foreground'
+              )}>
+                {step > idx + 1 ? <Check className="w-5 h-5" /> : info.icon}
+              </div>
+              <span className={cn(
+                'text-[10px] mt-1 font-medium transition-colors',
+                step === idx + 1 ? 'text-primary' : 'text-muted-foreground'
+              )}>
+                {idx + 1}/4
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Current step info bubble */}
+      <div className="bg-primary/10 border border-primary/20 rounded-2xl px-4 py-2 mb-4 animate-fade-in">
+        <p className="text-sm font-medium text-foreground text-center">
+          <span className="mr-1">{stepInfo[step - 1].icon}</span>
+          {stepInfo[step - 1].desc}
+        </p>
       </div>
 
       {/* FITEK */}
-      <div className="w-32 h-32 mb-4 animate-float-slow relative z-10">
+      <div className="w-28 h-28 mb-4 animate-float-slow relative z-10">
         <img src={fitekDetective} alt="FITEK" className="w-full h-full object-contain drop-shadow-2xl" />
       </div>
 
