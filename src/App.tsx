@@ -13,47 +13,69 @@ import { useTheme } from "@/hooks/useTheme";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { WorkoutProvider } from "@/contexts/WorkoutContext";
 
-// Lazy load pages for better performance
-const Home = lazy(() => import("./pages/Home"));
-const Workouts = lazy(() => import("./pages/Workouts"));
-const Nutrition = lazy(() => import("./pages/Nutrition"));
-const Challenges = lazy(() => import("./pages/Challenges"));
-const Progress = lazy(() => import("./pages/Progress"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Settings = lazy(() => import("./pages/Settings"));
-const More = lazy(() => import("./pages/More"));
-const ChatList = lazy(() => import("./pages/ChatList"));
-const FitekChat = lazy(() => import("./pages/FitekChat"));
-const DirectChat = lazy(() => import("./pages/DirectChat"));
-const Auth = lazy(() => import("./pages/Auth"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const ProfileSetup = lazy(() => import("./pages/ProfileSetup"));
-const Help = lazy(() => import("./pages/Help"));
-const About = lazy(() => import("./pages/About"));
-const Info = lazy(() => import("./pages/Info"));
-const CalendarPage = lazy(() => import("./pages/Calendar"));
-const Privacy = lazy(() => import("./pages/Privacy"));
-const TermsOfService = lazy(() => import("./pages/TermsOfService"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+// Retry wrapper for lazy loading - handles transient module loading failures
+const lazyWithRetry = <T extends React.ComponentType<unknown>>(
+  importFn: () => Promise<{ default: T }>,
+  retries = 3
+): React.LazyExoticComponent<T> => {
+  return lazy(() => {
+    const tryImport = async (attempt: number): Promise<{ default: T }> => {
+      try {
+        return await importFn();
+      } catch (error) {
+        if (attempt < retries) {
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
+          return tryImport(attempt + 1);
+        }
+        throw error;
+      }
+    };
+    return tryImport(0);
+  });
+};
 
-const Achievements = lazy(() => import("./pages/Achievements"));
-const Goals = lazy(() => import("./pages/Goals"));
-const Friends = lazy(() => import("./pages/Friends"));
-const FriendProfile = lazy(() => import("./pages/FriendProfile"));
-const SharedRecipe = lazy(() => import("./pages/SharedRecipe"));
-const Invite = lazy(() => import("./pages/Invite"));
-const DietConfig = lazy(() => import("./pages/DietConfig"));
-const Recipes = lazy(() => import("./pages/Recipes"));
-const RecipesDatabase = lazy(() => import("./pages/RecipesDatabase"));
-const QuickMeal = lazy(() => import("./pages/QuickMeal"));
-const QuickMealMethod = lazy(() => import("./pages/QuickMealMethod"));
-const ShoppingList = lazy(() => import("./pages/ShoppingList"));
-const SharedShoppingList = lazy(() => import("./pages/SharedShoppingList"));
-const DietShoppingList = lazy(() => import("./pages/DietShoppingList"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const FavoriteRecipes = lazy(() => import("./pages/FavoriteRecipes"));
-const DayPlanner = lazy(() => import("./pages/DayPlanner"));
-const ProductsDatabase = lazy(() => import("./pages/ProductsDatabase"));
+// Lazy load pages with retry mechanism for better reliability
+const Home = lazyWithRetry(() => import("./pages/Home"));
+const Workouts = lazyWithRetry(() => import("./pages/Workouts"));
+const Nutrition = lazyWithRetry(() => import("./pages/Nutrition"));
+const Challenges = lazyWithRetry(() => import("./pages/Challenges"));
+const Progress = lazyWithRetry(() => import("./pages/Progress"));
+const Profile = lazyWithRetry(() => import("./pages/Profile"));
+const Settings = lazyWithRetry(() => import("./pages/Settings"));
+const More = lazyWithRetry(() => import("./pages/More"));
+const ChatList = lazyWithRetry(() => import("./pages/ChatList"));
+const FitekChat = lazyWithRetry(() => import("./pages/FitekChat"));
+const DirectChat = lazyWithRetry(() => import("./pages/DirectChat"));
+const Auth = lazyWithRetry(() => import("./pages/Auth"));
+const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
+const ProfileSetup = lazyWithRetry(() => import("./pages/ProfileSetup"));
+const Help = lazyWithRetry(() => import("./pages/Help"));
+const About = lazyWithRetry(() => import("./pages/About"));
+const Info = lazyWithRetry(() => import("./pages/Info"));
+const CalendarPage = lazyWithRetry(() => import("./pages/Calendar"));
+const Privacy = lazyWithRetry(() => import("./pages/Privacy"));
+const TermsOfService = lazyWithRetry(() => import("./pages/TermsOfService"));
+const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));
+
+const Achievements = lazyWithRetry(() => import("./pages/Achievements"));
+const Goals = lazyWithRetry(() => import("./pages/Goals"));
+const Friends = lazyWithRetry(() => import("./pages/Friends"));
+const FriendProfile = lazyWithRetry(() => import("./pages/FriendProfile"));
+const SharedRecipe = lazyWithRetry(() => import("./pages/SharedRecipe"));
+const Invite = lazyWithRetry(() => import("./pages/Invite"));
+const DietConfig = lazyWithRetry(() => import("./pages/DietConfig"));
+const Recipes = lazyWithRetry(() => import("./pages/Recipes"));
+const RecipesDatabase = lazyWithRetry(() => import("./pages/RecipesDatabase"));
+const QuickMeal = lazyWithRetry(() => import("./pages/QuickMeal"));
+const QuickMealMethod = lazyWithRetry(() => import("./pages/QuickMealMethod"));
+const ShoppingList = lazyWithRetry(() => import("./pages/ShoppingList"));
+const SharedShoppingList = lazyWithRetry(() => import("./pages/SharedShoppingList"));
+const DietShoppingList = lazyWithRetry(() => import("./pages/DietShoppingList"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
+const FavoriteRecipes = lazyWithRetry(() => import("./pages/FavoriteRecipes"));
+const DayPlanner = lazyWithRetry(() => import("./pages/DayPlanner"));
+const ProductsDatabase = lazyWithRetry(() => import("./pages/ProductsDatabase"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
