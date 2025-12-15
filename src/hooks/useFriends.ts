@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { handleApiError } from '@/lib/errorHandler';
 
 export interface Friend {
   id: string;
@@ -49,7 +50,7 @@ export function useFriends() {
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
       if (error) {
-        console.error('Error fetching friendships:', error);
+        handleApiError(error, 'useFriends.fetchFriends', { silent: true });
         return;
       }
 
@@ -114,7 +115,7 @@ export function useFriends() {
         setFriends(friendsList);
       }
     } catch (error) {
-      console.error('Error fetching friends:', error);
+      handleApiError(error, 'useFriends.fetchFriends', { fallbackMessage: 'Nie udało się pobrać listy znajomych' });
       if (mountedRef.current) setFriends([]);
     }
   }, [user]);
@@ -134,7 +135,7 @@ export function useFriends() {
         .eq('status', 'pending');
 
       if (error) {
-        console.error('Error fetching pending requests:', error);
+        handleApiError(error, 'useFriends.fetchPendingRequests', { silent: true });
         return;
       }
 
@@ -179,7 +180,7 @@ export function useFriends() {
         setSentRequests(sent?.map(s => s.receiver_id) || []);
       }
     } catch (error) {
-      console.error('Error fetching pending requests:', error);
+      handleApiError(error, 'useFriends.fetchPendingRequests', { silent: true });
     }
   }, [user]);
 
@@ -191,14 +192,14 @@ export function useFriends() {
         .rpc('search_profiles', { search_term: query });
 
       if (error) {
-        console.error('Error searching users:', error);
+        handleApiError(error, 'useFriends.searchUsers', { silent: true });
         return [];
       }
 
       const filtered = (data || []).filter((p: { user_id: string }) => p.user_id !== user.id);
       return filtered.slice(0, 10);
     } catch (error) {
-      console.error('Error searching users:', error);
+      handleApiError(error, 'useFriends.searchUsers', { silent: true });
       return [];
     }
   }, [user]);
@@ -220,8 +221,7 @@ export function useFriends() {
         if (error.code === '23505') {
           toast.error('Zaproszenie już zostało wysłane');
         } else {
-          console.error('Error sending friend request:', error);
-          toast.error('Nie udało się wysłać zaproszenia');
+          handleApiError(error, 'useFriends.sendFriendRequest', { fallbackMessage: 'Nie udało się wysłać zaproszenia' });
         }
         return false;
       }
@@ -232,8 +232,7 @@ export function useFriends() {
       }
       return true;
     } catch (error) {
-      console.error('Error sending friend request:', error);
-      toast.error('Nie udało się wysłać zaproszenia');
+      handleApiError(error, 'useFriends.sendFriendRequest', { fallbackMessage: 'Nie udało się wysłać zaproszenia' });
       return false;
     } finally {
       operationInProgress.current = false;
@@ -251,8 +250,7 @@ export function useFriends() {
         .eq('id', requestId);
 
       if (error) {
-        console.error('Error accepting request:', error);
-        toast.error('Nie udało się zaakceptować zaproszenia');
+        handleApiError(error, 'useFriends.acceptRequest', { fallbackMessage: 'Nie udało się zaakceptować zaproszenia' });
         return false;
       }
 
@@ -260,8 +258,7 @@ export function useFriends() {
       await Promise.all([fetchFriends(), fetchPendingRequests()]);
       return true;
     } catch (error) {
-      console.error('Error accepting request:', error);
-      toast.error('Nie udało się zaakceptować zaproszenia');
+      handleApiError(error, 'useFriends.acceptRequest', { fallbackMessage: 'Nie udało się zaakceptować zaproszenia' });
       return false;
     } finally {
       operationInProgress.current = false;
@@ -279,8 +276,7 @@ export function useFriends() {
         .eq('id', requestId);
 
       if (error) {
-        console.error('Error rejecting request:', error);
-        toast.error('Nie udało się odrzucić zaproszenia');
+        handleApiError(error, 'useFriends.rejectRequest', { fallbackMessage: 'Nie udało się odrzucić zaproszenia' });
         return false;
       }
 
@@ -288,8 +284,7 @@ export function useFriends() {
       await fetchPendingRequests();
       return true;
     } catch (error) {
-      console.error('Error rejecting request:', error);
-      toast.error('Nie udało się odrzucić zaproszenia');
+      handleApiError(error, 'useFriends.rejectRequest', { fallbackMessage: 'Nie udało się odrzucić zaproszenia' });
       return false;
     } finally {
       operationInProgress.current = false;
@@ -307,8 +302,7 @@ export function useFriends() {
         .eq('id', friendshipId);
 
       if (error) {
-        console.error('Error removing friend:', error);
-        toast.error('Nie udało się usunąć znajomego');
+        handleApiError(error, 'useFriends.removeFriend', { fallbackMessage: 'Nie udało się usunąć znajomego' });
         return false;
       }
 
@@ -318,8 +312,7 @@ export function useFriends() {
       }
       return true;
     } catch (error) {
-      console.error('Error removing friend:', error);
-      toast.error('Nie udało się usunąć znajomego');
+      handleApiError(error, 'useFriends.removeFriend', { fallbackMessage: 'Nie udało się usunąć znajomego' });
       return false;
     } finally {
       operationInProgress.current = false;
