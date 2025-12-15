@@ -388,6 +388,39 @@ export type Database = {
         }
         Relationships: []
       }
+      gratitude_entries: {
+        Row: {
+          created_at: string
+          entry_1: string | null
+          entry_2: string | null
+          entry_3: string | null
+          entry_date: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_1?: string | null
+          entry_2?: string | null
+          entry_3?: string | null
+          entry_date?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_1?: string | null
+          entry_2?: string | null
+          entry_3?: string | null
+          entry_date?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       habit_logs: {
         Row: {
           completed_value: number | null
