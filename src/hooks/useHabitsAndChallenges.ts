@@ -399,14 +399,15 @@ export function useHabitsAndChallenges() {
   };
 
   const deleteHabit = async (habitId: string) => {
-    if (!user) return;
+    if (!user || habitOperationRef.current) return;
     
+    habitOperationRef.current = true;
     try {
       const { error: deleteError } = await supabase
         .from('habits')
         .delete()
         .eq('id', habitId)
-        .eq('user_id', user.id); // Extra safety check
+        .eq('user_id', user.id);
       
       if (deleteError) {
         console.error('Error deleting habit:', deleteError);
@@ -415,111 +416,143 @@ export function useHabitsAndChallenges() {
       }
       
       toast.success('Nawyk usunięty');
-      setHabits(prev => prev.filter(h => h.id !== habitId));
+      if (mountedRef.current) {
+        setHabits(prev => prev.filter(h => h.id !== habitId));
+      }
     } catch (err) {
       console.error('Error deleting habit:', err);
       toast.error('Nie udało się usunąć nawyku');
+    } finally {
+      habitOperationRef.current = false;
     }
   };
 
   const addChallenge = async (challenge: Partial<Challenge>) => {
-    if (!user) return null;
+    if (!user || challengeOperationRef.current) return null;
     
-    const { data, error } = await supabase
-      .from('challenges')
-      .insert([{
-        title: challenge.title || '',
-        description: challenge.description,
-        category: challenge.category || 'fitness',
-        icon: challenge.icon || 'trophy',
-        target: challenge.target || 7,
-        current: challenge.current || 0,
-        unit: challenge.unit || 'dni',
-        duration_days: challenge.duration_days || 7,
-        points: challenge.points || 100,
-        is_custom: challenge.is_custom || false,
-        user_id: user.id,
-      }])
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error adding challenge:', error);
+    challengeOperationRef.current = true;
+    try {
+      const { data, error } = await supabase
+        .from('challenges')
+        .insert([{
+          title: challenge.title || '',
+          description: challenge.description,
+          category: challenge.category || 'fitness',
+          icon: challenge.icon || 'trophy',
+          target: challenge.target || 7,
+          current: challenge.current || 0,
+          unit: challenge.unit || 'dni',
+          duration_days: challenge.duration_days || 7,
+          points: challenge.points || 100,
+          is_custom: challenge.is_custom || false,
+          user_id: user.id,
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error adding challenge:', error);
+        toast.error('Nie udało się dodać wyzwania');
+        return null;
+      }
+      
+      toast.success('Wyzwanie dodane! 🏆');
+      if (mountedRef.current) fetchChallenges();
+      return data;
+    } catch (err) {
+      console.error('Error adding challenge:', err);
       toast.error('Nie udało się dodać wyzwania');
       return null;
+    } finally {
+      challengeOperationRef.current = false;
     }
-    
-    toast.success('Wyzwanie dodane! 🏆');
-    fetchChallenges();
-    return data;
   };
 
   const startChallenge = async (challengeId: string) => {
-    const today = new Date();
-    const challenge = challenges.find(c => c.id === challengeId);
+    if (challengeOperationRef.current) return;
     
-    if (!challenge) return;
-    
-    const endDate = new Date(today);
-    endDate.setDate(endDate.getDate() + challenge.duration_days);
-    
-    const { error } = await supabase
-      .from('challenges')
-      .update({
-        is_active: true,
-        start_date: format(today, 'yyyy-MM-dd'),
-        end_date: format(endDate, 'yyyy-MM-dd'),
-      })
-      .eq('id', challengeId);
-    
-    if (error) {
-      console.error('Error starting challenge:', error);
-      toast.error('Nie udało się rozpocząć wyzwania');
-      return;
+    challengeOperationRef.current = true;
+    try {
+      const today = new Date();
+      const challenge = challenges.find(c => c.id === challengeId);
+      
+      if (!challenge) return;
+      
+      const endDate = new Date(today);
+      endDate.setDate(endDate.getDate() + challenge.duration_days);
+      
+      const { error } = await supabase
+        .from('challenges')
+        .update({
+          is_active: true,
+          start_date: format(today, 'yyyy-MM-dd'),
+          end_date: format(endDate, 'yyyy-MM-dd'),
+        })
+        .eq('id', challengeId);
+      
+      if (error) {
+        console.error('Error starting challenge:', error);
+        toast.error('Nie udało się rozpocząć wyzwania');
+        return;
+      }
+      
+      toast.success('Wyzwanie rozpoczęte! 💪');
+      if (mountedRef.current) fetchChallenges();
+    } finally {
+      challengeOperationRef.current = false;
     }
-    
-    toast.success('Wyzwanie rozpoczęte! 💪');
-    fetchChallenges();
   };
 
+  // Track per-challenge progress updates to prevent concurrent updates on same challenge
+  const progressUpdateRef = useRef<Set<string>>(new Set());
+
   const updateChallengeProgress = async (challengeId: string, newCurrent: number) => {
-    const challenge = challenges.find(c => c.id === challengeId);
-    if (!challenge) return;
+    // Prevent concurrent updates for the same challenge
+    if (progressUpdateRef.current.has(challengeId)) return;
+    progressUpdateRef.current.add(challengeId);
     
-    const isCompleted = newCurrent >= challenge.target;
-    const wasNotCompleted = !challenge.is_completed;
-    
-    const { error } = await supabase
-      .from('challenges')
-      .update({
-        current: newCurrent,
-        is_completed: isCompleted,
-        is_active: !isCompleted,
-      })
-      .eq('id', challengeId);
-    
-    if (error) {
-      console.error('Error updating challenge:', error);
-      return;
+    try {
+      const challenge = challenges.find(c => c.id === challengeId);
+      if (!challenge) return;
+      
+      const isCompleted = newCurrent >= challenge.target;
+      const wasNotCompleted = !challenge.is_completed;
+      
+      const { error } = await supabase
+        .from('challenges')
+        .update({
+          current: newCurrent,
+          is_completed: isCompleted,
+          is_active: !isCompleted,
+        })
+        .eq('id', challengeId);
+      
+      if (error) {
+        console.error('Error updating challenge:', error);
+        return;
+      }
+      
+      if (isCompleted && wasNotCompleted) {
+        toast.success(`Wyzwanie ukończone! +${challenge.points} punktów 🎉`);
+        onChallengeCompleted();
+      }
+      
+      if (mountedRef.current) fetchChallenges();
+    } finally {
+      progressUpdateRef.current.delete(challengeId);
     }
-    
-    if (isCompleted && wasNotCompleted) {
-      toast.success(`Wyzwanie ukończone! +${challenge.points} punktów 🎉`);
-      onChallengeCompleted();
-    }
-    
-    fetchChallenges();
   };
 
   const deleteChallenge = async (challengeId: string) => {
-    if (!user) return;
+    if (!user || challengeOperationRef.current) return;
     
+    challengeOperationRef.current = true;
     try {
       const { error: deleteError } = await supabase
         .from('challenges')
         .delete()
         .eq('id', challengeId)
-        .eq('user_id', user.id); // Extra safety check
+        .eq('user_id', user.id);
       
       if (deleteError) {
         console.error('Error deleting challenge:', deleteError);
@@ -528,10 +561,14 @@ export function useHabitsAndChallenges() {
       }
       
       toast.success('Wyzwanie usunięte');
-      setChallenges(prev => prev.filter(c => c.id !== challengeId));
+      if (mountedRef.current) {
+        setChallenges(prev => prev.filter(c => c.id !== challengeId));
+      }
     } catch (err) {
       console.error('Error deleting challenge:', err);
       toast.error('Nie udało się usunąć wyzwania');
+    } finally {
+      challengeOperationRef.current = false;
     }
   };
 
@@ -550,17 +587,25 @@ export function useHabitsAndChallenges() {
   };
 
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (isInitialized && user) {
       setLoading(true);
       setError(null);
       Promise.all([fetchHabits(), fetchTodayLogs(), fetchChallenges()])
-        .finally(() => setLoading(false));
+        .finally(() => {
+          if (mountedRef.current) setLoading(false);
+        });
     } else if (isInitialized && !user) {
       setHabits([]);
       setTodayLogs([]);
       setChallenges([]);
       setLoading(false);
     }
+    
+    return () => {
+      mountedRef.current = false;
+    };
   }, [isInitialized, user, fetchHabits, fetchTodayLogs, fetchChallenges]);
 
   return {
